@@ -10,7 +10,7 @@ export default function AuthPage() {
   const router = useRouter();
 
   const handleSuccess = () => {
-    router.push("/");
+    router.push("/dashboard");
     router.refresh();
   };
 

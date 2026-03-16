@@ -34,19 +34,22 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isAuthPage = pathname.startsWith("/auth");
+  const isPublic =
+    pathname === "/" ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/login");
 
-  // No session → redirect to /auth (except if already there)
-  if (!user && !isAuthPage) {
+  // Sin sesión → solo permitir landing (/) y login (/auth, /login)
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth";
     return NextResponse.redirect(url);
   }
 
-  // Authenticated → don't show auth page again
-  if (user && isAuthPage) {
+  // Con sesión → no mostrar auth/login; ir al dashboard
+  if (user && (pathname.startsWith("/auth") || pathname.startsWith("/login"))) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 

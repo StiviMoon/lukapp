@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Check, X, Zap } from "lucide-react";
-import SectionHeader from "@/components/ui/SectionHeader";
+import SectionHeader from "@/components/landing/ui/SectionHeader";
 
 const freePlan = {
   name: "Gratuito",

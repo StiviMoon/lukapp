@@ -1,10 +1,10 @@
 "use client";
 
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "next-themes";
 
 export default function PhoneMockup() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   return (
     <div className="relative w-[240px] animate-float mx-auto">

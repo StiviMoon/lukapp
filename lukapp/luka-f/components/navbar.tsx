@@ -37,21 +37,21 @@ export function Navbar() {
       >
         <div className="flex items-end justify-between max-w-sm mx-auto">
 
-          {/* Home */}
+          {/* Home / Dashboard */}
           <Link
-            href="/"
+            href="/dashboard"
             className="flex flex-col items-center gap-1.5 min-w-[56px] py-1"
           >
             <Home
               className={cn(
                 "w-[22px] h-[22px] transition-colors duration-150",
-                pathname === "/" ? "text-[#6600FF]" : "text-muted-foreground/40"
+                pathname === "/dashboard" ? "text-[#6600FF]" : "text-muted-foreground/40"
               )}
             />
             <span
               className={cn(
                 "text-[10px] font-semibold tracking-wide transition-colors duration-150",
-                pathname === "/" ? "text-[#6600FF]" : "text-muted-foreground/30"
+                pathname === "/dashboard" ? "text-[#6600FF]" : "text-muted-foreground/30"
               )}
             >
               Inicio

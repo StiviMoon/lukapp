@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sparkles, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "next-themes";
 
 const links = [
   { label: "Features", href: "#features" },
@@ -28,7 +28,8 @@ const LogoMark = ({ size = 14 }: { size?: number }) => (
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const theme = (resolvedTheme ?? "dark") as "light" | "dark";
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);

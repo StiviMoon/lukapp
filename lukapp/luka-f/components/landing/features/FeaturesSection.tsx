@@ -9,7 +9,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import FeatureCard from "./FeatureCard";
-import SectionHeader from "@/components/ui/SectionHeader";
+import SectionHeader from "@/components/landing/ui/SectionHeader";
 
 const features = [
   {
