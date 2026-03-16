@@ -10,9 +10,9 @@ import CtaSection from "@/components/landing/ui/CtaSection";
 import Footer from "@/components/landing/footer/Footer";
 
 export const metadata: Metadata = {
-  title: "Luka — Tu plata y la de tu pareja en una app",
+  title: "lukapp — Maneja tus lukas. Control, claridad, crecimiento.",
   description:
-    "Lleva tu dinero al día, solo o con tu pareja. Sin hojas de cálculo ni estrés.",
+    "Tus gastos, inversiones y tu plata en una app. Control total y crecimiento financiero — solo o con tu pareja.",
 };
 
 export default function LandingPage() {

@@ -34,9 +34,9 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Luka — Tu plata y la de tu pareja en una app",
+  title: "lukapp — Maneja tus lukas. Control, claridad, crecimiento.",
   description:
-    "Lleva tu dinero al día, solo o con tu pareja. Sin hojas de cálculo ni estrés.",
+    "Tus gastos, tus inversiones, tu plata. Una app para tener el control y crecer financieramente — solo o con tu pareja.",
 };
 
 export default function RootLayout({
@@ -55,6 +55,7 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="lukapp-theme"
         >
           <QueryProvider>
             {children}

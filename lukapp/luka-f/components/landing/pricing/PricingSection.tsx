@@ -52,13 +52,13 @@ export default function PricingSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[760px] mx-auto">
           {/* Free */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55, delay: 0.05 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.3, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
             className="relative pt-10 pb-9 px-9 bg-bg-card border border-border rounded-3xl overflow-visible"
           >
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-bg-elevated border border-border rounded-full shadow-sm">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-white dark:bg-[#111] border border-border dark:border-white/10 rounded-full shadow-sm">
               <span className="text-[12px] font-bold text-fg uppercase tracking-wider">
                 {freePlan.name}
               </span>
@@ -91,17 +91,17 @@ export default function PricingSection() {
               ))}
             </div>
 
-            <button className="w-full py-3.5 rounded-2xl border border-fg/[0.12] text-fg font-semibold text-[14px] hover:border-fg/25 hover:bg-fg/[0.04] transition-colors duration-200">
+            <button className="w-full py-3.5 rounded-2xl border border-fg/12 text-fg font-semibold text-[14px] hover:border-fg/25 hover:bg-fg/4 transition-colors duration-150">
               Empezar gratis
             </button>
           </motion.div>
 
           {/* Premium */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55, delay: 0.15 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.3, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="relative pt-10 pb-9 px-9 bg-gradient-to-br from-purple-brand/14 to-purple-bright/[0.04] border-[1.5px] border-purple-brand/40 rounded-3xl overflow-visible"
           >
             <div className="absolute -top-20 -right-20 w-52 h-52 bg-purple-bright/15 rounded-full blur-[60px] pointer-events-none" />
@@ -133,7 +133,7 @@ export default function PricingSection() {
 
             <button
               onClick={scrollToWaitlist}
-              className="w-full py-3.5 rounded-2xl bg-lime text-bg font-bold text-[14px] hover:bg-lime-dark transition-colors duration-200"
+              className="w-full py-3.5 rounded-2xl bg-lime text-bg font-bold text-[14px] hover:bg-lime-dark transition-colors duration-150"
             >
               Únete a la espera →
             </button>

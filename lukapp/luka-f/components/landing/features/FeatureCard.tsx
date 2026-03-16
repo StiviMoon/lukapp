@@ -25,17 +25,17 @@ export default function FeatureCard({
 }: FeatureCardProps) {
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
+      viewport={{ once: true, margin: "-30px" }}
       transition={{
-        duration: 0.5,
-        delay: index * 0.06,
+        duration: 0.28,
+        delay: index * 0.03,
         ease: [0.22, 1, 0.36, 1],
       }}
       className={cn(
         "h-full flex flex-col rounded-2xl border border-border bg-bg-card",
-        "p-5 sm:p-6 transition-all duration-300",
+        "p-5 sm:p-6 transition-all duration-200",
         "hover:border-lime/20 hover:bg-lime/[0.04] hover:-translate-y-0.5",
         "focus-within:ring-2 focus-within:ring-lime/30 focus-within:border-lime/30",
         "outline-none"

@@ -11,7 +11,7 @@ import { useTheme } from "next-themes";
 export default function ProfilePage() {
   const { user, loading, isAuthenticated, signOut } = useAuth();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   useInactivityTimeout();
 
   useEffect(() => {
@@ -113,11 +113,11 @@ export default function ProfilePage() {
             </p>
             <div className="rounded-2xl bg-card overflow-hidden">
               <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
                 className="w-full flex items-center gap-3 px-4 py-4 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
               >
                 <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
-                  {theme === "dark" ? (
+                  {resolvedTheme === "dark" ? (
                     <Sun className="w-4 h-4 text-muted-foreground/50" />
                   ) : (
                     <Moon className="w-4 h-4 text-muted-foreground/50" />
@@ -125,10 +125,10 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-medium text-foreground">
-                    {theme === "dark" ? "Modo claro" : "Modo oscuro"}
+                    {resolvedTheme === "dark" ? "Modo claro" : "Modo oscuro"}
                   </p>
                   <p className="text-xs text-muted-foreground/40 mt-0.5">
-                    Actualmente en modo {theme === "dark" ? "oscuro" : "claro"}
+                    Actualmente en modo {resolvedTheme === "dark" ? "oscuro" : "claro"}
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/25" />

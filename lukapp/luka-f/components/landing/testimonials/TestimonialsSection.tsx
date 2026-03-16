@@ -55,11 +55,11 @@ export default function TestimonialsSection() {
             return (
               <motion.div
                 key={t.name}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.55, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                className="p-7 bg-bg-card border border-white/[0.07] rounded-3xl transition-all duration-350 hover:border-lime/15 hover:-translate-y-1"
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.3, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                className="p-7 bg-bg-card border border-border dark:border-white/[0.08] rounded-3xl transition-all duration-200 hover:border-lime/15 hover:-translate-y-0.5"
               >
                 <div className={`flex gap-0.5 mb-5 ${c.stars}`}>
                   {"★★★★★".split("").map((s, j) => (
