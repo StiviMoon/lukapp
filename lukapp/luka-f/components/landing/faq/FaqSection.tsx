@@ -46,11 +46,11 @@ export default function FaqSection() {
           {faqs.map((f, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.45, delay: i * 0.06 }}
-              className="bg-bg-card border rounded-2xl overflow-hidden transition-colors duration-300"
+              transition={{ duration: 0.28, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-bg-card border rounded-2xl overflow-hidden transition-colors duration-200"
               style={{
                 borderColor: open === i ? "rgba(200,212,0,0.2)" : "rgba(255,255,255,0.07)",
               }}
@@ -60,7 +60,7 @@ export default function FaqSection() {
                 className="w-full flex items-center justify-between px-6 py-5 text-left gap-4"
               >
                 <span className="text-[15px] font-medium text-fg">{f.q}</span>
-                <div className="flex-shrink-0 w-7 h-7 rounded-full border border-white/[0.1] flex items-center justify-center transition-colors duration-300"
+                <div className="shrink-0 w-7 h-7 rounded-full border border-white/10 flex items-center justify-center transition-colors duration-200"
                   style={{ borderColor: open === i ? "rgba(200,212,0,0.3)" : undefined }}>
                   {open === i
                     ? <Minus size={13} className="text-lime" strokeWidth={2.5} />
@@ -75,7 +75,7 @@ export default function FaqSection() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <p className="px-6 pb-5 text-[14px] text-fg/40 leading-[1.75]">
                       {f.a}
