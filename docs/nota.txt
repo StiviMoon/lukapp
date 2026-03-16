@@ -1,0 +1,17 @@
+6tOaju0FOftCT8tw
+
+
+postgresql://postgres:[YOUR-PASSWORD]@db.lhxgicxhqdsiegfdeagm.supabase.co:5432/postgres
+
+
+
+NEXT_PUBLIC_SUPABASE_URL=https://lhxgicxhqdsiegfdeagm.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_bN5EFgxy2TcUtialVLM5yQ_FvK_vEHf
+
+
+
+# Connect to Supabase via connection pooling
+DATABASE_URL="postgresql://postgres.lhxgicxhqdsiegfdeagm:[YOUR-PASSWORD]@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Direct connection to the database. Used for migrations
+DIRECT_URL="postgresql://postgres.lhxgicxhqdsiegfdeagm:[YOUR-PASSWORD]@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
