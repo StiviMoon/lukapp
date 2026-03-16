@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Outfit, Syne, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
@@ -15,9 +15,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const syne = Syne({
+  variable: "--font-syne",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const spaceMono = Space_Mono({
+  variable: "--font-space-mono",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "Lukapp - Finanzas Personales",
-  description: "Gestiona tus finanzas personales de manera simple y útil",
+  title: "Luka — Tu plata y la de tu pareja en una app",
+  description:
+    "Lleva tu dinero al día, solo o con tu pareja. Sin hojas de cálculo ni estrés.",
 };
 
 export default function RootLayout({
@@ -28,7 +47,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${syne.variable} ${spaceMono.variable} antialiased`}
         suppressHydrationWarning
       >
         <ThemeProvider

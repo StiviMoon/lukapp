@@ -1,57 +1,52 @@
-# Despliegue en Vercel (Landing + App con un solo dominio)
+# Despliegue en Vercel — myluka.app (un dominio, una app)
 
-## Estructura del repo
+## Cómo queda el dominio
 
-- **`landing/`** → Landing pública (Next.js).
-- **`lukapp/luka-f/`** → Front de la app (Next.js) con **login incluido** (rutas `/`, `/auth`, `/profile`, etc.).
+- **Landing (pública):** [https://myluka.app/](https://myluka.app/)
+- **App (login, dashboard, etc.):**
+  - [https://myluka.app/login](https://myluka.app/login) — Iniciar sesión / registro
+  - [https://myluka.app/dashboard](https://myluka.app/dashboard) — Inicio de la app
+  - [https://myluka.app/profile](https://myluka.app/profile) — Perfil
+  - Otras rutas bajo el mismo dominio (`/app`, etc.)
 
-## Dos proyectos en Vercel
+Todo vive en **un solo dominio** y **un solo proyecto** en Vercel.
 
-1. **Proyecto 1 – Landing**
-   - Conectar el repo: `StiviMoon/lukapp`.
-   - **Root Directory:** `landing`.
-   - Framework: Next.js (auto-detectado).
-   - Build: `npm run build` (desde `landing/`).
-   - Dominio: por ejemplo `www.tudominio.com` o `tudominio.com` (según lo que quieras para la landing).
+## Un solo proyecto en Vercel
 
-2. **Proyecto 2 – App (front + login)**
-   - Conectar el mismo repo: `StiviMoon/lukapp`.
-   - **Root Directory:** `lukapp/luka-f`.
-   - Framework: Next.js (auto-detectado).
-   - Build: `npm run build` (desde `lukapp/luka-f/`).
-   - Dominio: **tu único dominio principal**, p. ej. `app.tudominio.com` o `tudominio.com` (si quieres que la app sea la raíz).
+1. **Repositorio:** `StiviMoon/lukapp`
+2. **Root Directory:** `lukapp/luka-f`
+3. **Framework:** Next.js (auto-detectado)
+4. **Build:** `npm run build`
+5. **Dominio:** `myluka.app` (en Vercel: Settings → Domains → añadir `myluka.app`)
 
-## Un solo dominio: app + login juntos
+En **Hostinger** (o donde tengas el DNS de myluka.app), apunta el dominio a Vercel según lo que indique Vercel (registros A/CNAME).
 
-Tu front (`luka-f`) ya incluye:
-- Página principal de la app
-- **Login/registro** en `/auth`
-- Perfil y resto de la app
+## Rutas en la app
 
-Por tanto **un solo despliegue** de `lukapp/luka-f` en Vercel sirve para “app + login”. No necesitas otro proyecto para el login.
+| Ruta           | Contenido        | ¿Protegida? |
+|----------------|------------------|-------------|
+| `/`            | Landing pública  | No          |
+| `/login`       | Login / registro | No (redirige a `/dashboard` si ya hay sesión) |
+| `/dashboard`   | Inicio de la app | Sí          |
+| `/profile`     | Perfil           | Sí          |
 
-## Cómo repartir el dominio
+La app usa **una sola base de dominio**; la landing y la app se diferencian por el path.
 
-- **Opción A:**  
-  - `www.tudominio.com` o `tudominio.com` → **Landing** (proyecto `landing/`).  
-  - `app.tudominio.com` → **App + login** (proyecto `lukapp/luka-f/`).
+## Variables de entorno (Vercel)
 
-- **Opción B (solo app en el dominio principal):**  
-  - `tudominio.com` → **App + login** (`lukapp/luka-f/`).  
-  - `www.tudominio.com` o `landing.tudominio.com` → **Landing** (`landing/`).
+En el proyecto de Vercel (`lukapp/luka-f`) configura:
 
-En ambos casos usas un solo dominio: repartes subdominios (o raíz vs subdominio) entre los dos proyectos de Vercel.
-
-## Variables de entorno
-
-- **Landing:** en el proyecto de Vercel de `landing/`, añade las que use la landing (Formspree, etc.).
-- **App (luka-f):** en el proyecto de Vercel de `lukapp/luka-f/`, añade las de Supabase y API (por ejemplo `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, URL del backend, etc.).
+- **Supabase:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Backend API** (si aplica): URL y keys que use el front
+- **Landing (Formspree, etc.):** las que use la landing si están en el mismo build
 
 ## Resumen
 
-| Qué quieres        | Proyecto Vercel   | Root Directory   |
-|--------------------|-------------------|------------------|
-| Landing            | Proyecto 1        | `landing`        |
-| App + login        | Proyecto 2        | `lukapp/luka-f`  |
+- **Un solo proyecto** en Vercel → Root: `lukapp/luka-f`
+- **Un solo dominio** → `myluka.app`
+- **Landing** → `https://myluka.app/`
+- **App** → `https://myluka.app/login`, `/dashboard`, `/profile`, etc.
 
-Un dominio: lo divides con subdominios (p. ej. `www` vs `app`) o raíz vs subdominio entre estos dos proyectos.
+## Landing como ruta base
+
+La ruta `/` es la **landing completa** (hero, features, pricing, testimonials, FAQ, waitlist, CTA, footer). No hay botón de login en la landing; para probar la app se accede escribiendo la ruta directamente (p. ej. `/auth`, `/dashboard`).
