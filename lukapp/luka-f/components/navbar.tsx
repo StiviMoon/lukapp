@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, History, Mic, User, Plus } from "lucide-react";
+import { Home, History, Mic, BarChart2, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
 import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 
-const SHOW_ON = ["/dashboard", "/history", "/settings", "/profile"];
+const SHOW_ON = ["/dashboard", "/history", "/analytics", "/settings", "/profile"];
 
 export function Navbar() {
   const pathname              = usePathname();
@@ -23,7 +23,7 @@ export function Navbar() {
   if (!SHOW_ON.some(p => pathname.startsWith(p))) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-6 px-6">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-[14px] px-6">
       <nav
         className="pointer-events-auto flex items-center gap-1 px-3 py-2 rounded-full"
         style={{
@@ -40,53 +40,52 @@ export function Navbar() {
         {/* Historial */}
         <NavLink href="/history" icon={History} label="Historial" pathname={pathname} />
 
-        {/* FAB central — añadir transacción */}
+        {/* ── FAB principal — Voz ── */}
         <div className="mx-2">
           <button
-            onClick={() => openAdd("EXPENSE")}
-            className="w-[52px] h-[52px] rounded-full flex items-center justify-center bg-primary transition-all duration-200 hover:scale-105 active:scale-95"
+            onClick={openVoice}
+            className="w-[56px] h-[56px] rounded-full flex items-center justify-center bg-primary transition-all duration-200 hover:scale-105 active:scale-95"
             style={{
-              boxShadow: "0 4px 20px color-mix(in srgb, var(--primary) 50%, transparent)",
+              boxShadow: "0 4px 20px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 0 5px color-mix(in srgb, var(--primary) 12%, transparent)",
             }}
-            aria-label="Registrar movimiento"
+            aria-label="Registrar por voz"
           >
-            <Plus className="w-[22px] h-[22px] text-white" strokeWidth={2.5} />
+            <Mic className="w-[22px] h-[22px] text-white" strokeWidth={2.2} />
           </button>
         </div>
 
-        {/* Voz */}
-        <NavButton
-          icon={Mic}
-          label="Voz"
-          onClick={openVoice}
-        />
+        {/* ── Botón secundario — Registro manual ── */}
+        <button
+          onClick={() => openAdd("EXPENSE")}
+          className="relative flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-full transition-all duration-200 active:scale-90 text-muted-foreground/50 hover:text-muted-foreground/80"
+          aria-label="Registrar movimiento"
+        >
+          <div className="w-[20px] h-[20px] flex items-center justify-center">
+            <Plus className="w-[18px] h-[18px]" strokeWidth={2.2} />
+          </div>
+          <span className="text-[9px] font-bold tracking-wide leading-none">Manual</span>
+        </button>
 
-        {/* Perfil */}
-        <NavLink href="/profile" icon={User} label="Perfil" pathname={pathname} />
+        {/* Analíticas */}
+        <NavLink href="/analytics" icon={BarChart2} label="Analíticas" pathname={pathname} />
       </nav>
     </div>
   );
 }
 
-// ─── Sub-componentes ────────────────────────────────────────────────────────
+// ─── NavLink ────────────────────────────────────────────────────────────────
 
 function NavLink({
-  href,
-  icon: Icon,
-  label,
-  pathname,
+  href, icon: Icon, label, pathname,
 }: {
-  href: string;
-  icon: React.ElementType;
-  label: string;
-  pathname: string;
+  href: string; icon: React.ElementType; label: string; pathname: string;
 }) {
   const active = pathname === href || pathname.startsWith(href + "/");
   return (
     <Link
       href={href}
       className={cn(
-        "relative flex flex-col items-center gap-[3px] px-4 py-2 rounded-full transition-all duration-200 active:scale-90",
+        "relative flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-full transition-all duration-200 active:scale-90",
         active ? "text-primary" : "text-muted-foreground/40 hover:text-muted-foreground/70",
       )}
     >
@@ -100,25 +99,5 @@ function NavLink({
       <Icon className="relative w-[20px] h-[20px]" strokeWidth={active ? 2.5 : 1.8} />
       <span className="relative text-[9px] font-bold tracking-wide leading-none">{label}</span>
     </Link>
-  );
-}
-
-function NavButton({
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  icon: React.ElementType;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="relative flex flex-col items-center gap-[3px] px-4 py-2 rounded-full transition-all duration-200 active:scale-90 text-muted-foreground/40 hover:text-muted-foreground/70"
-    >
-      <Icon className="w-[20px] h-[20px]" strokeWidth={1.8} />
-      <span className="text-[9px] font-bold tracking-wide leading-none">{label}</span>
-    </button>
   );
 }
