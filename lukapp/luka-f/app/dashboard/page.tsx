@@ -62,12 +62,12 @@ const MASKED = "••••••";
 function BalanceSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="h-[44px] w-44 rounded-xl bg-white/20 mb-6" />
-      <div className="grid grid-cols-2 gap-2.5">
-        {[0, 1].map(i => (
-          <div key={i} className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.12)" }}>
-            <div className="h-3 w-16 rounded bg-white/20 mb-2" />
-            <div className="h-4 w-20 rounded bg-white/20" />
+      <div className="h-[44px] w-44 rounded-xl bg-foreground/10 dark:bg-white/10 mb-4" />
+      <div className="flex gap-5">
+        {[0, 1].map((i) => (
+          <div key={i} className="min-w-0">
+            <div className="h-3 w-14 rounded bg-foreground/10 dark:bg-white/10 mb-2" />
+            <div className="h-4 w-24 rounded bg-foreground/10 dark:bg-white/10" />
           </div>
         ))}
       </div>
@@ -182,26 +182,27 @@ export default function DashboardPage() {
         </header>
 
         {/* ── Área scrolleable — todo scrollea naturalmente ── */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5 pt-1">
 
-          {/* Balance card */}
-          <div className="rounded-[28px] px-6 pt-6 pb-5 bg-primary">
+          {/* Balance card — iOS-like (basado en PhoneMockup) */}
+          <div className="balance-card mt-1 rounded-2xl p-5 bg-white shadow-md dark:bg-[#12001f] dark:shadow-lg">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-bold tracking-[0.15em] text-white/50 uppercase">
+              <p className="text-[10px] font-bold tracking-[0.15em] text-foreground/45 dark:text-white/50 uppercase">
                 Balance Total
               </p>
               <button
                 onClick={toggleBalance}
-                className="text-white/50 hover:text-white/80 transition-colors active:scale-90 p-0.5"
+                className="text-foreground/40 hover:text-foreground/70 dark:text-white/50 dark:hover:text-white/85 transition-colors active:scale-90 p-0.5 shrink-0"
                 aria-label={balanceVisible ? "Ocultar balance" : "Mostrar balance"}
               >
                 {balanceVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
             </div>
 
+            <div className="min-h-[88px]">
             {cardLoading ? <BalanceSkeleton /> : (
               <>
-                <div className="flex items-end gap-1 mb-6 min-h-[52px]">
+                <div className="flex items-end gap-1 mb-4 min-h-[40px] w-full min-w-0 overflow-hidden">
                   <AnimatePresence mode="wait" initial={false}>
                     {balanceVisible ? (
                       <motion.div
@@ -210,51 +211,58 @@ export default function DashboardPage() {
                         animate={{ opacity: 1, filter: "blur(0px)" }}
                         exit={{ opacity: 0, filter: "blur(6px)" }}
                         transition={{ duration: 0.2 }}
-                        className="flex items-end gap-1"
+                        className="balance-value-inner flex items-baseline gap-0.5 min-w-0 w-full font-extrabold tabular-nums font-nums leading-none text-lime"
                       >
-                        <span className="text-[44px] font-black tracking-tight text-white leading-none font-nums">
-                          {balInt}
-                        </span>
+                        <span>{balInt}</span>
                         {balDec && (
-                          <span className="text-[26px] font-black text-white/40 leading-none mb-0.5 font-nums">
+                          <span className="balance-value-decimal">
                             {balDec}
                           </span>
                         )}
                       </motion.div>
                     ) : (
-                      <motion.span
+                      <motion.div
                         key="mask"
                         initial={{ opacity: 0, filter: "blur(6px)" }}
                         animate={{ opacity: 1, filter: "blur(0px)" }}
                         exit={{ opacity: 0, filter: "blur(6px)" }}
                         transition={{ duration: 0.2 }}
-                        className="text-[38px] font-black text-white/60 leading-none tracking-[0.18em]"
+                        className="balance-value-inner flex items-baseline gap-0.5 min-w-0 w-full font-extrabold tabular-nums font-nums leading-none text-foreground/35 dark:text-white/55 tracking-[0.18em]"
                       >
                         {MASKED}
-                      </motion.span>
+                      </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="flex gap-5">
                   {[
                     { icon: ArrowUpRight,  label: "Ingresos", value: stats?.totalIncome   },
                     { icon: ArrowDownLeft, label: "Gastos",   value: stats?.totalExpenses },
                   ].map(({ icon: Icon, label, value }) => (
-                    <div key={label} className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.12)" }}>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <Icon className="w-3.5 h-3.5 text-white/50" />
-                        <span className="text-[9px] font-bold tracking-[0.1em] text-white/50 uppercase">{label}</span>
-                      </div>
-                      <p className="text-[14px] font-bold text-white font-nums">
-                        {value != null ? (balanceVisible ? formatCOP(value) : MASKED) : "—"}
+                    <div key={label} className="min-w-0">
+                      <p className="text-[9px] text-foreground/45 dark:text-white/40 mb-0.5">
+                        {label}
                       </p>
-                      <p className="text-[9px] text-white/30 mt-0.5 font-medium">Este mes</p>
+                      <p
+                        className={[
+                          "text-[12px] font-bold font-nums tabular-nums leading-none",
+                          label === "Ingresos"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-pink-600 dark:text-pink-400",
+                        ].join(" ")}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          <Icon className="w-3.5 h-3.5" />
+                          {value != null ? (balanceVisible ? formatCOP(value) : MASKED) : "—"}
+                        </span>
+                      </p>
                     </div>
                   ))}
                 </div>
               </>
             )}
+            </div>
           </div>
 
           {/* Quick actions */}

@@ -24,7 +24,7 @@ interface VoiceState {
   isOpen: boolean;
   transcript: string;
   interimTranscript: string;
-  parsedTx: ParsedTransaction | null;
+  parsedTxs: ParsedTransaction[];
   errorMessage: string | null;
 
   openVoice: () => void;
@@ -32,7 +32,7 @@ interface VoiceState {
   setTranscript: (text: string) => void;
   setInterim: (text: string) => void;
   setPhase: (phase: VoicePhase) => void;
-  setParsedTx: (tx: ParsedTransaction) => void;
+  setParsedTxs: (txs: ParsedTransaction[]) => void;
   setError: (msg: string) => void;
   reset: () => void;
 }
@@ -42,14 +42,14 @@ const initialState = {
   isOpen: false,
   transcript: "",
   interimTranscript: "",
-  parsedTx: null,
+  parsedTxs: [] as ParsedTransaction[],
   errorMessage: null,
 };
 
 export const useVoiceStore = create<VoiceState>((set, get) => ({
   ...initialState,
 
-  openVoice: () => set({ isOpen: true, phase: "listening" }),
+  openVoice: () => set({ isOpen: true, phase: "idle" }),
 
   closeVoice: () => {
     get().reset();
@@ -60,7 +60,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
   setTranscript: (text) => set({ transcript: text, interimTranscript: "" }),
   setInterim: (text) => set({ interimTranscript: text }),
   setPhase: (phase) => set({ phase }),
-  setParsedTx: (tx) => set({ parsedTx: tx }),
+  setParsedTxs: (txs) => set({ parsedTxs: txs }),
   setError: (msg) => set({ errorMessage: msg }),
 
   reset: () =>
@@ -68,7 +68,7 @@ export const useVoiceStore = create<VoiceState>((set, get) => ({
       phase: "idle",
       transcript: "",
       interimTranscript: "",
-      parsedTx: null,
+      parsedTxs: [],
       errorMessage: null,
     }),
 }));

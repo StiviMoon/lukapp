@@ -45,7 +45,7 @@ export class VoiceService {
   async parseTranscript(
     transcript: string,
     categories?: Array<{ id: string; name: string; type: string }>
-  ): Promise<ParsedTransaction> {
+  ): Promise<ParsedTransaction[]> {
     const userCategories =
       categories && categories.length > 0
         ? `\nCategorías existentes del usuario (priorizar estas si coinciden):\n${categories
@@ -54,7 +54,7 @@ export class VoiceService {
         : "\n(El usuario aún no tiene categorías propias — usar las categorías base)";
 
     const prompt = `Eres un asistente financiero experto en gastos e ingresos de Colombia y Latinoamérica.
-Analiza lo que dijo el usuario y extrae la transacción financiera.
+Analiza lo que dijo el usuario y extrae UNA O VARIAS transacciones financieras.
 
 Usuario dijo: "${transcript}"
 ${userCategories}
@@ -62,15 +62,19 @@ ${userCategories}
 Referencia de categorías base:
 ${BASE_CATEGORIES}
 
-Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional, sin markdown:
-{
-  "type": "INCOME" o "EXPENSE",
-  "amount": <número positivo, sin símbolos>,
-  "suggestedCategoryName": "<nombre de categoría en español, preferir categorías del usuario si coinciden>",
-  "categoryId": "<UUID exacto de la categoría del usuario si coincide perfectamente, o null>",
-  "description": "<descripción corta y natural en español, máximo 5 palabras>",
-  "confidence": "high" | "medium" | "low"
-}
+Responde ÚNICAMENTE con un JSON válido, sin texto adicional, sin markdown.
+Debe ser SIEMPRE un array (lista) de transacciones. Si el usuario mencionó 1 movimiento, devuelve un array con 1 elemento.
+Formato:
+[
+  {
+    "type": "INCOME" o "EXPENSE",
+    "amount": <número positivo, sin símbolos>,
+    "suggestedCategoryName": "<nombre de categoría en español, preferir categorías del usuario si coinciden>",
+    "categoryId": "<UUID exacto de la categoría del usuario si coincide perfectamente, o null>",
+    "description": "<descripción corta y natural en español, máximo 5 palabras>",
+    "confidence": "high" | "medium" | "low"
+  }
+]
 
 REGLAS DE MONTO (crítico):
 - "mil" = 1000 | "5 mil" = 5000 | "50 mil" = 50000 | "cien mil" = 100000
@@ -91,6 +95,12 @@ REGLAS DE CATEGORÍA:
 3. Si no hay coincidencia → categoryId: null, y usar la categoría base más apropiada en suggestedCategoryName
 4. suggestedCategoryName siempre en español, nunca en inglés
 
+REGLAS MULTI-MOVIMIENTO:
+- Si el usuario menciona varios montos/categorías/acciones en una frase, devuelve un elemento por cada movimiento.
+- Ejemplos: "500k en arriendo, 400k en comida" → 2 elementos.
+- "pagué 2 recibos de 45 mil" → 2 elementos de 45000 cada uno, con categoría Vivienda/Servicios públicos (según contexto).
+- Si el usuario mezcla ingresos y gastos, incluye ambos con su type correspondiente.
+
 CONFIANZA:
 - "high": monto y tipo completamente claros
 - "medium": monto aproximado o tipo inferido por contexto
@@ -109,7 +119,7 @@ CONFIANZA:
         throw new AppError("Respuesta vacía del asistente", 500, "AI_ERROR");
       }
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         throw new AppError(
           "No pude interpretar la respuesta del asistente",
@@ -118,22 +128,25 @@ CONFIANZA:
         );
       }
 
-      const parsed = JSON.parse(jsonMatch[0]) as ParsedTransaction;
-
-      if (
-        !parsed.type ||
-        !["INCOME", "EXPENSE"].includes(parsed.type) ||
-        !parsed.amount ||
-        parsed.amount <= 0
-      ) {
-        throw new AppError(
-          "No pude entender el monto de la transacción",
-          422,
-          "PARSE_ERROR"
-        );
+      const parsed = JSON.parse(jsonMatch[0]) as ParsedTransaction[];
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new AppError("No pude entender ninguna transacción", 422, "PARSE_ERROR");
       }
 
-      return parsed;
+      const cleaned = parsed.filter((p) =>
+        p &&
+        (p.type === "INCOME" || p.type === "EXPENSE") &&
+        typeof p.amount === "number" &&
+        p.amount > 0 &&
+        typeof p.suggestedCategoryName === "string" &&
+        p.suggestedCategoryName.trim().length > 0
+      );
+
+      if (cleaned.length === 0) {
+        throw new AppError("No pude entender el monto de la transacción", 422, "PARSE_ERROR");
+      }
+
+      return cleaned;
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (error instanceof SyntaxError) {

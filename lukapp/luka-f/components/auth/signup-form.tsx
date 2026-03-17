@@ -11,17 +11,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { Loader2 } from "lucide-react";
 
-const signupSchema = z
-  .object({
-    email: z.string().email("Email inválido"),
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-    confirmPassword: z.string(),
-    fullName: z.string().min(2, "El nombre debe tener al menos 2 caracteres").optional(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Las contraseñas no coinciden",
-    path: ["confirmPassword"],
-  });
+const signupSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+});
 
 type SignupFormData = z.infer<typeof signupSchema>;
 
@@ -48,11 +41,6 @@ export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        options: {
-          data: {
-            full_name: data.fullName,
-          },
-        },
       });
 
       if (error) {
@@ -74,26 +62,7 @@ export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="space-y-2.5">
-        <Label htmlFor="fullName" className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
-          Nombre <span className="font-normal text-[0.65rem]">(opcional)</span>
-        </Label>
-        <Input
-          id="fullName"
-          type="text"
-          placeholder="Tu nombre completo"
-          {...register("fullName")}
-          disabled={isLoading}
-          className="auth-input border-0 border-b-2 rounded-none bg-transparent px-2 h-11 focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/40 transition-colors duration-150"
-        />
-        {errors.fullName && (
-          <p className="text-xs text-destructive pt-1.5 pl-0.5">
-            {errors.fullName.message}
-          </p>
-        )}
-      </div>
-
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       <div className="space-y-2.5">
         <Label htmlFor="email" className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
           Email
@@ -132,25 +101,6 @@ export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
         )}
       </div>
 
-      <div className="space-y-2.5">
-        <Label htmlFor="confirmPassword" className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
-          Confirmar contraseña
-        </Label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          placeholder="Repite tu contraseña"
-          {...register("confirmPassword")}
-          disabled={isLoading}
-          className="auth-input border-0 border-b-2 rounded-none bg-transparent px-2 h-11 focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/40 transition-colors duration-150"
-        />
-        {errors.confirmPassword && (
-          <p className="text-xs text-destructive pt-1.5 pl-0.5">
-            {errors.confirmPassword.message}
-          </p>
-        )}
-      </div>
-
       <div className="pt-4">
         <Button
           type="submit"
@@ -167,6 +117,16 @@ export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
           )}
         </Button>
       </div>
+
+      {onSwitchToLogin ? (
+        <button
+          type="button"
+          onClick={onSwitchToLogin}
+          className="w-full text-xs text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+        >
+          ¿Ya tienes cuenta? Entrar
+        </button>
+      ) : null}
     </form>
   );
 };

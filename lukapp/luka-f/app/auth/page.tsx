@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { SignupForm } from "@/components/auth/signup-form";
+import { toast } from "@/lib/toast";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "callback") {
+      toast.error("No se pudo completar el inicio de sesión con Google. Intenta de nuevo.");
+    } else if (error === "missing_code") {
+      toast.error("Faltó el código de autorización. Intenta iniciar sesión con Google de nuevo.");
+    }
+  }, [searchParams]);
 
   const handleSuccess = () => {
     router.push("/dashboard");

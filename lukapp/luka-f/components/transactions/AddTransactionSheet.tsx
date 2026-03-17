@@ -51,6 +51,7 @@ interface AddTransactionSheetProps {
   isOpen: boolean;
   onClose: () => void;
   defaultType?: "INCOME" | "EXPENSE";
+  editingTransaction?: Transaction | null;
 }
 
 type SaveVars = {
@@ -68,6 +69,7 @@ export function AddTransactionSheet({
   isOpen,
   onClose,
   defaultType = "EXPENSE",
+  editingTransaction = null,
 }: AddTransactionSheetProps) {
   const queryClient = useQueryClient();
   const invalidateTransactions = useInvalidateTransactions();
@@ -81,18 +83,36 @@ export function AddTransactionSheet({
 
   const amountInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset state when sheet opens
+  const isEditing = Boolean(editingTransaction);
+
+  // Reset / prefill state when sheet opens
   useEffect(() => {
     if (isOpen) {
-      setType(defaultType);
-      setRawAmount("");
-      setDescription("");
-      setNewCategoryInput("");
+      if (editingTransaction) {
+        setType(editingTransaction.type);
+        setRawAmount(String(Math.trunc(Number(editingTransaction.amount) || 0)));
+        setDescription(editingTransaction.description ?? "");
+        setNewCategoryInput("");
+        if (editingTransaction.category) {
+          setSelectedCategoryId(editingTransaction.category.id);
+          setSelectedCategoryName(editingTransaction.category.name);
+        } else {
+          setSelectedCategoryId(null);
+          setSelectedCategoryName("");
+        }
+      } else {
+        setType(defaultType);
+        setRawAmount("");
+        setDescription("");
+        setNewCategoryInput("");
+        setSelectedCategoryId(null);
+        setSelectedCategoryName("");
+      }
       // Focus amount input after animation settles
       const timer = setTimeout(() => amountInputRef.current?.focus(), 350);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, defaultType]);
+  }, [isOpen, defaultType, editingTransaction]);
 
   // Fetch categories
   const { data: categoriesRes } = useQuery({
@@ -113,8 +133,8 @@ export function AddTransactionSheet({
     }
   }, [categories, selectedCategoryId, newCategoryInput]);
 
-  // Save mutation with optimistic updates
-  const saveMutation = useMutation({
+  // Create mutation (optimistic)
+  const createMutation = useMutation({
     mutationFn: (vars: SaveVars) => api.voice.save(vars),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ["transactions"] });
@@ -171,6 +191,30 @@ export function AddTransactionSheet({
     },
   });
 
+  // Update mutation (no optimistic — por simplicidad y consistencia)
+  const updateMutation = useMutation({
+    mutationFn: async (vars: SaveVars & { id: string; date: string }) =>
+      api.transactions.update(vars.id, {
+        type: vars.type,
+        amount: vars.amount,
+        description: vars.description,
+        categoryId: vars.categoryId,
+        date: vars.date,
+      }),
+    onSuccess: async (res) => {
+      if (!res.success) {
+        toast.error(res.error?.message ?? "Error al actualizar");
+        return;
+      }
+      await invalidateTransactions();
+      toast.success("✓ Actualizado");
+      handleClose();
+    },
+    onError: () => {
+      toast.error("Error de conexión al actualizar");
+    },
+  });
+
   const handleClose = () => {
     setSelectedCategoryId(null);
     setSelectedCategoryName("");
@@ -192,7 +236,8 @@ export function AddTransactionSheet({
   };
 
   const parsedAmount = parseFloat(rawAmount) || 0;
-  const canSubmit = parsedAmount > 0 && !saveMutation.isPending;
+  const canSubmit =
+    parsedAmount > 0 && !createMutation.isPending && !updateMutation.isPending;
 
   // Handle numeric-only input
   const handleAmountChange = (val: string) => {
@@ -202,14 +247,20 @@ export function AddTransactionSheet({
 
   const handleSubmit = () => {
     const categoryName = newCategoryInput.trim() || selectedCategoryName;
-    saveMutation.mutate({
+    const vars: SaveVars = {
       type,
       amount: parseFloat(rawAmount),
       description: description.trim() || undefined,
       suggestedCategoryName: categoryName,
       categoryId: newCategoryInput.trim() ? null : selectedCategoryId,
-      date: new Date().toISOString(),
-    });
+      date: editingTransaction?.date ?? new Date().toISOString(),
+    };
+
+    if (editingTransaction) {
+      updateMutation.mutate({ ...vars, id: editingTransaction.id, date: vars.date });
+    } else {
+      createMutation.mutate(vars);
+    }
   };
 
   return (
@@ -258,7 +309,7 @@ export function AddTransactionSheet({
 
               {/* Title */}
               <p className="text-sm font-semibold text-foreground">
-                Registrar movimiento
+                {isEditing ? "Editar movimiento" : "Registrar movimiento"}
               </p>
 
               {/* Type toggle */}
@@ -354,12 +405,10 @@ export function AddTransactionSheet({
 
               {/* Submit */}
               <div className="flex flex-col gap-2">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!canSubmit}
-                  className="w-full"
-                >
-                  {saveMutation.isPending ? "Registrando..." : "Registrar"}
+                <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
+                  {isEditing
+                    ? (updateMutation.isPending ? "Guardando..." : "Guardar cambios")
+                    : (createMutation.isPending ? "Registrando..." : "Registrar")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -383,8 +432,13 @@ export function AddTransactionSheet({
  * Montar en layout.tsx junto al VoiceModal.
  */
 export function GlobalAddTransactionSheet() {
-  const { isOpen, defaultType, close } = useAddTransactionStore();
+  const { isOpen, defaultType, editingTransaction, close } = useAddTransactionStore();
   return (
-    <AddTransactionSheet isOpen={isOpen} onClose={close} defaultType={defaultType} />
+    <AddTransactionSheet
+      isOpen={isOpen}
+      onClose={close}
+      defaultType={defaultType}
+      editingTransaction={editingTransaction}
+    />
   );
 }

@@ -65,7 +65,7 @@ router.post(
 
 // Schema para guardar la transacción de voz
 // categoryId puede llegar como null, undefined, UUID válido, o el string "null" (desde la IA)
-const saveVoiceTransactionSchema = z.object({
+const saveVoiceTransactionItemSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]),
   amount: z.number().positive(),
   description: z.string().optional(),
@@ -77,6 +77,11 @@ const saveVoiceTransactionSchema = z.object({
   // Fecha local del cliente — evita problemas de timezone con el servidor
   date: z.string().datetime({ offset: true }).optional(),
 });
+
+const saveVoiceTransactionSchema = z.union([
+  saveVoiceTransactionItemSchema,
+  z.array(saveVoiceTransactionItemSchema).min(1),
+]);
 
 /**
  * POST /api/voice/save
@@ -94,8 +99,9 @@ router.post(
     try {
       const userId = req.userId!;
       const userEmail = req.user?.email ?? "";
-      const { type, amount, description, suggestedCategoryName, categoryId, date } =
-        req.body as z.infer<typeof saveVoiceTransactionSchema>;
+      const items = (Array.isArray(req.body) ? req.body : [req.body]) as Array<
+        z.infer<typeof saveVoiceTransactionItemSchema>
+      >;
 
       // 1. Garantizar que el perfil exista
       await profileRepository.upsert(userId, userEmail);
@@ -114,56 +120,63 @@ router.post(
             });
       const accountId = account.id;
 
-      // 3. Resolver categoría: find-or-create por nombre, evita duplicados
-      const txType = type as TransactionType;
-      let resolvedCategoryId: string | null = null;
+      const created = [];
+      for (const item of items) {
+        const { type, amount, description, suggestedCategoryName, categoryId, date } = item;
 
-      // Si Groq ya devolvió un ID válido, verificar que exista y pertenezca al usuario
-      if (categoryId) {
-        const existing = await categoryRepository.findById(categoryId, userId);
-        if (existing && existing.type === txType) {
-          resolvedCategoryId = existing.id;
+        // 3. Resolver categoría: find-or-create por nombre, evita duplicados
+        const txType = type as TransactionType;
+        let resolvedCategoryId: string | null = null;
+
+        // Si Groq ya devolvió un ID válido, verificar que exista y pertenezca al usuario
+        if (categoryId) {
+          const existing = await categoryRepository.findById(categoryId, userId);
+          if (existing && existing.type === txType) {
+            resolvedCategoryId = existing.id;
+          }
         }
-      }
 
-      // Si no hay ID válido, buscar por nombre o crear
-      if (!resolvedCategoryId && suggestedCategoryName) {
-        const category = await categoryRepository.findOrCreate(
-          userId,
-          suggestedCategoryName,
-          txType
-        );
-        resolvedCategoryId = category.id;
-      }
+        // Si no hay ID válido, buscar por nombre o crear
+        if (!resolvedCategoryId && suggestedCategoryName) {
+          const category = await categoryRepository.findOrCreate(
+            userId,
+            suggestedCategoryName,
+            txType
+          );
+          resolvedCategoryId = category.id;
+        }
 
-      // 4. Crear la transacción
-      const transaction = await transactionRepository.create({
-        type: txType,
-        amount,
-        description: description ?? suggestedCategoryName,
-        date: date ? new Date(date) : new Date(),
-        profile: { connect: { userId } },
-        account: { connect: { id: accountId } },
-        ...(resolvedCategoryId && {
-          category: { connect: { id: resolvedCategoryId } },
-        }),
-      });
+        // 4. Crear la transacción
+        const transaction = await transactionRepository.create({
+          type: txType,
+          amount,
+          description: description ?? suggestedCategoryName,
+          date: date ? new Date(date) : new Date(),
+          profile: { connect: { userId } },
+          account: { connect: { id: accountId } },
+          ...(resolvedCategoryId && {
+            category: { connect: { id: resolvedCategoryId } },
+          }),
+        });
 
-      // 5. Actualizar balance de la cuenta
-      const balanceDelta =
-        txType === TransactionType.INCOME
-          ? amount
-          : txType === TransactionType.EXPENSE
-          ? -amount
-          : 0;
+        // 5. Actualizar balance de la cuenta
+        const balanceDelta =
+          txType === TransactionType.INCOME
+            ? amount
+            : txType === TransactionType.EXPENSE
+            ? -amount
+            : 0;
 
-      if (balanceDelta !== 0) {
-        await accountRepository.updateBalance(accountId, userId, balanceDelta);
+        if (balanceDelta !== 0) {
+          await accountRepository.updateBalance(accountId, userId, balanceDelta);
+        }
+
+        created.push(transaction);
       }
 
       res.status(201).json({
         success: true,
-        data: transaction,
+        data: Array.isArray(req.body) ? created : created[0],
       });
     } catch (error) {
       const formattedError = formatError(error);
