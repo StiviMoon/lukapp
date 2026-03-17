@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight, Mic } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight, Mic, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
 import { useVoiceRecognition } from "@/lib/hooks/use-voice-recognition";
@@ -13,7 +13,7 @@ import { VoiceWaveform } from "./VoiceWaveform";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Transaction } from "@/lib/types/transaction";
+import type { Transaction, TransactionCategory } from "@/lib/types/transaction";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -80,14 +80,31 @@ export function VoiceModal() {
   const invalidateTransactions = useInvalidateTransactions();
 
   // Estado local para campos editables en confirming
-  const [editAmount, setEditAmount] = useState("");
-  const [editDescription, setEditDescription] = useState("");
+  const [editAmount,       setEditAmount]       = useState("");
+  const [editDescription,  setEditDescription]  = useState("");
+  const [editCategoryId,   setEditCategoryId]   = useState<string | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [showCatPicker,    setShowCatPicker]    = useState(false);
+
+  // Categorías del usuario (del cache — staleTime 5min)
+  const { data: categoriesRes } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => api.categories.getAll(),
+    enabled: phase === "confirming",
+    staleTime: 5 * 60_000,
+  });
+  const categories = (categoriesRes?.data as TransactionCategory[] | undefined) ?? [];
 
   // Sincronizar campos editables cuando llega parsedTx
   useEffect(() => {
     if (parsedTx) {
       setEditAmount(String(parsedTx.amount));
       setEditDescription(parsedTx.description ?? "");
+      setEditCategoryId(parsedTx.categoryId ?? null);
+      setEditCategoryName(parsedTx.suggestedCategoryName ?? "");
+      setNewCategoryInput("");
+      setShowCatPicker(false);
     }
   }, [parsedTx]);
 
@@ -192,6 +209,9 @@ export function VoiceModal() {
 
     const delta = parsedTx.type === "EXPENSE" ? -amount : amount;
     queryClient.setQueryData<number>(["balance"], (old) => (old ?? 0) + delta);
+    const finalCategoryName = newCategoryInput.trim() || editCategoryName;
+    const finalCategoryId   = newCategoryInput.trim() ? null : editCategoryId;
+
     queryClient.setQueryData<Transaction[]>(["transactions", "recent"], (old) => {
       const optimistic: Transaction = {
         id: `optimistic-${Date.now()}`,
@@ -201,8 +221,8 @@ export function VoiceModal() {
         date: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         account: { id: "", name: "Efectivo", type: "CASH" },
-        category: parsedTx.categoryId
-          ? { id: parsedTx.categoryId, name: parsedTx.suggestedCategoryName, type: parsedTx.type }
+        category: finalCategoryName
+          ? { id: finalCategoryId ?? "opt", name: finalCategoryName, type: parsedTx.type }
           : null,
       };
       return [optimistic, ...(old ?? [])];
@@ -215,8 +235,8 @@ export function VoiceModal() {
         type: parsedTx.type,
         amount,
         description: editDescription || undefined,
-        suggestedCategoryName: parsedTx.suggestedCategoryName,
-        categoryId: parsedTx.categoryId,
+        suggestedCategoryName: finalCategoryName,
+        categoryId: finalCategoryId,
       });
 
       if (!txRes.success) {
@@ -381,12 +401,77 @@ export function VoiceModal() {
                 )}
               </div>
 
-              {/* Categoría */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Categoría:</span>
-                <span className="text-xs font-medium text-foreground bg-primary/10 px-2 py-0.5 rounded-full">
-                  {parsedTx.suggestedCategoryName}
+              {/* Categoría editable */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    Categoría
+                  </p>
+                  <button
+                    onClick={() => setShowCatPicker(v => !v)}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-primary active:scale-95 transition-transform"
+                  >
+                    Cambiar
+                    <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showCatPicker && "rotate-180")} />
+                  </button>
+                </div>
+
+                {/* Chip de categoría actual */}
+                <span className="inline-flex text-xs font-semibold text-foreground bg-primary/10 px-3 py-1 rounded-full">
+                  {newCategoryInput.trim() || editCategoryName || "Sin categoría"}
                 </span>
+
+                {/* Picker expandible */}
+                <AnimatePresence>
+                  {showCatPicker && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                      className="overflow-hidden space-y-2"
+                    >
+                      {/* Chips de categorías existentes */}
+                      {categories.length > 0 && (
+                        <div className="flex gap-1.5 flex-wrap pt-1">
+                          {categories.map(cat => (
+                            <button
+                              key={cat.id}
+                              onClick={() => {
+                                setEditCategoryId(cat.id);
+                                setEditCategoryName(cat.name);
+                                setNewCategoryInput("");
+                                setShowCatPicker(false);
+                              }}
+                              className={cn(
+                                "px-3 py-1 rounded-full text-[11px] font-semibold transition-all active:scale-95",
+                                editCategoryId === cat.id && !newCategoryInput
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Input nueva categoría */}
+                      <Input
+                        placeholder="Nueva categoría..."
+                        value={newCategoryInput}
+                        onChange={e => {
+                          setNewCategoryInput(e.target.value);
+                          if (e.target.value.trim()) {
+                            setEditCategoryId(null);
+                            setEditCategoryName("");
+                          }
+                        }}
+                        className="h-8 text-sm bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Descripción editable */}
