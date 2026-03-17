@@ -12,65 +12,96 @@ export interface ParsedTransaction {
   confidence: "high" | "medium" | "low";
 }
 
-/**
- * Servicio para interpretar transcripts de voz con Groq (Llama 3.3 70B) — gratis
- */
+// Categorías base para el contexto de la IA (Colombia / LatAm)
+const BASE_CATEGORIES = `
+GASTOS comunes (EXPENSE):
+- Alimentación: comida, almuerzo, desayuno, cena, restaurante, domicilio, mercado, supermercado, snack, bebida, tinto, café, rappi, ifood
+- Transporte: bus, SITP, taxi, Uber, Didi, gasolina, metro, tren, peaje, parqueadero, moto, bicicleta
+- Vivienda: arriendo, alquiler, agua, luz, gas, internet, cable, administración, conjunto, servicios públicos
+- Salud: médico, farmacia, droga, droguería, cita médica, examen, EPS, medicina, medicamento, hospital, clínica, dentista, óptica
+- Educación: universidad, colegio, curso, libro, útiles, matrícula, pensión, carrera, capacitación, certificado
+- Entretenimiento: cine, Netflix, Spotify, YouTube, videojuego, concierto, streaming, Disney+, HBO, Prime, bar, trago, rumba, parque
+- Ropa y calzado: ropa, zapatos, tenis, accesorios, vestido, camisa, pantalón, maleta, bolso, jean
+- Tecnología: celular, computador, laptop, tablet, electrónico, software, app, recarga, plan datos, minutos
+- Deudas y cuotas: crédito, cuota, préstamo, intereses, tarjeta de crédito, cuota banco, deuda
+- Mascotas: veterinario, concentrado, vacuna mascota, accesorios mascota, perro, gato
+- Cuidado personal: peluquería, barbería, spa, belleza, gimnasio, gym, cosmético, perfume
+- Hogar: mueble, electrodoméstico, decoración, limpieza, aseo, detergente, escoba
+- Regalos: regalo, detalle, flores, presente
+- Otros gastos: varios, otro gasto, misceláneo
+
+INGRESOS comunes (INCOME):
+- Salario: sueldo, salario, nómina, quincena, pago mensual, pago del trabajo, me pagaron del trabajo
+- Freelance: proyecto, cliente, trabajo independiente, honorarios, consultoría, me pagaron por trabajo
+- Ventas: vendí, venta, negocio, mercancía, artículo vendido
+- Inversiones: dividendos, rendimientos, intereses, CDT, acciones, cripto, retorno
+- Préstamo recibido: me prestaron, préstamo, crédito recibido
+- Regalo recibido: me regalaron, regalo de dinero, mesada, propina
+- Reembolso: me devolvieron, reembolso, devolución, reintegro, cashback
+- Arriendo cobrado: cobré arriendo, inquilino pagó
+- Otros ingresos: ingreso extra, bonificación, prima, auxilio`.trim();
+
 export class VoiceService {
   async parseTranscript(
     transcript: string,
     categories?: Array<{ id: string; name: string; type: string }>
   ): Promise<ParsedTransaction> {
-    const categoryContext =
+    const userCategories =
       categories && categories.length > 0
-        ? `\nCategorías disponibles del usuario:\n${categories
-            .map((c) => `- ID: ${c.id}, Nombre: "${c.name}", Tipo: ${c.type}`)
+        ? `\nCategorías existentes del usuario (priorizar estas si coinciden):\n${categories
+            .map((c) => `- ID: ${c.id} | Nombre: "${c.name}" | Tipo: ${c.type}`)
             .join("\n")}`
-        : "";
+        : "\n(El usuario aún no tiene categorías propias — usar las categorías base)";
 
-    const prompt = `Eres un asistente financiero que extrae información de transacciones en español colombiano.
+    const prompt = `Eres un asistente financiero experto en gastos e ingresos de Colombia y Latinoamérica.
+Analiza lo que dijo el usuario y extrae la transacción financiera.
 
-El usuario dijo: "${transcript}"
-${categoryContext}
+Usuario dijo: "${transcript}"
+${userCategories}
 
-Extrae la información de la transacción y responde ÚNICAMENTE con un objeto JSON válido con esta estructura exacta:
+Referencia de categorías base:
+${BASE_CATEGORIES}
+
+Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional, sin markdown:
 {
   "type": "INCOME" o "EXPENSE",
-  "amount": <número positivo sin símbolos de moneda>,
-  "suggestedCategoryName": "<categoría en español>",
-  "categoryId": "<UUID de la categoría si coincide con las disponibles, o null>",
-  "description": "<descripción corta y limpia en español>",
-  "confidence": "high" o "medium" o "low"
+  "amount": <número positivo, sin símbolos>,
+  "suggestedCategoryName": "<nombre de categoría en español, preferir categorías del usuario si coinciden>",
+  "categoryId": "<UUID exacto de la categoría del usuario si coincide perfectamente, o null>",
+  "description": "<descripción corta y natural en español, máximo 5 palabras>",
+  "confidence": "high" | "medium" | "low"
 }
 
-Reglas para el monto:
-- "mil" = 1000, "dos mil" = 2000, "50 mil" = 50000
-- "un millón" = 1000000, "2 millones" = 2000000
-- Si hay símbolo $ o COP, ignóralo y solo toma el número
+REGLAS DE MONTO (crítico):
+- "mil" = 1000 | "5 mil" = 5000 | "50 mil" = 50000 | "cien mil" = 100000
+- "un millón" = 1000000 | "dos millones" = 2000000 | "un palo" = 1000000
+- "quinientos" = 500 | "doscientos mil" = 200000
+- Ignorar símbolo $ y "COP" o "pesos"
 - El monto SIEMPRE es positivo
 
-Reglas para el tipo:
-- "gasté", "pagué", "compré", "me costó", "débito", "saqué" → EXPENSE
-- "recibí", "me pagaron", "ingresé", "salario", "sueldo", "cobré", "gané" → INCOME
+REGLAS DE TIPO:
+- EXPENSE: "gasté", "pagué", "compré", "me costó", "saqué", "debité", "invertí en", "pedí", "ordené"
+- INCOME: "recibí", "me pagaron", "cobré", "gané", "me depositaron", "ingresó", "salario", "sueldo", "vendí"
+- Si es ambiguo y menciona trabajo/sueldo/nómina → INCOME
+- Si es ambiguo y menciona un producto/servicio → EXPENSE
 
-Reglas para la categoría:
-- Si hay categorías disponibles, intenta coincidir el categoryId exacto
-- Si no hay coincidencia exacta, pon null en categoryId
-- Siempre rellena suggestedCategoryName con una categoría en español
-- Ejemplos: "comida"→Alimentación, "bus"/"transporte"→Transporte, "salario"→Salario, "arriendo"→Vivienda
+REGLAS DE CATEGORÍA:
+1. Primero buscar coincidencia en las categorías del usuario (por nombre similar o contexto)
+2. Si hay coincidencia → poner su UUID en categoryId y su nombre en suggestedCategoryName
+3. Si no hay coincidencia → categoryId: null, y usar la categoría base más apropiada en suggestedCategoryName
+4. suggestedCategoryName siempre en español, nunca en inglés
 
-Reglas de confianza:
-- "high": monto claro, tipo claro
+CONFIANZA:
+- "high": monto y tipo completamente claros
 - "medium": monto aproximado o tipo inferido por contexto
-- "low": monto o tipo ambiguos
-
-Responde SOLO el JSON, sin texto adicional, sin markdown, sin bloques de código.`;
+- "low": monto o tipo ambiguos o no mencionados explícitamente`;
 
     try {
       const completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 256,
-        temperature: 0.1, // baja temperatura para respuestas más consistentes
+        max_tokens: 300,
+        temperature: 0.05,
       });
 
       const text = completion.choices[0]?.message?.content?.trim() ?? "";
@@ -78,7 +109,6 @@ Responde SOLO el JSON, sin texto adicional, sin markdown, sin bloques de código
         throw new AppError("Respuesta vacía del asistente", 500, "AI_ERROR");
       }
 
-      // Extraer JSON aunque venga con texto extra
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new AppError(

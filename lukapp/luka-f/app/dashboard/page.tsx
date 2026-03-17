@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -81,19 +81,15 @@ export default function DashboardPage() {
   const router = useRouter();
   useInactivityTimeout();
 
-  const [selectedTx,     setSelectedTx]     = useState<Transaction | null>(null);
-  const [miniBalance,    setMiniBalance]     = useState(false);
-  const [balanceVisible, setBalanceVisible]  = useState(true);
+  const [selectedTx,     setSelectedTx]    = useState<Transaction | null>(null);
+  const [balanceVisible, setBalanceVisible] = useState(true);
 
   const { open: openAddSheet } = useAddTransactionStore();
-  const scrollRef  = useRef<HTMLDivElement>(null);
-  const balanceRef = useRef<HTMLDivElement>(null);
 
   const { data: balance, isLoading: balanceLoading } = useTotalBalance();
   const { data: stats,   isLoading: statsLoading   } = useMonthStats();
   const { data: transactions, isLoading: txLoading  } = useRecentTransactions(20);
 
-  // Persistir preferencia de visibilidad
   useEffect(() => {
     const stored = localStorage.getItem("lukapp-balance-visible");
     if (stored !== null) setBalanceVisible(stored === "true");
@@ -111,20 +107,6 @@ export default function DashboardPage() {
     if (!loading && !isAuthenticated) router.push("/auth");
   }, [loading, isAuthenticated, router]);
 
-  // Mini balance: aparece cuando el card de balance sale del área visible
-  useEffect(() => {
-    const scroll = scrollRef.current;
-    const card   = balanceRef.current;
-    if (!scroll || !card) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setMiniBalance(!entry.isIntersecting),
-      { root: scroll, threshold: 0.35 },
-    );
-    observer.observe(card);
-    return () => observer.disconnect();
-  }, []);
-
   if (loading) {
     return (
       <div className="flex h-dvh items-center justify-center">
@@ -138,92 +120,38 @@ export default function DashboardPage() {
     user?.user_metadata?.full_name?.split(" ")[0] ||
     user?.email?.split("@")[0] || "tú";
 
+  const cardLoading = balanceLoading || statsLoading;
   const balanceValue = balance ?? 0;
   const { integer: balInt, decimal: balDec } = splitCOP(balanceValue);
-  const cardLoading = balanceLoading || statsLoading;
 
   return (
     <>
       <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
 
-        {/* ═══ HEADER FIJO ═══ */}
-        <motion.header layout="size" className="flex-none px-5 pt-12 pb-4">
-
-          {/* Saludo + avatar */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground font-medium leading-none mb-1.5">
-                {getGreeting()},
-              </p>
-              <h1 className="text-[26px] font-bold tracking-tight text-foreground capitalize leading-none font-display">
-                {firstName}
-              </h1>
-            </div>
-            <button
-              onClick={() => router.push("/profile")}
-              className="active:scale-95 transition-transform"
-              aria-label="Ver perfil"
-            >
-              <UserAvatar letter={firstName.charAt(0)} size="sm" />
-            </button>
+        {/* ── Header fijo: solo saludo ── */}
+        <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground font-medium leading-none mb-1.5">
+              {getGreeting()},
+            </p>
+            <h1 className="text-[26px] font-bold tracking-tight text-foreground capitalize leading-none font-display">
+              {firstName}
+            </h1>
           </div>
+          <button
+            onClick={() => router.push("/profile")}
+            className="active:scale-95 transition-transform"
+            aria-label="Ver perfil"
+          >
+            <UserAvatar letter={firstName.charAt(0)} size="sm" />
+          </button>
+        </header>
 
-          {/* ── Mini balance sticky — aparece al hacer scroll ── */}
-          <AnimatePresence>
-            {miniBalance && !cardLoading && (
-              <motion.div
-                key="mini-balance"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="flex items-center justify-between mt-3 pt-3 border-t border-border/20"
-              >
-                <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">
-                  Balance Total
-                </span>
-
-                <div className="flex items-center gap-2">
-                  {/* Valor o máscara */}
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                      key={balanceVisible ? "visible" : "hidden"}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.15 }}
-                      className="text-[19px] font-black tracking-tight text-foreground font-nums leading-none"
-                    >
-                      {balanceVisible ? `${balInt}${balDec}` : MASKED}
-                    </motion.span>
-                  </AnimatePresence>
-
-                  {/* Ojo en mini balance */}
-                  <button
-                    onClick={toggleBalance}
-                    className="text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors active:scale-90"
-                    aria-label={balanceVisible ? "Ocultar balance" : "Mostrar balance"}
-                  >
-                    {balanceVisible
-                      ? <Eye className="w-3.5 h-3.5" />
-                      : <EyeOff className="w-3.5 h-3.5" />
-                    }
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.header>
-
-        {/* ═══ CONTENIDO SCROLLEABLE ═══ */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5"
-        >
+        {/* ── Área scrolleable — todo scrollea naturalmente ── */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5">
 
           {/* Balance card */}
-          <div ref={balanceRef} className="rounded-[28px] px-6 pt-6 pb-5 bg-primary">
-            {/* Label + ojo */}
+          <div className="rounded-[28px] px-6 pt-6 pb-5 bg-primary">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold tracking-[0.15em] text-white/50 uppercase">
                 Balance Total
@@ -233,24 +161,20 @@ export default function DashboardPage() {
                 className="text-white/50 hover:text-white/80 transition-colors active:scale-90 p-0.5"
                 aria-label={balanceVisible ? "Ocultar balance" : "Mostrar balance"}
               >
-                {balanceVisible
-                  ? <Eye className="w-4 h-4" />
-                  : <EyeOff className="w-4 h-4" />
-                }
+                {balanceVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
             </div>
 
             {cardLoading ? <BalanceSkeleton /> : (
               <>
-                {/* Número principal */}
                 <div className="flex items-end gap-1 mb-6 min-h-[52px]">
                   <AnimatePresence mode="wait" initial={false}>
                     {balanceVisible ? (
                       <motion.div
-                        key="amount"
-                        initial={{ opacity: 0, filter: "blur(8px)" }}
+                        key="val"
+                        initial={{ opacity: 0, filter: "blur(6px)" }}
                         animate={{ opacity: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, filter: "blur(8px)" }}
+                        exit={{ opacity: 0, filter: "blur(6px)" }}
                         transition={{ duration: 0.2 }}
                         className="flex items-end gap-1"
                       >
@@ -265,10 +189,10 @@ export default function DashboardPage() {
                       </motion.div>
                     ) : (
                       <motion.span
-                        key="masked"
-                        initial={{ opacity: 0, filter: "blur(8px)" }}
+                        key="mask"
+                        initial={{ opacity: 0, filter: "blur(6px)" }}
                         animate={{ opacity: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, filter: "blur(8px)" }}
+                        exit={{ opacity: 0, filter: "blur(6px)" }}
                         transition={{ duration: 0.2 }}
                         className="text-[38px] font-black text-white/60 leading-none tracking-[0.18em]"
                       >
@@ -278,7 +202,6 @@ export default function DashboardPage() {
                   </AnimatePresence>
                 </div>
 
-                {/* Stats ingresos / gastos */}
                 <div className="grid grid-cols-2 gap-2.5">
                   {[
                     { icon: ArrowUpRight,  label: "Ingresos", value: stats?.totalIncome   },
@@ -290,9 +213,7 @@ export default function DashboardPage() {
                         <span className="text-[9px] font-bold tracking-[0.1em] text-white/50 uppercase">{label}</span>
                       </div>
                       <p className="text-[14px] font-bold text-white font-nums">
-                        {value != null
-                          ? (balanceVisible ? formatCOP(value) : MASKED)
-                          : "—"}
+                        {value != null ? (balanceVisible ? formatCOP(value) : MASKED) : "—"}
                       </p>
                       <p className="text-[9px] text-white/30 mt-0.5 font-medium">Este mes</p>
                     </div>
