@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight, Mic, ChevronDown } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight, Mic, ChevronDown, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
 import { useVoiceRecognition } from "@/lib/hooks/use-voice-recognition";
@@ -65,13 +65,13 @@ export function VoiceModal() {
     phase,
     transcript,
     interimTranscript,
-    parsedTx,
+    parsedTxs,
     errorMessage,
     closeVoice,
     setTranscript,
     setInterim,
     setPhase,
-    setParsedTx,
+    setParsedTxs,
     setError,
     reset,
   } = useVoiceStore();
@@ -79,7 +79,19 @@ export function VoiceModal() {
   const queryClient = useQueryClient();
   const invalidateTransactions = useInvalidateTransactions();
 
-  // Estado local para campos editables en confirming
+  // Drafts locales: para 1 movimiento se edita directo; para muchos se edita por selección
+  const [drafts, setDrafts] = useState<Array<{
+    type: "INCOME" | "EXPENSE";
+    amount: number;
+    description?: string;
+    suggestedCategoryName: string;
+    categoryId: string | null;
+    confidence: "high" | "medium" | "low";
+    rawTranscript: string;
+  }>>([]);
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  // Estado local para edición del item seleccionado
   const [editAmount,       setEditAmount]       = useState("");
   const [editDescription,  setEditDescription]  = useState("");
   const [editCategoryId,   setEditCategoryId]   = useState<string | null>(null);
@@ -96,17 +108,28 @@ export function VoiceModal() {
   });
   const categories = (categoriesRes?.data as TransactionCategory[] | undefined) ?? [];
 
-  // Sincronizar campos editables cuando llega parsedTx
+  // Sincronizar drafts cuando llega parsedTxs
   useEffect(() => {
-    if (parsedTx) {
-      setEditAmount(String(parsedTx.amount));
-      setEditDescription(parsedTx.description ?? "");
-      setEditCategoryId(parsedTx.categoryId ?? null);
-      setEditCategoryName(parsedTx.suggestedCategoryName ?? "");
-      setNewCategoryInput("");
-      setShowCatPicker(false);
+    if (parsedTxs && parsedTxs.length > 0) {
+      setDrafts(parsedTxs);
+      setSelectedIdx(0);
+    } else {
+      setDrafts([]);
+      setSelectedIdx(0);
     }
-  }, [parsedTx]);
+  }, [parsedTxs]);
+
+  // Sincronizar campos editables cuando cambia item seleccionado
+  useEffect(() => {
+    const tx = drafts[selectedIdx];
+    if (!tx) return;
+    setEditAmount(String(tx.amount));
+    setEditDescription(tx.description ?? "");
+    setEditCategoryId(tx.categoryId ?? null);
+    setEditCategoryName(tx.suggestedCategoryName ?? "");
+    setNewCategoryInput("");
+    setShowCatPicker(false);
+  }, [drafts, selectedIdx]);
 
   // ── Callbacks del reconocimiento de voz ──
   const handleInterim = useCallback(
@@ -142,14 +165,15 @@ export function VoiceModal() {
           return;
         }
 
-        setParsedTx({ ...result.data, rawTranscript: finalText.trim() });
+        const txs = (result.data ?? []).map((t) => ({ ...t, rawTranscript: finalText.trim() }));
+        setParsedTxs(txs);
         setPhase("confirming");
       } catch {
         setError("Error de conexión, intenta de nuevo");
         setPhase("error");
       }
     },
-    [setTranscript, setPhase, setParsedTx, setError]
+    [setTranscript, setPhase, setParsedTxs, setError]
   );
 
   const handleRecognitionError = useCallback(
@@ -165,6 +189,29 @@ export function VoiceModal() {
     onFinal: handleFinal,
     onError: handleRecognitionError,
   });
+
+  // ── Timer (UI tipo WhatsApp) ─────────────────────────────────────────────
+  const [recordStartMs, setRecordStartMs] = useState<number | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen || phase !== "listening") {
+      setRecordStartMs(null);
+      setElapsedMs(0);
+      return;
+    }
+    const start = Date.now();
+    setRecordStartMs(start);
+    const id = setInterval(() => setElapsedMs(Date.now() - start), 250);
+    return () => clearInterval(id);
+  }, [isOpen, phase]);
+
+  const elapsedLabel = useMemo(() => {
+    const totalSec = Math.floor((elapsedMs || 0) / 1000);
+    const m = String(Math.floor(totalSec / 60)).padStart(2, "0");
+    const s = String(totalSec % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }, [elapsedMs]);
 
   // ── Iniciar escucha cuando el modal abre ──
   useEffect(() => {
@@ -192,13 +239,36 @@ export function VoiceModal() {
 
   // ── Guardar transacción ──
   const handleConfirm = async () => {
-    if (!parsedTx) return;
+    if (!drafts.length) return;
 
-    const amount = parseFloat(editAmount);
-    if (!amount || amount <= 0) {
+    // Guardar cambios del item seleccionado al draft antes de confirmar
+    const selected = drafts[selectedIdx];
+    if (!selected) return;
+
+    const amountSelected = parseFloat(editAmount);
+    if (!amountSelected || amountSelected <= 0) {
       toast.error("El monto debe ser mayor a 0");
       return;
     }
+
+    const finalCategoryNameSel = newCategoryInput.trim() || editCategoryName;
+    const finalCategoryIdSel =
+      finalCategoryNameSel.trim().length > 0
+        ? (newCategoryInput.trim() ? null : editCategoryId)
+        : null;
+
+    const nextDrafts = drafts.map((d, idx) =>
+      idx === selectedIdx
+        ? {
+            ...d,
+            amount: amountSelected,
+            description: editDescription || undefined,
+            suggestedCategoryName: finalCategoryNameSel || d.suggestedCategoryName,
+            categoryId: finalCategoryIdSel ?? d.categoryId,
+          }
+        : d
+    );
+    setDrafts(nextDrafts);
 
     // Optimistic update: actualizar balance y lista antes de la respuesta del servidor
     await queryClient.cancelQueries({ queryKey: ["transactions"] });
@@ -207,38 +277,42 @@ export function VoiceModal() {
     const prevTransactions = queryClient.getQueryData<Transaction[]>(["transactions", "recent"]);
     const prevBalance = queryClient.getQueryData<number>(["balance"]);
 
-    const delta = parsedTx.type === "EXPENSE" ? -amount : amount;
-    queryClient.setQueryData<number>(["balance"], (old) => (old ?? 0) + delta);
-    const finalCategoryName = newCategoryInput.trim() || editCategoryName;
-    const finalCategoryId   = newCategoryInput.trim() ? null : editCategoryId;
+    const totalDelta = nextDrafts.reduce((sum, t) => {
+      const amt = Number(t.amount) || 0;
+      return sum + (t.type === "EXPENSE" ? -amt : amt);
+    }, 0);
+    queryClient.setQueryData<number>(["balance"], (old) => (old ?? 0) + totalDelta);
 
+    const nowIso = new Date().toISOString();
     queryClient.setQueryData<Transaction[]>(["transactions", "recent"], (old) => {
-      const optimistic: Transaction = {
-        id: `optimistic-${Date.now()}`,
-        type: parsedTx.type,
-        amount: String(amount),
-        description: editDescription || undefined,
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
+      const optimistic = nextDrafts.map((t, i) => ({
+        id: `optimistic-${Date.now()}-${i}`,
+        type: t.type,
+        amount: String(t.amount),
+        description: t.description || undefined,
+        date: nowIso,
+        createdAt: nowIso,
         account: { id: "", name: "Efectivo", type: "CASH" },
-        category: finalCategoryName
-          ? { id: finalCategoryId ?? "opt", name: finalCategoryName, type: parsedTx.type }
+        category: t.suggestedCategoryName
+          ? { id: t.categoryId ?? "opt", name: t.suggestedCategoryName, type: t.type }
           : null,
-      };
-      return [optimistic, ...(old ?? [])];
+      }));
+      return [...optimistic, ...(old ?? [])];
     });
 
     setPhase("saving");
 
     try {
-      const txRes = await api.voice.save({
-        type: parsedTx.type,
-        amount,
-        description: editDescription || undefined,
-        suggestedCategoryName: finalCategoryName,
-        categoryId: finalCategoryId,
+      const payload = nextDrafts.map((t) => ({
+        type: t.type,
+        amount: t.amount,
+        description: t.description || undefined,
+        suggestedCategoryName: t.suggestedCategoryName,
+        categoryId: t.categoryId,
         date: new Date().toISOString(),
-      });
+      }));
+
+      const txRes = await api.voice.save(payload.length === 1 ? payload[0] : payload);
 
       if (!txRes.success) {
         // Rollback
@@ -275,53 +349,111 @@ export function VoiceModal() {
 
   const renderContent = () => {
     switch (phase) {
+      case "idle":
+        return (
+          <motion.div
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col gap-5 py-2"
+          >
+            <div className="text-center">
+              <p className="text-base font-semibold text-foreground">Registrar por voz</p>
+              <p className="mt-2 text-xs text-muted-foreground/70 leading-relaxed">
+                Di algo como{" "}
+                <span className="font-semibold text-foreground/80">“gasté 50k en comida”</span>{" "}
+                o{" "}
+                <span className="font-semibold text-foreground/80">“recibí 2 millones de nómina”</span>.
+                <br />
+                También puedes decir varios movimientos seguidos.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setPhase("listening")}
+                className={cn(
+                  "h-16 w-16 rounded-full flex items-center justify-center",
+                  "bg-primary text-primary-foreground shadow-sm",
+                  "hover:bg-primary/90 transition-colors active:scale-[0.98]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                )}
+                aria-label="Empezar a grabar"
+              >
+                <Mic className="w-7 h-7" strokeWidth={2.2} />
+              </button>
+              <p className="text-[11px] text-muted-foreground/60">
+                Toca para empezar
+              </p>
+            </div>
+
+            <Button variant="ghost" onClick={handleClose} className="w-full text-muted-foreground">
+              Cancelar
+            </Button>
+          </motion.div>
+        );
+
       case "listening":
         return (
-          <div className="flex flex-col items-center gap-5 py-2">
-            {/* Indicador de grabación */}
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-              <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-                Grabando
-              </p>
+          <div className="flex flex-col items-center gap-4 py-2">
+            {/* Barra superior: dot + timer */}
+            <div className="w-full flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+                  Grabando
+                </p>
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground/60 font-nums tabular-nums">
+                {elapsedLabel}
+              </span>
             </div>
 
             <VoiceWaveform isListening={true} />
 
             {/* Lo que va detectando el micrófono */}
-            <div className="w-full min-h-[48px] flex items-center justify-center px-4">
-              {interimTranscript && interimTranscript !== "..." ? (
-                <p className="text-sm text-foreground/80 text-center italic">
-                  "{interimTranscript}"
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground/40 text-center italic">
-                  Habla ahora — para automáticamente al terminar
-                </p>
-              )}
+            <div className="w-full min-h-[44px] flex items-center justify-center px-2">
+              <p className="text-sm text-muted-foreground/70 text-center leading-relaxed">
+                {interimTranscript && interimTranscript !== "..."
+                  ? `"${interimTranscript}"`
+                  : "Habla normal. Cuando termines, toca Enviar."}
+              </p>
             </div>
 
-            {/* Ejemplos */}
-            <div className="flex flex-col items-center gap-1 opacity-40">
-              <p className="text-[11px] text-muted-foreground">"Gasté 50 mil en comida"</p>
-              <p className="text-[11px] text-muted-foreground">"Recibí 2 millones de salario"</p>
-            </div>
-
-            <div className="flex gap-2 w-full pt-1">
-              <Button
-                variant="ghost"
+            {/* Barra inferior tipo WhatsApp */}
+            <div className="w-full flex items-center gap-2 pt-1">
+              <button
+                type="button"
                 onClick={handleClose}
-                className="flex-1 text-muted-foreground"
+                className="h-12 w-12 rounded-full bg-muted/60 hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground"
+                aria-label="Cancelar"
               >
-                Cancelar
-              </Button>
-              <Button
-                onClick={() => { stopListening(); }}
-                className="flex-1 gap-2"
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex-1 h-12 rounded-full bg-muted/40 px-4 flex items-center text-[12px] text-muted-foreground/60">
+                {recordStartMs ? "Grabando…" : "Preparando…"}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  // UX: parar el timer/estado de grabación inmediatamente
+                  // (el MediaRecorder se detiene y luego llega el transcript en onstop)
+                  setInterim("Procesando…");
+                  setPhase("processing");
+                  stopListening();
+                }}
+                className={cn(
+                  "h-12 w-12 rounded-full bg-primary text-primary-foreground",
+                  "hover:bg-primary/90 transition-colors active:scale-[0.98]",
+                  "flex items-center justify-center",
+                )}
+                aria-label="Enviar"
               >
-                Procesar
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+                <Send className="w-5 h-5" />
+              </button>
             </div>
           </div>
         );
@@ -337,14 +469,17 @@ export function VoiceModal() {
 
             {transcript && (
               <p className="text-sm text-muted-foreground text-center px-4 italic">
-                "{transcript}"
+                &ldquo;{transcript}&rdquo;
               </p>
             )}
           </div>
         );
 
       case "confirming":
-        if (!parsedTx) return null;
+        if (!drafts.length) return null;
+        // Nota: en multi-movimiento, editamos el item seleccionado.
+        // Al confirmar, se guardan todos los drafts (con el seleccionado actualizado).
+        const current = drafts[selectedIdx] ?? drafts[0];
         return (
           <motion.div
             variants={cardVariants}
@@ -353,7 +488,9 @@ export function VoiceModal() {
             className="flex flex-col gap-5 py-2"
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-foreground">¿Registrar esto?</p>
+              <p className="text-sm font-semibold text-foreground">
+                {drafts.length > 1 ? `¿Registrar ${drafts.length} movimientos?` : "¿Registrar esto?"}
+              </p>
               <button
                 onClick={handleRetry}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -363,20 +500,39 @@ export function VoiceModal() {
               </button>
             </div>
 
+            {drafts.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {drafts.map((tx, idx) => (
+                  <button
+                    key={`${idx}-${tx.type}-${tx.amount}`}
+                    onClick={() => setSelectedIdx(idx)}
+                    className={cn(
+                      "shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-[0.98]",
+                      idx === selectedIdx
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {tx.type === "INCOME" ? "↑" : "↓"} {formatCOP(Number(tx.amount) || 0)}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Card de transacción */}
             <div className="rounded-2xl border bg-muted/30 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span
                   className={cn(
                     "text-xs font-bold px-2.5 py-1 rounded-full",
-                    parsedTx.type === "INCOME"
+                    current.type === "INCOME"
                       ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                       : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
                   )}
                 >
-                  {parsedTx.type === "INCOME" ? "Ingreso" : "Gasto"}
+                  {current.type === "INCOME" ? "Ingreso" : "Gasto"}
                 </span>
-                {parsedTx.confidence === "low" && (
+                {current.confidence === "low" && (
                   <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium">
                     ⚠ Revisa el monto
                   </span>
@@ -491,7 +647,8 @@ export function VoiceModal() {
             </div>
 
             <Button onClick={handleConfirm} className="w-full gap-2">
-              Confirmar <ArrowRight className="w-4 h-4" />
+              {drafts.length > 1 ? `Confirmar ${drafts.length}` : "Confirmar"}{" "}
+              <ArrowRight className="w-4 h-4" />
             </Button>
             <Button variant="ghost" onClick={handleClose} className="w-full text-muted-foreground">
               Cancelar

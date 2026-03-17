@@ -1,9 +1,24 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "@/lib/toast";
+import { api } from "@/lib/api/client";
+import { useInvalidateTransactions } from "@/lib/hooks/use-invalidate-transactions";
+import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Transaction } from "@/lib/types/transaction";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -132,7 +147,7 @@ export function TransactionDetailSheet({
             </button>
 
             {/* Content */}
-            <TransactionDetailContent transaction={transaction} />
+            <TransactionDetailContent transaction={transaction} onClose={onClose} />
           </motion.div>
         </>
       )}
@@ -142,8 +157,17 @@ export function TransactionDetailSheet({
 
 // ─── Inner content (avoids hooks-in-conditional issues) ───────────────────────
 
-function TransactionDetailContent({ transaction }: { transaction: Transaction }) {
+function TransactionDetailContent({
+  transaction,
+  onClose,
+}: {
+  transaction: Transaction;
+  onClose: () => void;
+}) {
   const { type, amount, description, date, createdAt, account, category } = transaction;
+  const invalidateTransactions = useInvalidateTransactions();
+  const { openEdit } = useAddTransactionStore();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const isIncome = type === "INCOME";
   const categoryName = category?.name ?? (isIncome ? "Ingreso" : "Gasto");
@@ -156,6 +180,20 @@ function TransactionDetailContent({ transaction }: { transaction: Transaction })
   const fullDate = format(txDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
   const time = format(txDate, "hh:mm a");
   const createdDisplay = format(createdDate, "d MMM yyyy, hh:mm a", { locale: es });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => api.transactions.delete(transaction.id),
+    onSuccess: async (res) => {
+      if (!res.success) {
+        toast.error(res.error?.message ?? "Error al eliminar");
+        return;
+      }
+      await invalidateTransactions();
+      toast.success("Transacción eliminada");
+      onClose();
+    },
+    onError: () => toast.error("Error de conexión al eliminar"),
+  });
 
   return (
     <div className="flex flex-col gap-5 py-1">
@@ -206,6 +244,65 @@ function TransactionDetailContent({ transaction }: { transaction: Transaction })
         <DetailRow label="Hora" value={time} />
         <DetailRow label="Registrado" value={createdDisplay} />
       </div>
+
+      {/* Actions */}
+      <div className="pt-1 flex flex-col gap-2">
+        <Button
+          type="button"
+          onClick={() => {
+            openEdit(transaction);
+            onClose();
+          }}
+          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+        >
+          <Pencil className="w-4 h-4" />
+          Editar
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          disabled={deleteMutation.isPending}
+          onClick={() => setConfirmOpen(true)}
+          className="w-full bg-red-500 text-white hover:bg-red-600/90 dark:bg-red-500 dark:hover:bg-red-600/90 shadow-sm"
+        >
+          <Trash2 className="w-4 h-4" />
+          {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+        </Button>
+      </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-sm rounded-2xl" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar este registro?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer. El balance y tus estadísticas se actualizarán.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="bg-red-500 text-white hover:bg-red-600/90 shadow-sm"
+              disabled={deleteMutation.isPending}
+              onClick={async () => {
+                await deleteMutation.mutateAsync();
+                setConfirmOpen(false);
+              }}
+            >
+              {deleteMutation.isPending ? "Eliminando..." : "Sí, eliminar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

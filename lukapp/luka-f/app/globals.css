@@ -321,6 +321,24 @@
   }
 }
 
+/* Balance card: fluid typography so large numbers stay in layout */
+.balance-card {
+  container-type: inline-size;
+  container-name: balance;
+}
+
+/* Escala con el ancho del card: más dígitos → mismo espacio, fuente más chica (max 44px) */
+.balance-value-inner {
+  font-size: min(2.75rem, calc((100cqw - 1.5rem) / 8));
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.balance-value-decimal {
+  font-size: 0.6em;
+  opacity: 0.85;
+}
+
 @keyframes pulse-slow {
   0%, 100% {
     opacity: 0.3;

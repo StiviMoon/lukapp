@@ -193,23 +193,36 @@ export const api = {
       transcript: string;
       categories?: Array<{ id: string; name: string; type: string }>;
     }) =>
-      apiClient.post<{
-        type: "INCOME" | "EXPENSE";
-        amount: number;
-        suggestedCategoryName: string;
-        categoryId: string | null;
-        description: string;
-        confidence: "high" | "medium" | "low";
-      }>("/voice/parse", data),
+      apiClient.post<
+        Array<{
+          type: "INCOME" | "EXPENSE";
+          amount: number;
+          suggestedCategoryName: string;
+          categoryId: string | null;
+          description: string;
+          confidence: "high" | "medium" | "low";
+        }>
+      >("/voice/parse", data),
 
-    save: (data: {
-      type: "INCOME" | "EXPENSE";
-      amount: number;
-      description?: string;
-      suggestedCategoryName: string;
-      categoryId?: string | null;
-      date?: string; // ISO con offset — hora local del usuario
-    }) => apiClient.post("/voice/save", data),
+    save: (
+      data:
+        | {
+            type: "INCOME" | "EXPENSE";
+            amount: number;
+            description?: string;
+            suggestedCategoryName: string;
+            categoryId?: string | null;
+            date?: string; // ISO con offset — hora local del usuario
+          }
+        | Array<{
+            type: "INCOME" | "EXPENSE";
+            amount: number;
+            description?: string;
+            suggestedCategoryName: string;
+            categoryId?: string | null;
+            date?: string;
+          }>
+    ) => apiClient.post("/voice/save", data),
   },
 
   health: () => apiClient.get("/health"),
