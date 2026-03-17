@@ -111,7 +111,7 @@ export function TransactionDetailSheet({
           {/* Backdrop */}
           <motion.div
             key="detail-backdrop"
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -122,7 +122,7 @@ export function TransactionDetailSheet({
           {/* Bottom sheet */}
           <motion.div
             key="detail-sheet"
-            className="fixed bottom-0 left-0 right-0 z-50 max-w-sm mx-auto rounded-t-[32px] px-6 pt-5 pb-10"
+            className="fixed bottom-0 left-0 right-0 z-60 max-w-sm mx-auto rounded-t-[32px] px-6 pt-5 pb-10"
             style={{
               backgroundColor: "var(--background)",
               borderTop:
