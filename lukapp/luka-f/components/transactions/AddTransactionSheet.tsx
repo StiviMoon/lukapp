@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, lazy } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { TransactionCategory } from "@/lib/types/transaction";
+import type { Transaction, TransactionCategory } from "@/lib/types/transaction";
+import { useInvalidateTransactions } from "@/lib/hooks/use-invalidate-transactions";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -52,6 +53,14 @@ interface AddTransactionSheetProps {
   defaultType?: "INCOME" | "EXPENSE";
 }
 
+type SaveVars = {
+  type: "INCOME" | "EXPENSE";
+  amount: number;
+  description?: string;
+  suggestedCategoryName: string;
+  categoryId: string | null;
+};
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function AddTransactionSheet({
@@ -60,6 +69,7 @@ export function AddTransactionSheet({
   defaultType = "EXPENSE",
 }: AddTransactionSheetProps) {
   const queryClient = useQueryClient();
+  const invalidateTransactions = useInvalidateTransactions();
 
   const [type, setType] = useState<"INCOME" | "EXPENSE">(defaultType);
   const [rawAmount, setRawAmount] = useState("");
@@ -88,7 +98,7 @@ export function AddTransactionSheet({
     queryKey: ["categories"],
     queryFn: () => api.categories.getAll(),
     enabled: isOpen,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
 
   const categories =
@@ -102,33 +112,61 @@ export function AddTransactionSheet({
     }
   }, [categories, selectedCategoryId, newCategoryInput]);
 
-  // Save mutation
+  // Save mutation with optimistic updates
   const saveMutation = useMutation({
-    mutationFn: () => {
-      const amount = parseFloat(rawAmount);
-      const categoryName = newCategoryInput.trim() || selectedCategoryName;
-      return api.voice.save({
-        type,
-        amount,
-        description: description.trim() || undefined,
-        suggestedCategoryName: categoryName,
-        categoryId: newCategoryInput.trim() ? null : selectedCategoryId,
+    mutationFn: (vars: SaveVars) => api.voice.save(vars),
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ["transactions"] });
+      await queryClient.cancelQueries({ queryKey: ["balance"] });
+
+      const prevTransactions = queryClient.getQueryData<Transaction[]>(["transactions", "recent"]);
+      const prevBalance = queryClient.getQueryData<number>(["balance"]);
+
+      const delta = variables.type === "EXPENSE" ? -variables.amount : variables.amount;
+      queryClient.setQueryData<number>(["balance"], (old) => (old ?? 0) + delta);
+
+      queryClient.setQueryData<Transaction[]>(["transactions", "recent"], (old) => {
+        const optimistic: Transaction = {
+          id: `optimistic-${Date.now()}`,
+          type: variables.type,
+          amount: String(variables.amount),
+          description: variables.description,
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          account: { id: "", name: "Efectivo", type: "CASH" },
+          category: variables.categoryId
+            ? { id: variables.categoryId, name: variables.suggestedCategoryName, type: variables.type }
+            : null,
+        };
+        return [optimistic, ...(old ?? [])];
       });
+
+      return { prevTransactions, prevBalance };
     },
-    onSuccess: (res) => {
+    onError: (_err, _vars, context) => {
+      if (context?.prevBalance !== undefined) {
+        queryClient.setQueryData(["balance"], context.prevBalance);
+      }
+      if (context?.prevTransactions !== undefined) {
+        queryClient.setQueryData(["transactions", "recent"], context.prevTransactions);
+      }
+      toast.error("Error de conexión al guardar");
+    },
+    onSuccess: async (res, _vars, context) => {
       if (!res.success) {
+        // Rollback optimistic update on API-level error
+        if (context?.prevBalance !== undefined) {
+          queryClient.setQueryData(["balance"], context.prevBalance);
+        }
+        if (context?.prevTransactions !== undefined) {
+          queryClient.setQueryData(["transactions", "recent"], context.prevTransactions);
+        }
         toast.error(res.error?.message ?? "Error al registrar");
         return;
       }
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["balance"] });
-      queryClient.invalidateQueries({ queryKey: ["stats", "month"] });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      await invalidateTransactions();
       toast.success("✓ Registrado");
       handleClose();
-    },
-    onError: () => {
-      toast.error("Error de conexión al guardar");
     },
   });
 
@@ -157,9 +195,19 @@ export function AddTransactionSheet({
 
   // Handle numeric-only input
   const handleAmountChange = (val: string) => {
-    // Allow digits only, strip leading zeros
     const cleaned = val.replace(/[^0-9]/g, "");
     setRawAmount(cleaned === "" ? "" : String(parseInt(cleaned, 10)));
+  };
+
+  const handleSubmit = () => {
+    const categoryName = newCategoryInput.trim() || selectedCategoryName;
+    saveMutation.mutate({
+      type,
+      amount: parseFloat(rawAmount),
+      description: description.trim() || undefined,
+      suggestedCategoryName: categoryName,
+      categoryId: newCategoryInput.trim() ? null : selectedCategoryId,
+    });
   };
 
   return (
@@ -305,7 +353,7 @@ export function AddTransactionSheet({
               {/* Submit */}
               <div className="flex flex-col gap-2">
                 <Button
-                  onClick={() => saveMutation.mutate()}
+                  onClick={handleSubmit}
                   disabled={!canSubmit}
                   className="w-full"
                 >
