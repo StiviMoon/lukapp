@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { createSupabaseClient } from "./supabase";
 import { UnauthorizedError } from "@/errors";
+import { profileRepository } from "@/repositories/profile.repository";
 
 /**
  * Extiende Request para incluir userId
@@ -53,6 +54,13 @@ export const authenticate = async (
       id: user.id,
       email: user.email,
     };
+
+    // Garantizar que el perfil exista en la BD (upsert silencioso)
+    // Necesario porque Supabase crea el usuario en auth.users pero no
+    // en la tabla Profile de Prisma. Sin esto, crear cuentas/transacciones falla.
+    if (user.email) {
+      await profileRepository.upsert(user.id, user.email);
+    }
 
     next();
   } catch (error) {

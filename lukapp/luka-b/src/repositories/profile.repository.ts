@@ -66,8 +66,7 @@ export class ProfileRepository {
       create: {
         userId,
         email,
-        ...(data || {}),
-      },
+      } as Prisma.ProfileUncheckedCreateInput,
     });
   }
 }

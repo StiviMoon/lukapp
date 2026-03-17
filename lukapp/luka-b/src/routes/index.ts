@@ -3,6 +3,7 @@ import accountsRouter from "./accounts.routes";
 import transactionsRouter from "./transactions.routes";
 import categoriesRouter from "./categories.routes";
 import budgetsRouter from "./budgets.routes";
+import voiceRouter from "./voice.routes";
 
 const router = Router();
 
@@ -13,12 +14,13 @@ router.use("/accounts", accountsRouter);
 router.use("/transactions", transactionsRouter);
 router.use("/categories", categoriesRouter);
 router.use("/budgets", budgetsRouter);
+router.use("/voice", voiceRouter);
 
 /**
  * GET /api/health
  * Endpoint de salud
  */
-router.get("/health", (req, res) => {
+router.get("/health", (_req, res) => {
   res.json({
     success: true,
     message: "API funcionando correctamente",

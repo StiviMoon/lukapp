@@ -155,8 +155,7 @@ export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-11 rounded-xl font-medium text-sm text-white transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: "#6600FF" }}
+          className="w-full h-11 rounded-xl font-medium text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-opacity duration-150 disabled:opacity-50"
         >
           {isLoading ? (
             <>

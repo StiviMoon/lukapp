@@ -26,7 +26,6 @@ export class CategoryService {
     }
 
     return await categoryRepository.create({
-      userId,
       name: data.name,
       type: data.type,
       color: data.color,

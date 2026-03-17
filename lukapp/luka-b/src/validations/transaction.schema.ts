@@ -35,8 +35,8 @@ export const getTransactionsSchema = z.object({
   type: transactionTypeSchema.optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
-  limit: z.number().int().min(1).max(100).default(50).optional(),
-  offset: z.number().int().min(0).default(0).optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(50).optional(),
+  offset: z.coerce.number().int().min(0).default(0).optional(),
 });
 
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;

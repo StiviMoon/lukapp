@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { authenticate } from "@/auth/middleware";
-import { validateBody, validateParams, validateQuery } from "@/middleware/validation";
+import { validateBody, validateParams } from "@/middleware/validation";
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -49,7 +49,7 @@ router.get("/", async (req: Request, res: Response) => {
     const { type } = req.query;
 
     const categories = await categoryService.getCategories(userId, {
-      ...(type && { type: type as string }),
+      ...(type && { type: String(type) as import("@prisma/client").TransactionType }),
     });
 
     res.json({
@@ -76,7 +76,7 @@ router.get(
     try {
       const userId = req.userId!;
       const category = await categoryService.getCategoryById(
-        req.params.id,
+        String(req.params.id),
         userId
       );
 
@@ -105,7 +105,7 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      const { id } = req.params;
+      const id = String(req.params["id"]);
       const { id: _, ...data } = req.body;
 
       const category = await categoryService.updateCategory(id, userId, data);
@@ -134,7 +134,7 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      await categoryService.deleteCategory(req.params.id, userId);
+      await categoryService.deleteCategory(String(req.params.id), userId);
 
       res.json({
         success: true,

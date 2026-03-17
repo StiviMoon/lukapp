@@ -19,11 +19,14 @@ export default function AuthPage() {
 
       {/* Logo & Branding */}
       <div className="mb-16">
-        <span className="text-5xl font-black text-brand-purple leading-none">L</span>
-        <h1 className="text-4xl font-bold tracking-tight text-foreground mt-4">
+        <div className="relative inline-flex items-start mb-4">
+          <span className="text-5xl font-black text-primary leading-none font-display">L</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-brand-lime mt-1 ml-0.5 flex-shrink-0" />
+        </div>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground font-display">
           Lukapp
         </h1>
-        <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
+        <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
           Tus finanzas. Claras.
         </p>
       </div>
@@ -40,7 +43,7 @@ export default function AuthPage() {
         >
           Entrar
           {isLogin && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-purple transition-all duration-200" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary transition-all duration-200" />
           )}
         </button>
         <button
@@ -53,12 +56,12 @@ export default function AuthPage() {
         >
           Registrarse
           {!isLogin && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-purple transition-all duration-200" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary transition-all duration-200" />
           )}
         </button>
       </div>
 
-      {/* Form - Clean swap */}
+      {/* Form */}
       <div className="flex-1">
         {isLogin ? (
           <LoginForm
@@ -87,4 +90,3 @@ export default function AuthPage() {
     </div>
   );
 }
-

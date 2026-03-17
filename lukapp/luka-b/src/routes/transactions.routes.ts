@@ -111,7 +111,7 @@ router.get(
     try {
       const userId = req.userId!;
       const transaction = await transactionService.getTransactionById(
-        req.params.id,
+        String(req.params.id),
         userId
       );
 
@@ -140,7 +140,7 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      const { id } = req.params;
+      const id = String(req.params["id"]);
       const { id: _, ...data } = req.body;
 
       const transaction = await transactionService.updateTransaction(
@@ -173,7 +173,7 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      await transactionService.deleteTransaction(req.params.id, userId);
+      await transactionService.deleteTransaction(String(req.params.id), userId);
 
       res.json({
         success: true,

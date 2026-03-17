@@ -199,14 +199,15 @@ export class TransactionRepository {
     startDate?: Date;
     endDate?: Date;
   }): Promise<number> {
+    const { startDate, endDate, ...rest } = filters ?? {};
     return await prisma.transaction.count({
       where: {
         userId,
-        ...filters,
-        ...(filters?.startDate || filters?.endDate ? {
+        ...rest,
+        ...(startDate || endDate ? {
           date: {
-            ...(filters.startDate && { gte: filters.startDate }),
-            ...(filters.endDate && { lte: filters.endDate }),
+            ...(startDate && { gte: startDate }),
+            ...(endDate && { lte: endDate }),
           },
         } : {}),
       },

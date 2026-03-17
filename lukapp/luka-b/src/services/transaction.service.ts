@@ -40,9 +40,6 @@ export class TransactionService {
 
     // Crear la transacción
     const transaction = await transactionRepository.create({
-      userId,
-      accountId: data.accountId,
-      categoryId: data.categoryId ?? null,
       type: data.type,
       amount: data.amount,
       description: data.description,
