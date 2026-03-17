@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api/client";
@@ -59,6 +59,7 @@ type SaveVars = {
   description?: string;
   suggestedCategoryName: string;
   categoryId: string | null;
+  date: string;
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -207,6 +208,7 @@ export function AddTransactionSheet({
       description: description.trim() || undefined,
       suggestedCategoryName: categoryName,
       categoryId: newCategoryInput.trim() ? null : selectedCategoryId,
+      date: new Date().toISOString(),
     });
   };
 

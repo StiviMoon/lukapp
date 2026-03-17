@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, ApiResponse } from "@/lib/api/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export const useApiQuery = <T>({
   queryKey,

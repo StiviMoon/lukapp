@@ -74,6 +74,8 @@ const saveVoiceTransactionSchema = z.object({
     .union([z.string().uuid(), z.null(), z.literal("null")])
     .optional()
     .transform((val) => (val === "null" ? null : val)),
+  // Fecha local del cliente — evita problemas de timezone con el servidor
+  date: z.string().datetime({ offset: true }).optional(),
 });
 
 /**
@@ -92,7 +94,7 @@ router.post(
     try {
       const userId = req.userId!;
       const userEmail = req.user?.email ?? "";
-      const { type, amount, description, suggestedCategoryName, categoryId } =
+      const { type, amount, description, suggestedCategoryName, categoryId, date } =
         req.body as z.infer<typeof saveVoiceTransactionSchema>;
 
       // 1. Garantizar que el perfil exista
@@ -139,7 +141,7 @@ router.post(
         type: txType,
         amount,
         description: description ?? suggestedCategoryName,
-        date: new Date(),
+        date: date ? new Date(date) : new Date(),
         profile: { connect: { userId } },
         account: { connect: { id: accountId } },
         ...(resolvedCategoryId && {

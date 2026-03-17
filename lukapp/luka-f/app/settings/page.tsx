@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   ArrowLeft,
   Sun,

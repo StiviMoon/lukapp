@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, History, Mic, BarChart2, Plus } from "lucide-react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
 import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
@@ -13,25 +11,21 @@ const SHOW_ON = ["/dashboard", "/history", "/analytics", "/settings", "/profile"
 
 export function Navbar() {
   const pathname              = usePathname();
-  const [mounted, setMounted] = useState(false);
   const { openVoice }         = useVoiceStore();
   const { open: openAdd }     = useAddTransactionStore();
-
-  useEffect(() => { setMounted(true); }, []);
-
-  if (!mounted) return null;
   if (!SHOW_ON.some(p => pathname.startsWith(p))) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-[14px] px-6">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-3 px-4">
       <nav
-        className="pointer-events-auto flex items-center gap-1 px-3 py-2 rounded-full"
+        aria-label="Navegación principal"
+        className="pointer-events-auto flex items-center gap-1 rounded-full px-2 py-1.5"
         style={{
           background: "color-mix(in srgb, var(--card) 82%, transparent)",
-          backdropFilter: "blur(24px) saturate(180%)",
-          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          backdropFilter: "blur(14px) saturate(160%)",
+          WebkitBackdropFilter: "blur(14px) saturate(160%)",
           border: "1px solid color-mix(in srgb, var(--border) 30%, transparent)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.28), 0 1px 0 color-mix(in srgb, var(--border) 20%, transparent) inset",
+          boxShadow: "0 6px 22px rgba(0,0,0,0.18), 0 1px 0 color-mix(in srgb, var(--border) 18%, transparent) inset",
         }}
       >
         {/* Inicio */}
@@ -41,29 +35,41 @@ export function Navbar() {
         <NavLink href="/history" icon={History} label="Historial" pathname={pathname} />
 
         {/* ── FAB principal — Voz ── */}
-        <div className="mx-2">
+        <div className="mx-1.5">
           <button
             onClick={openVoice}
-            className="w-[56px] h-[56px] rounded-full flex items-center justify-center bg-primary transition-all duration-200 hover:scale-105 active:scale-95"
+            type="button"
+            className={cn(
+              "h-11 w-11 rounded-full flex items-center justify-center bg-primary",
+              "transition-transform duration-150 active:scale-[0.98]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            )}
             style={{
-              boxShadow: "0 4px 20px color-mix(in srgb, var(--primary) 55%, transparent), 0 0 0 5px color-mix(in srgb, var(--primary) 12%, transparent)",
+              boxShadow:
+                "0 4px 16px color-mix(in srgb, var(--primary) 48%, transparent), 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent)",
             }}
             aria-label="Registrar por voz"
           >
-            <Mic className="w-[22px] h-[22px] text-white" strokeWidth={2.2} />
+            <Mic className="h-5 w-5 text-white" strokeWidth={2.2} />
           </button>
         </div>
 
         {/* ── Botón secundario — Registro manual ── */}
         <button
           onClick={() => openAdd("EXPENSE")}
-          className="relative flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-full transition-all duration-200 active:scale-90 text-muted-foreground/50 hover:text-muted-foreground/80"
+          type="button"
+          className={cn(
+            "relative flex flex-col items-center gap-0.5 rounded-full px-2.5 py-1.5",
+            "text-muted-foreground/55 hover:text-muted-foreground/85",
+            "transition-colors duration-150 active:scale-[0.98]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          )}
           aria-label="Registrar movimiento"
         >
-          <div className="w-[20px] h-[20px] flex items-center justify-center">
-            <Plus className="w-[18px] h-[18px]" strokeWidth={2.2} />
+          <div className="h-[18px] w-[18px] flex items-center justify-center">
+            <Plus className="h-4 w-4" strokeWidth={2.2} />
           </div>
-          <span className="text-[9px] font-bold tracking-wide leading-none">Manual</span>
+          <span className="text-[9px] font-semibold tracking-wide leading-none">Manual</span>
         </button>
 
         {/* Analíticas */}
@@ -85,19 +91,17 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        "relative flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-full transition-all duration-200 active:scale-90",
-        active ? "text-primary" : "text-muted-foreground/40 hover:text-muted-foreground/70",
+        "relative flex flex-col items-center gap-0.5 rounded-full px-2.5 py-1.5",
+        "transition-colors duration-150 active:scale-[0.98]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        active
+          ? "text-primary bg-primary/10"
+          : "text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-muted/30",
       )}
+      aria-current={active ? "page" : undefined}
     >
-      {active && (
-        <motion.span
-          layoutId="nav-active"
-          className="absolute inset-0 rounded-full bg-primary/10"
-          transition={{ type: "spring", damping: 26, stiffness: 380 }}
-        />
-      )}
-      <Icon className="relative w-[20px] h-[20px]" strokeWidth={active ? 2.5 : 1.8} />
-      <span className="relative text-[9px] font-bold tracking-wide leading-none">{label}</span>
+      <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.4 : 2.0} />
+      <span className="text-[9px] font-semibold tracking-wide leading-none">{label}</span>
     </Link>
   );
 }
