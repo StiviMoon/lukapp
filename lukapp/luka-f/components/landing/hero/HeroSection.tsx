@@ -7,7 +7,7 @@ import PhoneMockup from "./PhoneMockup";
 const stats = [
   { value: "50k+", label: "En espera", color: "text-accent" },
   { value: "Abr 26", label: "MVP launch", color: "text-fg" },
-  { value: "Claude", label: "Powered by", color: "text-purple-muted" },
+  { value: "IA", label: "Powered by", color: "text-purple-muted" },
 ];
 
 export default function HeroSection() {

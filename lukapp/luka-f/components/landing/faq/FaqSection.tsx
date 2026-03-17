@@ -28,7 +28,7 @@ const faqs = [
   },
   {
     q: "¿Cómo funciona la IA?",
-    a: "Usa la API de Claude (Anthropic). Analiza tu perfil de gasto, personaliza recomendaciones según tu situación y responde preguntas en tiempo real sobre tus finanzas.",
+    a: "Analiza tu perfil de gasto, personaliza recomendaciones según tu situación y responde preguntas en tiempo real sobre tus finanzas.",
   },
 ];
 

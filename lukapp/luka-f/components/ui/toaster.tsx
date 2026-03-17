@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   CheckCircle2, XCircle, AlertTriangle, Info, Loader2,
 } from "lucide-react";
@@ -58,6 +58,7 @@ const CONFIG: Record<ToastType, {
 
 function Toast({ item }: { item: ToastItem }) {
   const remove   = useToastStore(s => s.remove);
+  const reduceMotion = useReducedMotion();
   const cfg  = CONFIG[item.type];
   const Icon = cfg.icon;
 
@@ -69,15 +70,23 @@ function Toast({ item }: { item: ToastItem }) {
   }, [item.id, item.duration, remove]);
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
       layout
-      initial={{ opacity: 0, y: -16, scale: 0.94 }}
-      animate={{ opacity: 1, y: 0,   scale: 1     }}
-      exit={{    opacity: 0, y: -12, scale: 0.94  }}
-      transition={{ type: "spring", damping: 24, stiffness: 320 }}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -16, scale: 0.94 }}
+      animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -12, scale: 0.94 }}
+      transition={reduceMotion ? { duration: 0.12 } : { type: "spring", damping: 24, stiffness: 320 }}
       onClick={() => remove(item.id)}
-      role="alert"
-      className="relative w-full overflow-hidden rounded-2xl cursor-pointer select-none"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") remove(item.id);
+      }}
+      aria-label="Cerrar notificación"
+      className={cn(
+        "relative w-full overflow-hidden rounded-2xl select-none text-left",
+        "cursor-pointer",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      )}
       style={{
         background: cfg.bgVar,
         border: `1px solid ${cfg.borderVar}`,
@@ -94,7 +103,7 @@ function Toast({ item }: { item: ToastItem }) {
         </p>
       </div>
 
-    </motion.div>
+    </motion.button>
   );
 }
 
@@ -106,7 +115,7 @@ export function Toaster() {
   return (
     <div
       aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[200] flex flex-col items-center pointer-events-none"
+      className="fixed top-0 left-0 right-0 z-200 flex flex-col items-center pointer-events-none"
       style={{ paddingTop: "env(safe-area-inset-top, 12px)" }}
     >
       <div className="w-full max-w-sm px-4 pt-3 flex flex-col gap-2 pointer-events-auto">
