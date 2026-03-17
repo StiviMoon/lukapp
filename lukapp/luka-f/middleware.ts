@@ -46,12 +46,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Con sesión → no mostrar auth/login; ir al dashboard
+  // Con sesión en /auth o /login → ir al dashboard (no dejar ver login/registro)
   if (user && (pathname.startsWith("/auth") || pathname.startsWith("/login"))) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
+
+  // Con sesión en "/" → no redirigir; puede ver la landing
+  // Sin sesión en rutas protegidas → ya redirige a /auth arriba
 
   return supabaseResponse;
 }
