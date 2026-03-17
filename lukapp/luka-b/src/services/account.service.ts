@@ -13,7 +13,6 @@ export class AccountService {
    */
   async createAccount(userId: string, data: CreateAccountInput) {
     return await accountRepository.create({
-      userId,
       name: data.name,
       type: data.type,
       balance: data.balance ?? 0,

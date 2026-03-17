@@ -78,7 +78,7 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      const accountId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+      const accountId = String(req.params.id);
       const account = await accountService.getAccountById(accountId, userId);
 
       res.json({
@@ -106,7 +106,7 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      const { id } = req.params;
+      const id = String(req.params["id"]);
       const { id: _, ...data } = req.body;
 
       const account = await accountService.updateAccount(id, userId, data);
@@ -137,7 +137,7 @@ router.delete(
       const userId = req.userId!;
       const hardDelete = req.query.hardDelete === "true";
 
-      await accountService.deleteAccount(req.params.id, userId, hardDelete);
+      await accountService.deleteAccount(String(req.params.id), userId, hardDelete);
 
       res.json({
         success: true,

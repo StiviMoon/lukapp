@@ -5,7 +5,7 @@ import { useInactivityTimeout } from "@/lib/hooks/use-inactivity-timeout";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2, LogOut, Moon, Sun, ChevronRight, Mail, User } from "lucide-react";
-import { Navbar } from "@/components/navbar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useTheme } from "next-themes";
 
 export default function ProfilePage() {
@@ -36,7 +36,7 @@ export default function ProfilePage() {
     "Usuario";
   const fullName = user?.user_metadata?.full_name || firstName;
   const email = user?.email || "";
-  const avatarLetter = firstName.charAt(0).toUpperCase();
+  const avatarLetter = firstName.charAt(0);
 
   const handleSignOut = async () => {
     await signOut();
@@ -50,21 +50,14 @@ export default function ProfilePage() {
 
           {/* Header */}
           <div className="mb-10">
-            <h1 className="text-[26px] font-bold tracking-tight text-foreground leading-none">
+            <h1 className="text-[26px] font-bold tracking-tight text-foreground leading-none font-display">
               Perfil
             </h1>
           </div>
 
           {/* Avatar & Name */}
           <div className="flex flex-col items-center mb-10">
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
-              style={{ backgroundColor: "color-mix(in srgb, #6600FF 15%, var(--card))" }}
-            >
-              <span className="text-3xl font-black text-[#6600FF]">
-                {avatarLetter}
-              </span>
-            </div>
+            <UserAvatar letter={avatarLetter} size="lg" className="mb-4" />
             <p className="text-xl font-bold text-foreground capitalize tracking-tight">
               {fullName}
             </p>
@@ -161,7 +154,6 @@ export default function ProfilePage() {
 
         </main>
       </div>
-      <Navbar />
     </>
   );
 }

@@ -98,6 +98,43 @@ export class CategoryRepository {
       },
     });
   }
+
+  /**
+   * Busca una categoría por nombre (case-insensitive) y tipo para un usuario.
+   * Usado por el flujo de voz para evitar duplicados.
+   */
+  async findByNameAndType(
+    userId: string,
+    name: string,
+    type: TransactionType
+  ): Promise<Category | null> {
+    const all = await prisma.category.findMany({
+      where: { userId, type },
+    });
+    const normalized = name.trim().toLowerCase();
+    return all.find((c) => c.name.trim().toLowerCase() === normalized) ?? null;
+  }
+
+  /**
+   * Busca una categoría por nombre e tipo; si no existe la crea.
+   * Garantiza que nunca haya dos categorías con el mismo nombre y tipo por usuario.
+   */
+  async findOrCreate(
+    userId: string,
+    name: string,
+    type: TransactionType
+  ): Promise<Category> {
+    const existing = await this.findByNameAndType(userId, name, type);
+    if (existing) return existing;
+
+    return await prisma.category.create({
+      data: {
+        name: name.trim(),
+        type,
+        profile: { connect: { userId } },
+      },
+    });
+  }
 }
 
 export const categoryRepository = new CategoryRepository();

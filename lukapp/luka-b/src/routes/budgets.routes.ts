@@ -1,9 +1,8 @@
 import { Router, Request, Response } from "express";
 import { authenticate } from "@/auth/middleware";
-import { validateBody, validateParams, validateQuery } from "@/middleware/validation";
+import { validateBody, validateParams } from "@/middleware/validation";
 import {
   createBudgetSchema,
-  updateBudgetSchema,
   updateBudgetBodySchema,
   budgetIdSchema,
 } from "@/validations/budget.schema";
@@ -105,7 +104,7 @@ router.get(
     try {
       const userId = req.userId!;
       const budget = await budgetService.getBudgetById(
-        req.params.id,
+        String(req.params.id),
         userId
       );
 
@@ -134,7 +133,7 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      const { id } = req.params;
+      const id = String(req.params["id"]);
       const { id: _, ...data } = req.body;
 
       const budget = await budgetService.updateBudget(id, userId, data);
@@ -163,7 +162,7 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      await budgetService.deleteBudget(req.params.id, userId);
+      await budgetService.deleteBudget(String(req.params.id), userId);
 
       res.json({
         success: true,

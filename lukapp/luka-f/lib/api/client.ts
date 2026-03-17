@@ -188,6 +188,29 @@ export const api = {
       apiClient.get("/budgets/status", date ? { date } : undefined),
   },
 
+  voice: {
+    parse: (data: {
+      transcript: string;
+      categories?: Array<{ id: string; name: string; type: string }>;
+    }) =>
+      apiClient.post<{
+        type: "INCOME" | "EXPENSE";
+        amount: number;
+        suggestedCategoryName: string;
+        categoryId: string | null;
+        description: string;
+        confidence: "high" | "medium" | "low";
+      }>("/voice/parse", data),
+
+    save: (data: {
+      type: "INCOME" | "EXPENSE";
+      amount: number;
+      description?: string;
+      suggestedCategoryName: string;
+      categoryId?: string | null;
+    }) => apiClient.post("/voice/save", data),
+  },
+
   health: () => apiClient.get("/health"),
 };
 

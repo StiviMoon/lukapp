@@ -4,6 +4,9 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { VoiceModal } from "@/components/voice/VoiceModal";
+import { Navbar } from "@/components/navbar";
+import { GlobalAddTransactionSheet } from "@/components/transactions/AddTransactionSheet";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,7 +62,10 @@ export default function RootLayout({
         >
           <QueryProvider>
             {children}
+            <Navbar />
             <Toaster />
+            <VoiceModal />
+            <GlobalAddTransactionSheet />
           </QueryProvider>
         </ThemeProvider>
       </body>
