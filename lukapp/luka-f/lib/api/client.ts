@@ -208,6 +208,7 @@ export const api = {
       description?: string;
       suggestedCategoryName: string;
       categoryId?: string | null;
+      date?: string; // ISO con offset — hora local del usuario
     }) => apiClient.post("/voice/save", data),
   },
 

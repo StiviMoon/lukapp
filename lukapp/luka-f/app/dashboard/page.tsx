@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Loader2, Plus, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
+  Sun, Sunset, Moon, Sunrise,
 } from "lucide-react";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useInactivityTimeout } from "@/lib/hooks/use-inactivity-timeout";
@@ -19,11 +20,27 @@ import type { Transaction } from "@/lib/types/transaction";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getGreeting = () => {
+type TimeOfDay = "dawn" | "morning" | "afternoon" | "evening" | "night";
+
+function getTimeOfDay(): TimeOfDay {
   const h = new Date().getHours();
-  if (h < 12) return "Buenos días";
-  if (h < 19) return "Buenas tardes";
-  return "Buenas noches";
+  if (h >= 5  && h < 7)  return "dawn";
+  if (h >= 7  && h < 12) return "morning";
+  if (h >= 12 && h < 18) return "afternoon";
+  if (h >= 18 && h < 21) return "evening";
+  return "night";
+}
+
+const TIME_CONFIG: Record<TimeOfDay, {
+  greeting: string;
+  Icon: React.ElementType;
+  iconClass: string;
+}> = {
+  dawn:      { greeting: "Buenos días",   Icon: Sunrise, iconClass: "text-orange-400" },
+  morning:   { greeting: "Buenos días",   Icon: Sun,     iconClass: "text-yellow-400" },
+  afternoon: { greeting: "Buenas tardes", Icon: Sun,     iconClass: "text-orange-400" },
+  evening:   { greeting: "Buenas tardes", Icon: Sunset,  iconClass: "text-rose-400"   },
+  night:     { greeting: "Buenas noches", Icon: Moon,    iconClass: "text-indigo-400" },
 };
 
 function formatCOP(n: number) {
@@ -83,6 +100,7 @@ export default function DashboardPage() {
 
   const [selectedTx,     setSelectedTx]    = useState<Transaction | null>(null);
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [visibleCount,   setVisibleCount]   = useState(6);
 
   const { open: openAddSheet } = useAddTransactionStore();
 
@@ -90,9 +108,20 @@ export default function DashboardPage() {
   const { data: stats,   isLoading: statsLoading   } = useMonthStats();
   const { data: transactions, isLoading: txLoading  } = useRecentTransactions(20);
 
+  // Resetear paginación cuando llegan nuevas transacciones (ej. después de registrar una)
+  useEffect(() => {
+    setTimeout(() => {
+      setVisibleCount(6);
+    }, 100);
+  }, [transactions?.length]);
+
   useEffect(() => {
     const stored = localStorage.getItem("lukapp-balance-visible");
-    if (stored !== null) setBalanceVisible(stored === "true");
+    if (stored !== null) {
+      setTimeout(() => {
+        setBalanceVisible(stored === "true");
+      }, 100);
+    }
   }, []);
 
   const toggleBalance = () => {
@@ -120,6 +149,8 @@ export default function DashboardPage() {
     user?.user_metadata?.full_name?.split(" ")[0] ||
     user?.email?.split("@")[0] || "tú";
 
+  const { greeting, Icon: TimeIcon, iconClass } = TIME_CONFIG[getTimeOfDay()];
+
   const cardLoading = balanceLoading || statsLoading;
   const balanceValue = balance ?? 0;
   const { integer: balInt, decimal: balDec } = splitCOP(balanceValue);
@@ -131,9 +162,12 @@ export default function DashboardPage() {
         {/* ── Header fijo: solo saludo ── */}
         <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground font-medium leading-none mb-1.5">
-              {getGreeting()},
-            </p>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <TimeIcon className={`w-3.5 h-3.5 ${iconClass}`} strokeWidth={2.2} />
+              <p className="text-sm text-muted-foreground font-medium leading-none">
+                {greeting},
+              </p>
+            </div>
             <h1 className="text-[26px] font-bold tracking-tight text-foreground capitalize leading-none font-display">
               {firstName}
             </h1>
@@ -270,9 +304,26 @@ export default function DashboardPage() {
               </div>
             ) : transactions && transactions.length > 0 ? (
               <div className="flex flex-col gap-2">
-                {transactions.map(tx => (
+                {transactions.slice(0, visibleCount).map(tx => (
                   <TransactionItem key={tx.id} transaction={tx} onClick={() => setSelectedTx(tx)} />
                 ))}
+
+                {/* Cargar más / Ver todo */}
+                {transactions.length > visibleCount ? (
+                  <button
+                    onClick={() => setVisibleCount(v => v + 6)}
+                    className="w-full py-3 rounded-2xl text-[12px] font-semibold text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-muted/40 transition-all active:scale-[0.98]"
+                  >
+                    Cargar más · {transactions.length - visibleCount} restantes
+                  </button>
+                ) : visibleCount > 6 && (
+                  <button
+                    onClick={() => router.push("/history")}
+                    className="w-full py-3 rounded-2xl text-[12px] font-semibold text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-muted/40 transition-all active:scale-[0.98]"
+                  >
+                    Ver historial completo <ChevronRight className="inline w-3 h-3 mb-0.5" />
+                  </button>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-14 rounded-[24px] bg-card">

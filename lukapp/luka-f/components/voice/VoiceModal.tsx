@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight, Mic, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
@@ -237,6 +237,7 @@ export function VoiceModal() {
         description: editDescription || undefined,
         suggestedCategoryName: finalCategoryName,
         categoryId: finalCategoryId,
+        date: new Date().toISOString(),
       });
 
       if (!txRes.success) {
