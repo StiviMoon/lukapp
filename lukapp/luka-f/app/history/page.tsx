@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   startOfMonth, endOfMonth, format, addMonths, subMonths,
-  parseISO, isToday, isSameMonth, getDay, addDays, startOfWeek,
+  parseISO, isToday, isSameMonth, addDays, startOfWeek,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -32,22 +32,13 @@ function groupByDate(txs: Transaction[]): TxMap {
   const map = new Map<string, Transaction[]>();
   for (const tx of txs) {
     const key = tx.date.slice(0, 10);
-    const arr = map.get(key) ?? [];
-    arr.push(tx);
-    map.set(key, arr);
+    map.set(key, [...(map.get(key) ?? []), tx]);
   }
   return map;
 }
 
-/**
- * Genera los días a mostrar en el calendario.
- * Siempre empieza en lunes (weekStartsOn: 1).
- * Retorna 6 filas × 7 columnas = 42 celdas.
- */
 function buildCalendarDays(month: Date): Date[] {
-  const firstDay = startOfMonth(month);
-  // Primer lunes de la semana que contiene el 1 del mes
-  const start = startOfWeek(firstDay, { weekStartsOn: 1 });
+  const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
   return Array.from({ length: 42 }, (_, i) => addDays(start, i));
 }
 
@@ -56,18 +47,12 @@ function buildCalendarDays(month: Date): Date[] {
 function CalendarSkeleton() {
   return (
     <div className="rounded-[28px] bg-card p-4 animate-pulse">
-      {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {[...Array(7)].map((_, i) => (
-          <div key={i} className="h-5 rounded-lg bg-muted-foreground/10" />
-        ))}
+        {[...Array(7)].map((_, i) => <div key={i} className="h-5 rounded-lg bg-muted-foreground/10" />)}
       </div>
-      {/* 6 rows */}
       {[...Array(6)].map((_, r) => (
         <div key={r} className="grid grid-cols-7 gap-1 mb-1">
-          {[...Array(7)].map((_, c) => (
-            <div key={c} className="aspect-square rounded-xl bg-muted-foreground/10" />
-          ))}
+          {[...Array(7)].map((_, c) => <div key={c} className="aspect-square rounded-xl bg-muted-foreground/10" />)}
         </div>
       ))}
     </div>
@@ -90,24 +75,20 @@ function TxSkeleton() {
   );
 }
 
-// ─── Custom Calendar (CSS Grid, full-width guaranteed) ────────────────────────
+// ─── Full Calendar ─────────────────────────────────────────────────────────────
 
 const WEEKDAYS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
 
-interface FullCalendarProps {
-  month: Date;
-  selected: Date;
-  onSelect: (d: Date) => void;
-  txByDate: TxMap;
-}
-
-function FullCalendar({ month, selected, onSelect, txByDate }: FullCalendarProps) {
+function FullCalendar({
+  month, selected, onSelect, txByDate,
+}: {
+  month: Date; selected: Date; onSelect: (d: Date) => void; txByDate: TxMap;
+}) {
   const days = useMemo(() => buildCalendarDays(month), [month]);
   const selectedKey = format(selected, "yyyy-MM-dd");
 
   return (
     <div className="w-full">
-      {/* Weekday headers */}
       <div className="grid grid-cols-7 mb-2">
         {WEEKDAYS.map(d => (
           <div key={d} className="text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground/35 py-1 select-none">
@@ -115,57 +96,34 @@ function FullCalendar({ month, selected, onSelect, txByDate }: FullCalendarProps
           </div>
         ))}
       </div>
-
-      {/* Day grid — 6 rows × 7 cols */}
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, i) => {
-          const key = format(day, "yyyy-MM-dd");
-          const txs = txByDate.get(key) ?? [];
+          const key    = format(day, "yyyy-MM-dd");
+          const txs    = txByDate.get(key) ?? [];
           const hasInc = txs.some(t => t.type === "INCOME");
           const hasExp = txs.some(t => t.type === "EXPENSE");
-          const isSel = key === selectedKey;
-          const isTod = isToday(day);
-          const isOut = !isSameMonth(day, month);
-
+          const isSel  = key === selectedKey;
+          const isTod  = isToday(day);
+          const isOut  = !isSameMonth(day, month);
           return (
             <button
               key={i}
               onClick={() => onSelect(day)}
               className={cn(
                 "relative flex flex-col items-center justify-center aspect-square w-full rounded-xl",
-                "text-[13px] font-semibold transition-all duration-150 select-none focus:outline-none",
-                "active:scale-90",
-                // Selected
+                "text-[13px] font-semibold transition-all duration-150 select-none focus:outline-none active:scale-90",
                 isSel && "bg-primary text-primary-foreground shadow-lg scale-[1.04]",
-                // Today (not selected)
                 isTod && !isSel && "ring-[1.5px] ring-primary/60 text-primary",
-                // Outside current month
                 isOut && "opacity-20 pointer-events-none",
-                // Has transactions
-                !isSel && !isOut && txs.length > 0 && "text-foreground",
-                // Empty days
+                !isSel && !isOut && txs.length > 0  && "text-foreground hover:bg-muted/50",
                 !isSel && !isOut && txs.length === 0 && "text-muted-foreground/40 hover:bg-muted/40",
-                // Days with txs: subtle hover
-                !isSel && !isOut && txs.length > 0 && "hover:bg-muted/50",
               )}
             >
               <span className="leading-none">{day.getDate()}</span>
-
-              {/* Dots */}
               {txs.length > 0 && (
                 <span className="flex gap-[3px] mt-[3px]">
-                  {hasInc && (
-                    <span className={cn(
-                      "w-[5px] h-[5px] rounded-full",
-                      isSel ? "bg-white/70" : "bg-emerald-500",
-                    )} />
-                  )}
-                  {hasExp && (
-                    <span className={cn(
-                      "w-[5px] h-[5px] rounded-full",
-                      isSel ? "bg-white/50" : "bg-rose-500",
-                    )} />
-                  )}
+                  {hasInc && <span className={cn("w-[5px] h-[5px] rounded-full", isSel ? "bg-white/70" : "bg-emerald-500")} />}
+                  {hasExp && <span className={cn("w-[5px] h-[5px] rounded-full", isSel ? "bg-white/50" : "bg-rose-500")} />}
                 </span>
               )}
             </button>
@@ -179,65 +137,67 @@ function FullCalendar({ month, selected, onSelect, txByDate }: FullCalendarProps
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HistoryPage() {
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
-  const [currentMonth, setCurrentMonth] = useState(() => new Date());
-  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
-  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const router = useRouter();
+  const [viewMode,      setViewMode]      = useState<"calendar" | "list">("calendar");
+  const [currentMonth,  setCurrentMonth]  = useState(() => new Date());
+  const [selectedDate,  setSelectedDate]  = useState<Date>(() => new Date());
+  const [selectedTx,    setSelectedTx]    = useState<Transaction | null>(null);
 
-  const year = currentMonth.getFullYear();
+  const year  = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
   const { data: txData, isLoading } = useQuery<Transaction[]>({
-    queryKey: ["transactions", year, month],
+    queryKey: ["transactions", "month", year, month],
     queryFn: async () => {
       const res = await api.transactions.getAll({
         startDate: startOfMonth(currentMonth),
-        endDate: endOfMonth(currentMonth),
+        endDate:   endOfMonth(currentMonth),
         limit: 300,
       });
       if (!res.success) throw new Error(res.error?.message ?? "Error");
       return (res.data ?? []) as Transaction[];
     },
-    staleTime: 60_000,
+    staleTime: 2 * 60_000,
   });
 
   const transactions = txData ?? [];
-  const txByDate = useMemo(() => groupByDate(transactions), [transactions]);
-
-  const selectedKey = format(selectedDate, "yyyy-MM-dd");
-  const dayTxs     = txByDate.get(selectedKey) ?? [];
-  const dayIncome  = dayTxs.filter(t => t.type === "INCOME").reduce((s, t) => s + Number(t.amount), 0);
-  const dayExpense = dayTxs.filter(t => t.type === "EXPENSE").reduce((s, t) => s + Number(t.amount), 0);
-
-  const monthIncome  = transactions.filter(t => t.type === "INCOME").reduce((s, t) => s + Number(t.amount), 0);
-  const monthExpense = transactions.filter(t => t.type === "EXPENSE").reduce((s, t) => s + Number(t.amount), 0);
-
-  const sortedKeys = useMemo(
+  const txByDate     = useMemo(() => groupByDate(transactions), [transactions]);
+  const sortedKeys   = useMemo(
     () => Array.from(txByDate.keys()).sort((a, b) => b.localeCompare(a)),
     [txByDate],
   );
+
+  const monthIncome  = transactions.filter(t => t.type === "INCOME") .reduce((s, t) => s + Number(t.amount), 0);
+  const monthExpense = transactions.filter(t => t.type === "EXPENSE").reduce((s, t) => s + Number(t.amount), 0);
+
+  const selectedKey = format(selectedDate, "yyyy-MM-dd");
+  const dayTxs      = txByDate.get(selectedKey) ?? [];
+  const dayIncome   = dayTxs.filter(t => t.type === "INCOME") .reduce((s, t) => s + Number(t.amount), 0);
+  const dayExpense  = dayTxs.filter(t => t.type === "EXPENSE").reduce((s, t) => s + Number(t.amount), 0);
 
   const monthLabel = format(currentMonth, "MMMM yyyy", { locale: es });
   const monthTitle = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
   return (
     <>
-      <div className="min-h-dvh bg-background">
-        <div className="px-5 pt-12 pb-32 max-w-sm mx-auto space-y-4">
+      <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
 
-          {/* ── Header ── */}
+        {/* ═══ HEADER FIJO ═══ */}
+        <div className="flex-none px-5 pt-12 pb-3 space-y-3">
+
+          {/* Título + toggle de vista */}
           <div className="flex items-center justify-between">
             <h1 className="text-[22px] font-bold text-foreground font-display">Historial</h1>
-            <div className="flex gap-1">
+            <div className="flex gap-1 p-1 rounded-xl bg-muted/50">
               {(["calendar", "list"] as const).map(mode => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={cn(
-                    "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150 active:scale-95",
+                    "w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150 active:scale-95",
                     viewMode === mode
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-card text-muted-foreground hover:bg-muted/60",
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground/50 hover:text-muted-foreground",
                   )}
                 >
                   {mode === "calendar" ? <CalendarDays className="w-4 h-4" /> : <List className="w-4 h-4" />}
@@ -246,7 +206,7 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          {/* ── Month nav ── */}
+          {/* Navegación de mes */}
           <div className="flex items-center justify-between px-1">
             <button
               onClick={() => setCurrentMonth(m => subMonths(m, 1))}
@@ -263,13 +223,13 @@ export default function HistoryPage() {
             </button>
           </div>
 
-          {/* ── Month stats ── */}
+          {/* Resumen del mes */}
           {isLoading ? (
             <div className="grid grid-cols-2 gap-2 animate-pulse">
               <div className="h-14 rounded-2xl bg-muted-foreground/10" />
               <div className="h-14 rounded-2xl bg-muted-foreground/10" />
             </div>
-          ) : transactions.length > 0 && (
+          ) : (
             <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-500/10 px-3.5 py-3">
                 <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -287,8 +247,12 @@ export default function HistoryPage() {
               </div>
             </div>
           )}
+        </div>
 
-          {/* ══ CALENDAR VIEW ══ */}
+        {/* ═══ CONTENIDO SCROLLEABLE ═══ */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-32 space-y-4">
+
+          {/* ── Vista calendario ── */}
           {viewMode === "calendar" && (
             <>
               {isLoading ? <CalendarSkeleton /> : (
@@ -302,7 +266,7 @@ export default function HistoryPage() {
                 </div>
               )}
 
-              {/* ── Day panel ── */}
+              {/* Panel del día seleccionado */}
               <div className="rounded-[24px] bg-card overflow-hidden">
                 <div className="flex items-start justify-between px-5 pt-4 pb-3 border-b border-border/30">
                   <div>
@@ -313,12 +277,8 @@ export default function HistoryPage() {
                     </p>
                     {dayTxs.length > 0 && (
                       <div className="flex gap-3">
-                        {dayIncome > 0 && (
-                          <span className="text-[13px] font-bold text-emerald-500 font-nums">+{formatCOP(dayIncome)}</span>
-                        )}
-                        {dayExpense > 0 && (
-                          <span className="text-[13px] font-bold text-rose-500 font-nums">-{formatCOP(dayExpense)}</span>
-                        )}
+                        {dayIncome  > 0 && <span className="text-[13px] font-bold text-emerald-500 font-nums">+{formatCOP(dayIncome)}</span>}
+                        {dayExpense > 0 && <span className="text-[13px] font-bold text-rose-500 font-nums">-{formatCOP(dayExpense)}</span>}
                       </div>
                     )}
                   </div>
@@ -341,9 +301,9 @@ export default function HistoryPage() {
             </>
           )}
 
-          {/* ══ LIST VIEW ══ */}
+          {/* ── Vista lista ── */}
           {viewMode === "list" && (
-            <div className="space-y-5">
+            <>
               {isLoading ? (
                 <div className="space-y-2">
                   {[...Array(5)].map((_, i) => <TxSkeleton key={i} />)}
@@ -357,11 +317,10 @@ export default function HistoryPage() {
                 sortedKeys.map(dk => {
                   const dTxs  = txByDate.get(dk)!;
                   const dDate = parseISO(dk);
-                  const dInc  = dTxs.filter(t => t.type === "INCOME").reduce((s, t) => s + Number(t.amount), 0);
+                  const dInc  = dTxs.filter(t => t.type === "INCOME") .reduce((s, t) => s + Number(t.amount), 0);
                   const dExp  = dTxs.filter(t => t.type === "EXPENSE").reduce((s, t) => s + Number(t.amount), 0);
                   const dNet  = dInc - dExp;
                   const label = isToday(dDate) ? "Hoy" : format(dDate, "EEEE d", { locale: es });
-
                   return (
                     <div key={dk}>
                       <div className="flex items-center justify-between px-1 mb-2">
@@ -381,7 +340,7 @@ export default function HistoryPage() {
                   );
                 })
               )}
-            </div>
+            </>
           )}
 
         </div>

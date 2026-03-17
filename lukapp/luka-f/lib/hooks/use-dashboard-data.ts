@@ -17,7 +17,7 @@ export function useTotalBalance() {
       }
       return (res.data as { total: number }).total;
     },
-    staleTime: 30_000,
+    staleTime: 20_000,
   });
 }
 
@@ -45,7 +45,7 @@ export function useMonthStats() {
 
 export function useRecentTransactions(limit = 20) {
   return useQuery({
-    queryKey: ["transactions"],
+    queryKey: ["transactions", "recent"],
     queryFn: async () => {
       const res = await api.transactions.getAll({ limit });
       if (!res.success || res.data === undefined) {
@@ -53,6 +53,6 @@ export function useRecentTransactions(limit = 20) {
       }
       return res.data as Transaction[];
     },
-    staleTime: 30_000,
+    staleTime: 20_000,
   });
 }

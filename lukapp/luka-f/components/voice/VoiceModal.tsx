@@ -4,14 +4,16 @@ import { useEffect, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
 import { useVoiceRecognition } from "@/lib/hooks/use-voice-recognition";
+import { useInvalidateTransactions } from "@/lib/hooks/use-invalidate-transactions";
 import { VoiceWaveform } from "./VoiceWaveform";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { Transaction } from "@/lib/types/transaction";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -75,6 +77,7 @@ export function VoiceModal() {
   } = useVoiceStore();
 
   const queryClient = useQueryClient();
+  const invalidateTransactions = useInvalidateTransactions();
 
   // Estado local para campos editables en confirming
   const [editAmount, setEditAmount] = useState("");
@@ -163,12 +166,12 @@ export function VoiceModal() {
   useEffect(() => {
     if (phase === "done") {
       toast.success("Transacción registrada");
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      invalidateTransactions();
       const timer = setTimeout(() => closeVoice(), 1400);
       return () => clearTimeout(timer);
     }
-  }, [phase, queryClient, closeVoice]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, closeVoice]);
 
   // ── Guardar transacción ──
   const handleConfirm = async () => {
@@ -180,11 +183,34 @@ export function VoiceModal() {
       return;
     }
 
+    // Optimistic update: actualizar balance y lista antes de la respuesta del servidor
+    await queryClient.cancelQueries({ queryKey: ["transactions"] });
+    await queryClient.cancelQueries({ queryKey: ["balance"] });
+
+    const prevTransactions = queryClient.getQueryData<Transaction[]>(["transactions", "recent"]);
+    const prevBalance = queryClient.getQueryData<number>(["balance"]);
+
+    const delta = parsedTx.type === "EXPENSE" ? -amount : amount;
+    queryClient.setQueryData<number>(["balance"], (old) => (old ?? 0) + delta);
+    queryClient.setQueryData<Transaction[]>(["transactions", "recent"], (old) => {
+      const optimistic: Transaction = {
+        id: `optimistic-${Date.now()}`,
+        type: parsedTx.type,
+        amount: String(amount),
+        description: editDescription || undefined,
+        date: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        account: { id: "", name: "Efectivo", type: "CASH" },
+        category: parsedTx.categoryId
+          ? { id: parsedTx.categoryId, name: parsedTx.suggestedCategoryName, type: parsedTx.type }
+          : null,
+      };
+      return [optimistic, ...(old ?? [])];
+    });
+
     setPhase("saving");
 
     try {
-      // El backend resuelve cuenta (crea Efectivo si no hay) y categoría
-      // (find-or-create por nombre para evitar duplicados)
       const txRes = await api.voice.save({
         type: parsedTx.type,
         amount,
@@ -194,6 +220,9 @@ export function VoiceModal() {
       });
 
       if (!txRes.success) {
+        // Rollback
+        if (prevBalance !== undefined) queryClient.setQueryData(["balance"], prevBalance);
+        if (prevTransactions !== undefined) queryClient.setQueryData(["transactions", "recent"], prevTransactions);
         setError(txRes.error?.message ?? "Error al guardar la transacción");
         setPhase("error");
         return;
@@ -201,6 +230,9 @@ export function VoiceModal() {
 
       setPhase("done");
     } catch {
+      // Rollback
+      if (prevBalance !== undefined) queryClient.setQueryData(["balance"], prevBalance);
+      if (prevTransactions !== undefined) queryClient.setQueryData(["transactions", "recent"], prevTransactions);
       setError("Error de conexión al guardar");
       setPhase("error");
     }
@@ -224,36 +256,50 @@ export function VoiceModal() {
     switch (phase) {
       case "listening":
         return (
-          <div className="flex flex-col items-center gap-6 py-4">
-            <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-              Grabando... habla ahora
-            </p>
+          <div className="flex flex-col items-center gap-5 py-2">
+            {/* Indicador de grabación */}
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+                Grabando
+              </p>
+            </div>
 
             <VoiceWaveform isListening={true} />
 
-            <p className="text-sm text-muted-foreground/50 italic text-center px-4">
-              "Gasté 50 mil en comida"<br />
-              "Recibí 2 millones de salario"
-            </p>
+            {/* Lo que va detectando el micrófono */}
+            <div className="w-full min-h-[48px] flex items-center justify-center px-4">
+              {interimTranscript && interimTranscript !== "..." ? (
+                <p className="text-sm text-foreground/80 text-center italic">
+                  "{interimTranscript}"
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground/40 text-center italic">
+                  Habla ahora — para automáticamente al terminar
+                </p>
+              )}
+            </div>
 
-            <div className="flex flex-col gap-2 w-full pt-2">
-              <Button
-                onClick={() => {
-                  setPhase("processing");
-                  stopListening();
-                }}
-                className="w-full gap-2"
-              >
-                Listo, procesar
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+            {/* Ejemplos */}
+            <div className="flex flex-col items-center gap-1 opacity-40">
+              <p className="text-[11px] text-muted-foreground">"Gasté 50 mil en comida"</p>
+              <p className="text-[11px] text-muted-foreground">"Recibí 2 millones de salario"</p>
+            </div>
+
+            <div className="flex gap-2 w-full pt-1">
               <Button
                 variant="ghost"
-                size="sm"
                 onClick={handleClose}
-                className="text-muted-foreground"
+                className="flex-1 text-muted-foreground"
               >
                 Cancelar
+              </Button>
+              <Button
+                onClick={() => { stopListening(); }}
+                className="flex-1 gap-2"
+              >
+                Procesar
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import "express-async-errors";
 import "dotenv/config";
 import express, { Express } from "express";
 import cors from "cors";
+import compression from "compression";
 import { errorHandler, notFoundHandler } from "@/middleware/error-handler";
 import apiRoutes from "@/routes";
 import { checkDatabaseConnection } from "@/db/utils";
@@ -11,6 +12,7 @@ const PORT = process.env.PORT || 3001;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // Middleware
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

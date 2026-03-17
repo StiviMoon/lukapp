@@ -99,18 +99,18 @@ router.post(
       await profileRepository.upsert(userId, userEmail);
 
       // 2. Resolver cuenta: usar la primera activa o crear "Efectivo"
-      let accounts = await accountRepository.findByUserId(userId);
-      if (accounts.length === 0) {
-        await accountRepository.create({
-          name: "Efectivo",
-          type: AccountType.CASH,
-          balance: 0,
-          isActive: true,
-          profile: { connect: { userId } },
-        });
-        accounts = await accountRepository.findByUserId(userId);
-      }
-      const accountId = accounts[0].id;
+      const existingAccounts = await accountRepository.findByUserId(userId);
+      const account =
+        existingAccounts.length > 0
+          ? existingAccounts[0]
+          : await accountRepository.create({
+              name: "Efectivo",
+              type: AccountType.CASH,
+              balance: 0,
+              isActive: true,
+              profile: { connect: { userId } },
+            });
+      const accountId = account.id;
 
       // 3. Resolver categoría: find-or-create por nombre, evita duplicados
       const txType = type as TransactionType;
