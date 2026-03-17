@@ -13,15 +13,16 @@ const PREFETCH_ROUTES = ["/dashboard", "/history", "/analytics", "/settings", "/
 
 export function Navbar() {
   const pathname              = usePathname();
-  const router = useRouter();
+  const router                = useRouter();
   const { openVoice }         = useVoiceStore();
   const { open: openAdd }     = useAddTransactionStore();
-  if (!SHOW_ON.some(p => pathname.startsWith(p))) return null;
 
   useEffect(() => {
     // Prefetch de rutas principales para navegación "instantánea" en móvil.
     for (const href of PREFETCH_ROUTES) router.prefetch(href);
   }, [router]);
+
+  if (!SHOW_ON.some(p => pathname.startsWith(p))) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-3 px-4">
