@@ -6,17 +6,24 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Loader2, Plus, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
-  Sun, Sunset, Moon, Sunrise,
+  Sun, Sunset, Moon, Sunrise, Settings2, BarChart2,
 } from "lucide-react";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useInactivityTimeout } from "@/lib/hooks/use-inactivity-timeout";
 import {
   useTotalBalance, useMonthStats, useRecentTransactions,
 } from "@/lib/hooks/use-dashboard-data";
+import { useMinDelay } from "@/lib/hooks/use-min-delay";
+import { useBudgetStatus } from "@/lib/hooks/use-budgets";
+import { useSharedOverview } from "@/lib/hooks/use-spaces";
+import { formatCompact } from "@/lib/utils";
+import { BudgetBar } from "@/components/categories/BudgetBar";
+import { Users } from "lucide-react";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
 import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 import type { Transaction } from "@/lib/types/transaction";
+import { cn } from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -107,6 +114,14 @@ export default function DashboardPage() {
   const { data: balance, isLoading: balanceLoading } = useTotalBalance();
   const { data: stats,   isLoading: statsLoading   } = useMonthStats();
   const { data: transactions, isLoading: txLoading  } = useRecentTransactions(20);
+  const { data: budgetStatuses } = useBudgetStatus();
+  const { data: sharedOverview, isLoading: overviewLoading } = useSharedOverview();
+  const hasBudgets = (budgetStatuses?.length ?? 0) > 0;
+  const hasSharedSpaces = (sharedOverview?.spaces.length ?? 0) > 0;
+
+  // useMinDelay ANTES de cualquier early return — regla de hooks
+  const cardLoading = useMinDelay(balanceLoading || statsLoading);
+  const txsLoading  = useMinDelay(txLoading);
 
   // Resetear paginación cuando llegan nuevas transacciones (ej. después de registrar una)
   useEffect(() => {
@@ -151,7 +166,6 @@ export default function DashboardPage() {
 
   const { greeting, Icon: TimeIcon, iconClass } = TIME_CONFIG[getTimeOfDay()];
 
-  const cardLoading = balanceLoading || statsLoading;
   const balanceValue = balance ?? 0;
   const { integer: balInt, decimal: balDec } = splitCOP(balanceValue);
 
@@ -172,13 +186,29 @@ export default function DashboardPage() {
               {firstName}
             </h1>
           </div>
-          <button
-            onClick={() => router.push("/profile")}
-            className="active:scale-95 transition-transform"
-            aria-label="Ver perfil"
-          >
-            <UserAvatar letter={firstName.charAt(0)} size="sm" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => router.push("/analytics")}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors active:scale-95"
+              aria-label="Analíticas"
+            >
+              <BarChart2 className="w-4 h-4 text-muted-foreground/60" />
+            </button>
+            <button
+              onClick={() => router.push("/settings")}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors active:scale-95"
+              aria-label="Ajustes"
+            >
+              <Settings2 className="w-4 h-4 text-muted-foreground/60" />
+            </button>
+            <button
+              onClick={() => router.push("/profile")}
+              className="active:scale-95 transition-transform"
+              aria-label="Ver perfil"
+            >
+              <UserAvatar letter={firstName.charAt(0)} size="sm" />
+            </button>
+          </div>
         </header>
 
         {/* ── Área scrolleable — todo scrollea naturalmente ── */}
@@ -292,6 +322,106 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Presupuestos widget */}
+          {hasBudgets && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
+                  Presupuestos
+                </p>
+                <button
+                  onClick={() => router.push("/categories")}
+                  className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
+                >
+                  Ver todo <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {budgetStatuses!.map((budget) => (
+                  <div key={budget.id} className="px-4 py-3.5 rounded-2xl bg-card">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <p className="text-[12px] font-semibold text-foreground truncate">
+                        {budget.category?.name ?? "Presupuesto general"}
+                      </p>
+                      <span className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
+                        budget.isExceeded
+                          ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                          : budget.percentage >= 90
+                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                          : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                      )}>
+                        {budget.isExceeded ? "Excedido" : `${Math.round(budget.percentage)}%`}
+                      </span>
+                    </div>
+                    <BudgetBar
+                      spent={budget.spent}
+                      total={Number(budget.amount)}
+                      percentage={budget.percentage}
+                      remaining={budget.remaining}
+                      isExceeded={budget.isExceeded}
+                      showAmounts={false}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* En pareja — widget compartido */}
+          {(hasSharedSpaces || overviewLoading) && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
+                  En pareja
+                </p>
+                <button
+                  onClick={() => router.push("/friends")}
+                  className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
+                >
+                  Ver todo <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+              {overviewLoading ? (
+                <div className="px-4 py-3.5 rounded-2xl bg-card animate-pulse h-16" />
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {sharedOverview?.spaces.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => router.push(`/shared/${s.id}`)}
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.98] text-left w-full"
+                    >
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
+                        <Users className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-semibold text-foreground truncate">{s.name}</p>
+                        <p className="text-[11px] text-muted-foreground/60">con {s.partnerName}</p>
+                      </div>
+                      {s.myDeductions > 0 && (
+                        <div className="text-right shrink-0">
+                          <p className="text-[12px] font-bold text-rose-400 font-nums">
+                            -{formatCompact(s.myDeductions)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground/40">mi parte</p>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                  {(sharedOverview?.totalMyDeductions ?? 0) > 0 && (sharedOverview?.spaces.length ?? 0) > 1 && (
+                    <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-muted/30">
+                      <p className="text-[11px] text-muted-foreground/60">Total comprometido en pareja</p>
+                      <p className="text-[12px] font-bold text-rose-400 font-nums">
+                        -{formatCompact(sharedOverview!.totalMyDeductions)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Recientes */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -306,7 +436,7 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {txLoading ? (
+            {txsLoading ? (
               <div className="flex flex-col gap-2">
                 <TxSkeleton /><TxSkeleton /><TxSkeleton />
               </div>

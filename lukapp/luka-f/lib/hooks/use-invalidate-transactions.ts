@@ -10,5 +10,6 @@ export function useInvalidateTransactions() {
       qc.invalidateQueries({ queryKey: ["balance"] }),
       qc.invalidateQueries({ queryKey: ["stats"] }),
       qc.invalidateQueries({ queryKey: ["accounts"] }),
+      qc.invalidateQueries({ queryKey: ["budgets", "status"] }),
     ]);
 }

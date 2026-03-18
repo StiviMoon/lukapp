@@ -19,13 +19,115 @@ model Profile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relaciones
+  // Relaciones personales
   accounts     Account[]
   categories   Category[]
   transactions Transaction[]
   budgets      Budget[]
 
+  // Relaciones de sala compartida
+  contactsRequested  Contact[]           @relation("ContactRequests")
+  contactsReceived   Contact[]           @relation("ContactReceived")
+  sharedSpaces       SpaceMember[]
+  spacesCreated      SharedSpace[]       @relation("SpaceCreator")
+  sharedTransactions SharedTransaction[]
+
   @@map("profiles")
+}
+
+// ─── Contactos ────────────────────────────────────────────────────────────────
+
+model Contact {
+  id          String        @id @default(uuid())
+  requesterId String
+  receiverId  String
+  status      ContactStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  requester Profile @relation("ContactRequests", fields: [requesterId], references: [userId], onDelete: Cascade)
+  receiver  Profile @relation("ContactReceived",  fields: [receiverId],  references: [userId], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+  @@index([receiverId])
+  @@map("contacts")
+}
+
+enum ContactStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// ─── Sala compartida ──────────────────────────────────────────────────────────
+
+model SharedSpace {
+  id                  String   @id @default(uuid())
+  name                String   @default("Finanzas compartidas")
+  createdBy           String
+  deletionRequestedBy String?  // userId quien solicitó eliminar la sala
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  creator      Profile             @relation("SpaceCreator", fields: [createdBy], references: [userId], onDelete: Cascade)
+  members      SpaceMember[]
+  budgets      SharedBudget[]
+  transactions SharedTransaction[]
+
+  @@map("shared_spaces")
+}
+
+model SpaceMember {
+  id       String    @id @default(uuid())
+  spaceId  String
+  userId   String
+  salary   Decimal?  @db.Decimal(12, 2)
+  role     SpaceRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  space   SharedSpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  profile Profile     @relation(fields: [userId],  references: [userId], onDelete: Cascade)
+
+  @@unique([spaceId, userId])
+  @@map("space_members")
+}
+
+enum SpaceRole {
+  OWNER
+  MEMBER
+}
+
+model SharedBudget {
+  id           String       @id @default(uuid())
+  spaceId      String
+  categoryName String
+  percentage   Decimal      @db.Decimal(5, 2)
+  period       BudgetPeriod @default(MONTHLY)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  space        SharedSpace         @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  transactions SharedTransaction[]
+
+  @@map("shared_budgets")
+}
+
+model SharedTransaction {
+  id             String   @id @default(uuid())
+  spaceId        String
+  sharedBudgetId String?
+  authorId       String
+  amount         Decimal  @db.Decimal(12, 2)
+  description    String?
+  date           DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  space        SharedSpace   @relation(fields: [spaceId],        references: [id], onDelete: Cascade)
+  sharedBudget SharedBudget? @relation(fields: [sharedBudgetId], references: [id], onDelete: SetNull)
+  author       Profile       @relation(fields: [authorId],       references: [userId], onDelete: Cascade)
+
+  @@index([spaceId])
+  @@map("shared_transactions")
 }
 
 // Cuentas (bancarias, efectivo, tarjetas de crédito)

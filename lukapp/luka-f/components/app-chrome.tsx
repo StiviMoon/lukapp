@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/toaster";
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 
 const VoiceModal = dynamic(
   () => import("@/components/voice/VoiceModal").then(m => m.VoiceModal),
@@ -21,6 +22,7 @@ export function AppChrome() {
       <Toaster />
       <VoiceModal />
       <GlobalAddTransactionSheet />
+      <LoadingOverlay />
     </>
   );
 }

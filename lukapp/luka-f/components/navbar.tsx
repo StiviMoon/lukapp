@@ -3,22 +3,19 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, History, Mic, BarChart2, Plus } from "lucide-react";
+import { Home, History, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
-import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 
-const SHOW_ON = ["/dashboard", "/history", "/analytics", "/settings", "/profile"];
-const PREFETCH_ROUTES = ["/dashboard", "/history", "/analytics", "/settings", "/profile"];
+const SHOW_ON = ["/dashboard", "/history", "/analytics", "/settings", "/profile", "/categories", "/friends"];
+const PREFETCH_ROUTES = ["/dashboard", "/history", "/analytics", "/settings", "/profile", "/friends"];
 
 export function Navbar() {
-  const pathname              = usePathname();
-  const router                = useRouter();
-  const { openVoice }         = useVoiceStore();
-  const { open: openAdd }     = useAddTransactionStore();
+  const pathname      = usePathname();
+  const router        = useRouter();
+  const { openVoice } = useVoiceStore();
 
   useEffect(() => {
-    // Prefetch de rutas principales para navegación "instantánea" en móvil.
     for (const href of PREFETCH_ROUTES) router.prefetch(href);
   }, [router]);
 
@@ -40,22 +37,19 @@ export function Navbar() {
         {/* Inicio */}
         <NavLink href="/dashboard" icon={Home} label="Inicio" pathname={pathname} prefetch={() => router.prefetch("/dashboard")} />
 
-        {/* Historial */}
-        <NavLink href="/history" icon={History} label="Historial" pathname={pathname} prefetch={() => router.prefetch("/history")} />
-
         {/* ── FAB principal — Voz ── */}
-        <div className="mx-1.5">
+        <div className="mx-3">
           <button
             onClick={openVoice}
             type="button"
             className={cn(
-              "h-11 w-11 rounded-full flex items-center justify-center bg-primary",
-              "transition-transform duration-150 active:scale-[0.98]",
+              "h-12 w-12 rounded-full flex items-center justify-center bg-primary",
+              "transition-transform duration-150 active:scale-[0.96]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             )}
             style={{
               boxShadow:
-                "0 4px 16px color-mix(in srgb, var(--primary) 48%, transparent), 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent)",
+                "0 4px 18px color-mix(in srgb, var(--primary) 52%, transparent), 0 0 0 5px color-mix(in srgb, var(--primary) 12%, transparent)",
             }}
             aria-label="Registrar por voz"
           >
@@ -63,26 +57,8 @@ export function Navbar() {
           </button>
         </div>
 
-        {/* ── Botón secundario — Registro manual ── */}
-        <button
-          onClick={() => openAdd("EXPENSE")}
-          type="button"
-          className={cn(
-            "relative flex flex-col items-center gap-0.5 rounded-full px-2.5 py-1.5",
-            "text-muted-foreground/55 hover:text-muted-foreground/85",
-            "transition-colors duration-150 active:scale-[0.98]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          )}
-          aria-label="Registrar movimiento"
-        >
-          <div className="h-[18px] w-[18px] flex items-center justify-center">
-            <Plus className="h-4 w-4" strokeWidth={2.2} />
-          </div>
-          <span className="text-[9px] font-semibold tracking-wide leading-none">Manual</span>
-        </button>
-
-        {/* Analíticas */}
-        <NavLink href="/analytics" icon={BarChart2} label="Analíticas" pathname={pathname} prefetch={() => router.prefetch("/analytics")} />
+        {/* Historial */}
+        <NavLink href="/history" icon={History} label="Historial" pathname={pathname} prefetch={() => router.prefetch("/history")} />
       </nav>
     </div>
   );

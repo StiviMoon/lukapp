@@ -4,12 +4,15 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { useInactivityTimeout } from "@/lib/hooks/use-inactivity-timeout";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Loader2, LogOut, Moon, Sun, ChevronRight, Mail, User } from "lucide-react";
+import { LogOut, Moon, Sun, ChevronRight, Mail, User, Tag, Settings2, Users } from "lucide-react";
+import { useMinDelay } from "@/lib/hooks/use-min-delay";
+import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useTheme } from "next-themes";
 
 export default function ProfilePage() {
   const { user, loading, isAuthenticated, signOut } = useAuth();
+  const { show: showOverlay, hide: hideOverlay } = useLoadingOverlay();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   useInactivityTimeout();
@@ -20,10 +23,48 @@ export default function ProfilePage() {
     }
   }, [loading, isAuthenticated, router]);
 
-  if (loading) {
+  const showSkeleton = useMinDelay(loading);
+
+  if (showSkeleton) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/40" />
+      <div className="min-h-dvh bg-background">
+        <main className="px-5 pt-14 pb-40 max-w-sm mx-auto">
+          {/* Header */}
+          <div className="w-16 h-7 rounded-xl bg-card animate-pulse mb-10" />
+          {/* Avatar */}
+          <div className="flex flex-col items-center mb-10 gap-3">
+            <div className="w-20 h-20 rounded-3xl bg-card animate-pulse" />
+            <div className="w-28 h-5 rounded-lg bg-card animate-pulse" />
+            <div className="w-40 h-3.5 rounded-lg bg-card animate-pulse" />
+          </div>
+          {/* Cuenta */}
+          <div className="mb-5">
+            <div className="w-14 h-3 rounded bg-muted-foreground/10 animate-pulse mb-3 ml-1" />
+            <div className="rounded-2xl bg-card overflow-hidden">
+              {[0,1].map(i => (
+                <div key={i} className="flex items-center gap-3 px-4 py-4 border-b border-border/20 last:border-0">
+                  <div className="w-8 h-8 rounded-xl bg-muted-foreground/10 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-2 w-12 rounded bg-muted-foreground/10 animate-pulse" />
+                    <div className="h-3.5 w-32 rounded bg-muted-foreground/10 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Preferencias */}
+          <div>
+            <div className="w-20 h-3 rounded bg-muted-foreground/10 animate-pulse mb-3 ml-1" />
+            <div className="rounded-2xl bg-card overflow-hidden">
+              {[0,1,2,3].map(i => (
+                <div key={i} className="flex items-center gap-3 px-4 py-4 border-b border-border/20 last:border-0">
+                  <div className="w-8 h-8 rounded-xl bg-muted-foreground/10 animate-pulse shrink-0" />
+                  <div className="h-3.5 w-24 rounded bg-muted-foreground/10 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -39,8 +80,10 @@ export default function ProfilePage() {
   const avatarLetter = firstName.charAt(0);
 
   const handleSignOut = async () => {
+    showOverlay("Cerrando sesión...");
     await signOut();
     router.push("/auth");
+    setTimeout(() => hideOverlay(), 400);
   };
 
   return (
@@ -99,7 +142,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Preferences */}
+          {/* Preferencias */}
           <div className="mb-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">
               Preferencias
@@ -107,7 +150,7 @@ export default function ProfilePage() {
             <div className="rounded-2xl bg-card overflow-hidden">
               <button
                 onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                className="w-full flex items-center gap-3 px-4 py-4 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+                className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
               >
                 <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
                   {resolvedTheme === "dark" ? (
@@ -125,6 +168,53 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/25" />
+              </button>
+              <button
+                onClick={() => router.push("/categories")}
+                className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+              >
+                <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
+                  <Tag className="w-4 h-4 text-muted-foreground/50" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium text-foreground">Categorías</p>
+                  <p className="text-xs text-muted-foreground/40 mt-0.5">
+                    Gestiona categorías y presupuestos
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/25" />
+              </button>
+              <button
+                onClick={() => router.push("/settings")}
+                className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+              >
+                <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
+                  <Settings2 className="w-4 h-4 text-muted-foreground/50" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium text-foreground">Ajustes</p>
+                  <p className="text-xs text-muted-foreground/40 mt-0.5">
+                    Cuentas y configuración
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/25" />
+              </button>
+              <button
+                onClick={() => router.push("/friends")}
+                className="w-full flex items-center gap-3 px-4 py-4 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+              >
+                <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
+                  <Users className="w-4 h-4 text-muted-foreground/50" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium text-foreground">Amigos</p>
+                  <p className="text-xs text-muted-foreground/40 mt-0.5">
+                    Gastos compartidos · próximamente
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
+                  Pronto
+                </span>
               </button>
             </div>
           </div>
