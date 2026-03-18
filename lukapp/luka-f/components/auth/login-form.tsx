@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { Loader2 } from "lucide-react";
+import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -38,6 +39,7 @@ interface LoginFormProps {
 export const LoginForm = ({ onSuccess, onSwitchToSignup }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
+  const { show: showOverlay, hide: hideOverlay } = useLoadingOverlay();
 
   const {
     register,
@@ -60,10 +62,11 @@ export const LoginForm = ({ onSuccess, onSwitchToSignup }: LoginFormProps) => {
         return;
       }
 
-      toast.success("¡Bienvenido de vuelta!");
+      showOverlay("Iniciando sesión...");
       onSuccess?.();
     } catch {
       toast.error("Error al iniciar sesión");
+      hideOverlay();
     } finally {
       setIsLoading(false);
     }

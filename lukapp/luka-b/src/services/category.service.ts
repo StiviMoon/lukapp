@@ -1,6 +1,6 @@
 import { categoryRepository } from "@/repositories/category.repository";
 import { CreateCategoryInput, UpdateCategoryInput } from "@/validations/category.schema";
-import { NotFoundError } from "@/errors/app-error";
+import { NotFoundError, ConflictError } from "@/errors/app-error";
 import { TransactionType } from "@prisma/client";
 
 /**
@@ -11,6 +11,12 @@ export class CategoryService {
    * Crea una nueva categoría
    */
   async createCategory(userId: string, data: CreateCategoryInput) {
+    // Verificar duplicados: no permitir misma nombre+tipo por usuario
+    const existing = await categoryRepository.findByNameAndType(userId, data.name, data.type);
+    if (existing) {
+      throw new ConflictError(`Ya existe una categoría "${data.name.trim()}" de tipo ${data.type === "EXPENSE" ? "Gasto" : "Ingreso"}`);
+    }
+
     // Si se marca como default, quitar default de otras categorías del mismo tipo
     if (data.isDefault) {
       const existingDefault = await categoryRepository.findDefaultByType(

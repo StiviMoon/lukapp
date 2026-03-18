@@ -9,6 +9,7 @@ import {
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, X } from "lucide-react";
 import { api } from "@/lib/api/client";
+import { useMinDelay } from "@/lib/hooks/use-min-delay";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
 import type { Transaction } from "@/lib/types/transaction";
@@ -78,7 +79,7 @@ export default function AnalyticsPage() {
   const year  = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
-  const { data: txData, isLoading } = useQuery<Transaction[]>({
+  const { data: txData, isLoading: txRawLoading } = useQuery<Transaction[]>({
     queryKey: ["transactions", "month", year, month],
     queryFn: async () => {
       const res = await api.transactions.getAll({
@@ -92,6 +93,7 @@ export default function AnalyticsPage() {
     staleTime: 2 * 60_000,
   });
 
+  const isLoading    = useMinDelay(txRawLoading);
   const transactions = txData ?? [];
 
   const totalIncome  = useMemo(() => transactions.filter(t => t.type === "INCOME") .reduce((s, t) => s + Number(t.amount), 0), [transactions]);

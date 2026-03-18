@@ -225,6 +225,36 @@ export const api = {
     ) => apiClient.post("/voice/save", data),
   },
 
+  contacts: {
+    getAll: () => apiClient.get("/contacts"),
+    invite: (email: string) => apiClient.post("/contacts/invite", { email }),
+    accept: (id: string) => apiClient.post(`/contacts/${id}/accept`),
+    remove: (id: string) => apiClient.delete(`/contacts/${id}`),
+  },
+
+  spaces: {
+    getAll: () => apiClient.get("/spaces"),
+    getById: (id: string) => apiClient.get(`/spaces/${id}`),
+    create: (data: { contactId: string; name?: string }) => apiClient.post("/spaces", data),
+    updateSalary: (id: string, salary: number) => apiClient.put(`/spaces/${id}/salary`, { salary }),
+    getStatus: (id: string) => apiClient.get(`/spaces/${id}/status`),
+    createBudget: (id: string, data: { categoryName: string; percentage: number }) =>
+      apiClient.post(`/spaces/${id}/budgets`, data),
+    updateBudget: (id: string, budgetId: string, data: { categoryName?: string; percentage?: number }) =>
+      apiClient.put(`/spaces/${id}/budgets/${budgetId}`, data),
+    deleteBudget: (id: string, budgetId: string) => apiClient.delete(`/spaces/${id}/budgets/${budgetId}`),
+    addTransaction: (id: string, data: { amount: number; sharedBudgetId?: string; description?: string; date?: string }) =>
+      apiClient.post(`/spaces/${id}/transactions`, data),
+    updateTransaction: (id: string, txId: string, data: { amount?: number; sharedBudgetId?: string | null; description?: string | null }) =>
+      apiClient.put(`/spaces/${id}/transactions/${txId}`, data),
+    getTransactions: (id: string) => apiClient.get(`/spaces/${id}/transactions`),
+    deleteTransaction: (id: string, txId: string) => apiClient.delete(`/spaces/${id}/transactions/${txId}`),
+    getOverview: () => apiClient.get("/spaces/overview"),
+    requestDeletion: (id: string) => apiClient.post(`/spaces/${id}/request-deletion`),
+    cancelDeletion: (id: string) => apiClient.post(`/spaces/${id}/cancel-deletion`),
+    confirmDeletion: (id: string) => apiClient.delete(`/spaces/${id}/confirm-deletion`),
+  },
+
   health: () => apiClient.get("/health"),
 };
 

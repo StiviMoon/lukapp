@@ -4,6 +4,8 @@ import transactionsRouter from "./transactions.routes";
 import categoriesRouter from "./categories.routes";
 import budgetsRouter from "./budgets.routes";
 import voiceRouter from "./voice.routes";
+import contactsRouter from "./contacts.routes";
+import spacesRouter from "./spaces.routes";
 
 const router = Router();
 
@@ -15,6 +17,8 @@ router.use("/transactions", transactionsRouter);
 router.use("/categories", categoriesRouter);
 router.use("/budgets", budgetsRouter);
 router.use("/voice", voiceRouter);
+router.use("/contacts", contactsRouter);
+router.use("/spaces", spacesRouter);
 
 /**
  * GET /api/health
