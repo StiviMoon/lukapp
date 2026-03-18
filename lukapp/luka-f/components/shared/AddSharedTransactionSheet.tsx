@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { useAddSharedTransaction, useUpdateSharedTransaction } from "@/lib/hooks/use-spaces";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { haptics } from "@/lib/haptics";
 import type { SharedBudget, SharedTransaction } from "@/lib/types/shared";
 
 const backdropVariants = {
@@ -110,6 +111,7 @@ export function AddSharedTransactionSheet({
       return;
     }
 
+    haptics.success();
     toast.success(isEditing ? "Gasto actualizado" : "Gasto registrado");
     handleClose();
   };

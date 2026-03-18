@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Outfit, Syne, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AppChrome } from "../components/app-chrome";
+import { PwaRegister } from "@/components/PwaRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,10 +34,26 @@ const spaceMono = Space_Mono({
   weight: ["400", "700"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#6600FF",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: "lukapp — Maneja tus lukas. Control, claridad, crecimiento.",
   description:
     "Tus gastos, tus inversiones, tu plata. Una app para tener el control y crecer financieramente — solo o con tu pareja.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Lukapp",
+  },
+  icons: {
+    apple: "/icons/icon-180.png",
+  },
 };
 
 export default function RootLayout({
@@ -60,6 +77,7 @@ export default function RootLayout({
           <QueryProvider>
             {children}
             <AppChrome />
+            <PwaRegister />
           </QueryProvider>
         </ThemeProvider>
       </body>

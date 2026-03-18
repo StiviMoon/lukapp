@@ -6,6 +6,7 @@ import budgetsRouter from "./budgets.routes";
 import voiceRouter from "./voice.routes";
 import contactsRouter from "./contacts.routes";
 import spacesRouter from "./spaces.routes";
+import pushRouter from "./push.routes";
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.use("/budgets", budgetsRouter);
 router.use("/voice", voiceRouter);
 router.use("/contacts", contactsRouter);
 router.use("/spaces", spacesRouter);
+router.use("/push", pushRouter);
 
 /**
  * GET /api/health

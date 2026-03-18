@@ -3,10 +3,12 @@
 import { useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Plus, Wallet, Pencil, Trash2, TrendingDown, Heart, MoreHorizontal, Settings2, AlertTriangle, Trash } from "lucide-react";
+import { ArrowLeft, Plus, Wallet, Pencil, Trash2, TrendingDown, Heart, MoreHorizontal, Settings2, AlertTriangle, Trash, Share2 } from "lucide-react";
 // Plus se usa en los botones de presupuesto inline
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
+import { displayMemberName } from "@/lib/display";
+import { shareMonthSummary } from "@/lib/share";
 import {
   useSpaceStatus,
   useSpaceTransactions,
@@ -252,7 +254,7 @@ function TxActionSheet({
                   {tx.description ?? tx.sharedBudget?.categoryName ?? "Gasto compartido"}
                 </p>
                 <p className="text-[12px] text-muted-foreground/60">
-                  {tx.author.fullName?.split(" ")[0] ?? tx.author.email} · {timeAgo(tx.date)}
+                  {tx.author.fullName?.split(" ")[0] ?? (tx.author.email?.split("@")[0] ?? "—")} · {timeAgo(tx.date)}
                 </p>
               </div>
               <p className="text-[16px] font-extrabold text-foreground font-nums tabular-nums shrink-0">
@@ -291,14 +293,15 @@ function TxActionSheet({
 // ─── Transaction item ─────────────────────────────────────────────────────────
 
 function TxItem({
-  tx, myUserId, onTap,
+  tx, myUserId, spaceType, onTap,
 }: {
   tx: SharedTransaction;
   myUserId: string;
+  spaceType: "PAREJA" | "FAMILIAR";
   onTap: (tx: SharedTransaction) => void;
 }) {
   const isMe  = tx.authorId === myUserId;
-  const who   = isMe ? "Yo" : (tx.author.fullName?.split(" ")[0] ?? tx.author.email);
+  const who   = displayMemberName(tx.author.fullName, tx.author.email, spaceType, isMe);
   const title = tx.description ?? tx.sharedBudget?.categoryName ?? "Gasto compartido";
 
   return (
@@ -590,9 +593,9 @@ function DeletionPendingBanner({
 // ─── Monthly summary ──────────────────────────────────────────────────────────
 
 function MonthSummary({
-  transactions, myUserId, partnerName,
+  transactions, myUserId, partnerName, spaceName,
 }: {
-  transactions: SharedTransaction[]; myUserId: string; partnerName: string;
+  transactions: SharedTransaction[]; myUserId: string; partnerName: string; spaceName: string;
 }) {
   const now = new Date();
   const thisMonth = useMemo(() =>
@@ -619,9 +622,20 @@ function MonthSummary({
           <TrendingDown className="w-3.5 h-3.5 text-muted-foreground/50" />
           <p className="text-[11px] font-bold text-muted-foreground/60 capitalize">{monthName}</p>
         </div>
-        <p className="text-[13px] font-extrabold text-foreground font-nums tabular-nums">
-          {formatCompact(total)}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-[13px] font-extrabold text-foreground font-nums tabular-nums">
+            {formatCompact(total)}
+          </p>
+          {typeof navigator !== "undefined" && "share" in navigator && (
+            <button
+              onClick={() => shareMonthSummary(spaceName, total, mySpent, partnerName)}
+              className="w-7 h-7 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted/80 transition-colors active:scale-95"
+              aria-label="Compartir resumen"
+            >
+              <Share2 className="w-3.5 h-3.5 text-muted-foreground/50" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Barra doble — mi parte vs pareja */}
@@ -703,9 +717,10 @@ export default function SharedSpacePage() {
   const partnerTotalDeductions = spaceStatus?.partnerTotalDeductions ?? 0;
   const existingBudgetNames   = (space?.budgets ?? []).map(b => b.categoryName);
 
-  const partnerFirstName = partner?.profile.fullName?.split(" ")[0]
-    ?? partner?.profile.email?.split("@")[0]
-    ?? "Pareja";
+  const spaceType = space?.type ?? "PAREJA";
+  const partnerFirstName = partner
+    ? displayMemberName(partner.profile.fullName, partner.profile.email, spaceType, false)
+    : (spaceType === "PAREJA" ? "My love" : "Miembro");
 
   const handleSalary = async (salary: number) => {
     const res = await updateSalary({ id: spaceId, salary });
@@ -758,7 +773,7 @@ export default function SharedSpacePage() {
   const iAmRequester       = deletionRequested === myUserId;
   const requesterName      = iAmRequester
     ? "Tú"
-    : (partner?.profile.fullName?.split(" ")[0] ?? partner?.profile.email?.split("@")[0] ?? "Tu pareja");
+    : (partner ? displayMemberName(partner.profile.fullName, partner.profile.email, spaceType, false) : "Tu pareja");
 
   // ─── Full-page skeleton while loading space ────────────────────────────────
   if (spaceLoading) {
@@ -850,6 +865,7 @@ export default function SharedSpacePage() {
               transactions={transactions}
               myUserId={myUserId}
               partnerName={partnerFirstName}
+              spaceName={space.name}
             />
           )}
 
@@ -872,6 +888,7 @@ export default function SharedSpacePage() {
                     status={s}
                     me={me}
                     partner={partner}
+                    spaceType={spaceType}
                     onAddTransaction={(budgetId) =>
                       setTxSheet({ open: true, budgetId, editing: null })
                     }
@@ -911,6 +928,7 @@ export default function SharedSpacePage() {
                     key={tx.id}
                     tx={tx}
                     myUserId={myUserId}
+                    spaceType={space.type ?? "PAREJA"}
                     onTap={setSelectedTx}
                   />
                 ))}

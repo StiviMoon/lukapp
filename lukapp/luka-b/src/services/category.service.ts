@@ -1,4 +1,5 @@
 import { categoryRepository } from "@/repositories/category.repository";
+import { budgetRepository } from "@/repositories/budget.repository";
 import { CreateCategoryInput, UpdateCategoryInput } from "@/validations/category.schema";
 import { NotFoundError, ConflictError } from "@/errors/app-error";
 import { TransactionType } from "@prisma/client";
@@ -99,7 +100,7 @@ export class CategoryService {
   }
 
   /**
-   * Elimina una categoría
+   * Elimina una categoría y sus presupuestos asociados
    */
   async deleteCategory(id: string, userId: string) {
     const category = await categoryRepository.findById(id, userId);
@@ -108,9 +109,9 @@ export class CategoryService {
       throw new NotFoundError("Categoría no encontrada");
     }
 
-    // Verificar si la categoría tiene transacciones asociadas
-    // Esto se puede hacer a través de Prisma o de la capa de repositorio
-    // Por ahora, permitimos eliminar pero las transacciones quedan sin categoría (null)
+    // Eliminar presupuestos vinculados a esta categoría antes de eliminarla
+    // (evita que queden presupuestos huérfanos con categoryId: null)
+    await budgetRepository.deleteByCategoryId(id, userId);
 
     await categoryRepository.delete(id, userId);
   }

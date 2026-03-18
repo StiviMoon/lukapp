@@ -8,6 +8,7 @@ export interface ParsedTransaction {
   amount: number;
   suggestedCategoryName: string;
   categoryId: string | null;
+  accountId: string | null;
   description: string;
   confidence: "high" | "medium" | "low";
 }
@@ -44,7 +45,8 @@ INGRESOS comunes (INCOME):
 export class VoiceService {
   async parseTranscript(
     transcript: string,
-    categories?: Array<{ id: string; name: string; type: string }>
+    categories?: Array<{ id: string; name: string; type: string }>,
+    accounts?: Array<{ id: string; name: string; type: string }>
   ): Promise<ParsedTransaction[]> {
     const userCategories =
       categories && categories.length > 0
@@ -53,11 +55,19 @@ export class VoiceService {
             .join("\n")}`
         : "\n(El usuario aún no tiene categorías propias — usar las categorías base)";
 
+    const userAccounts =
+      accounts && accounts.length > 0
+        ? `\nCuentas del usuario (si el usuario menciona alguna, usar su ID en accountId):\n${accounts
+            .map((a) => `- ID: ${a.id} | Nombre: "${a.name}" | Tipo: ${a.type}`)
+            .join("\n")}`
+        : "\n(El usuario no tiene cuentas configuradas — accountId: null)";
+
     const prompt = `Eres un asistente financiero experto en gastos e ingresos de Colombia y Latinoamérica.
 Analiza lo que dijo el usuario y extrae UNA O VARIAS transacciones financieras.
 
 Usuario dijo: "${transcript}"
 ${userCategories}
+${userAccounts}
 
 Referencia de categorías base:
 ${BASE_CATEGORIES}
@@ -71,6 +81,7 @@ Formato:
     "amount": <número positivo, sin símbolos>,
     "suggestedCategoryName": "<nombre de categoría en español, preferir categorías del usuario si coinciden>",
     "categoryId": "<UUID exacto de la categoría del usuario si coincide perfectamente, o null>",
+    "accountId": "<UUID exacto de la cuenta del usuario si la menciona, o null>",
     "description": "<descripción corta y natural en español, máximo 5 palabras>",
     "confidence": "high" | "medium" | "low"
   }
@@ -100,6 +111,11 @@ REGLAS MULTI-MOVIMIENTO:
 - Ejemplos: "500k en arriendo, 400k en comida" → 2 elementos.
 - "pagué 2 recibos de 45 mil" → 2 elementos de 45000 cada uno, con categoría Vivienda/Servicios públicos (según contexto).
 - Si el usuario mezcla ingresos y gastos, incluye ambos con su type correspondiente.
+
+REGLAS DE CUENTA:
+- Si el usuario dice "de Nequi", "del banco", "de Bancolombia", "de la tarjeta", "de mi cuenta de ahorros", etc. → busca la cuenta por nombre similar en la lista
+- Si hay coincidencia → poner su UUID exacto en accountId
+- Si no menciona ninguna cuenta específica → accountId: null
 
 CONFIANZA:
 - "high": monto y tipo completamente claros

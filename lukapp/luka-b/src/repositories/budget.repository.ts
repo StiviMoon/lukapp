@@ -123,6 +123,20 @@ export class BudgetRepository {
   }
 
   /**
+   * Elimina todos los presupuestos de una categoría específica (para cuando se elimina la categoría)
+   */
+  async deleteByCategoryId(categoryId: string, userId: string): Promise<void> {
+    await prisma.budget.deleteMany({ where: { categoryId, userId } });
+  }
+
+  /**
+   * Elimina presupuestos huérfanos (sin categoría) de un usuario
+   */
+  async deleteOrphaned(userId: string): Promise<void> {
+    await prisma.budget.deleteMany({ where: { categoryId: null, userId } });
+  }
+
+  /**
    * Encuentra presupuestos activos para una fecha específica
    */
   async findActiveBudgets(

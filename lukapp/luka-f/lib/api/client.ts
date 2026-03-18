@@ -192,6 +192,7 @@ export const api = {
     parse: (data: {
       transcript: string;
       categories?: Array<{ id: string; name: string; type: string }>;
+      accounts?: Array<{ id: string; name: string; type: string }>;
     }) =>
       apiClient.post<
         Array<{
@@ -212,6 +213,7 @@ export const api = {
             description?: string;
             suggestedCategoryName: string;
             categoryId?: string | null;
+            accountId?: string | null;
             date?: string; // ISO con offset — hora local del usuario
           }
         | Array<{
@@ -220,6 +222,7 @@ export const api = {
             description?: string;
             suggestedCategoryName: string;
             categoryId?: string | null;
+            accountId?: string | null;
             date?: string;
           }>
     ) => apiClient.post("/voice/save", data),
@@ -235,7 +238,7 @@ export const api = {
   spaces: {
     getAll: () => apiClient.get("/spaces"),
     getById: (id: string) => apiClient.get(`/spaces/${id}`),
-    create: (data: { contactId: string; name?: string }) => apiClient.post("/spaces", data),
+    create: (data: { contactIds: string[]; name?: string; type?: "PAREJA" | "FAMILIAR" }) => apiClient.post("/spaces", data),
     updateSalary: (id: string, salary: number) => apiClient.put(`/spaces/${id}/salary`, { salary }),
     getStatus: (id: string) => apiClient.get(`/spaces/${id}/status`),
     createBudget: (id: string, data: { categoryName: string; percentage: number }) =>

@@ -56,7 +56,8 @@ export function useSharedOverview() {
 export function useCreateSpace() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { contactId: string; name?: string }) => api.spaces.create(data),
+    mutationFn: (data: { contactIds: string[]; name?: string; type?: "PAREJA" | "FAMILIAR" }) =>
+      api.spaces.create(data),
     onSuccess: (res) => {
       if (!res.success) return;
       qc.invalidateQueries({ queryKey: ["spaces"] });

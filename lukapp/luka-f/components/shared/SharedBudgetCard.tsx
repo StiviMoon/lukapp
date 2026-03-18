@@ -3,12 +3,14 @@
 import { Plus, Trash2, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatCompact, cn } from "@/lib/utils";
-import type { SharedBudgetStatus, SpaceMember } from "@/lib/types/shared";
+import type { SharedBudgetStatus, SpaceMember, SpaceType } from "@/lib/types/shared";
+import { displayMemberName } from "@/lib/display";
 
 interface SharedBudgetCardProps {
   status: SharedBudgetStatus;
   me?: SpaceMember;
   partner?: SpaceMember;
+  spaceType?: SpaceType;
   onAddTransaction: (budgetId: string) => void;
   onDelete: (budgetId: string) => void;
 }
@@ -23,6 +25,7 @@ export function SharedBudgetCard({
   status,
   me,
   partner,
+  spaceType = "PAREJA",
   onAddTransaction,
   onDelete,
 }: SharedBudgetCardProps) {
@@ -33,10 +36,9 @@ export function SharedBudgetCard({
   const barWidth = Math.min(percentage, 100);
   const color    = barColor(percentage);
 
-  // Primer nombre o email-prefix del partner
-  const partnerLabel = partner?.profile.fullName
-    ? partner.profile.fullName.split(" ")[0]
-    : (partner?.profile.email?.split("@")[0] ?? "Pareja");
+  const partnerLabel = partner
+    ? displayMemberName(partner.profile.fullName, partner.profile.email, spaceType, false)
+    : (spaceType === "PAREJA" ? "My love" : "Miembro");
 
   return (
     <div className="bg-card rounded-2xl overflow-hidden">

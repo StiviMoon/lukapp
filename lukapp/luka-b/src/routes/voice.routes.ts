@@ -74,6 +74,10 @@ const saveVoiceTransactionItemSchema = z.object({
     .union([z.string().uuid(), z.null(), z.literal("null")])
     .optional()
     .transform((val) => (val === "null" ? null : val)),
+  accountId: z
+    .union([z.string().uuid(), z.null(), z.literal("null")])
+    .optional()
+    .transform((val) => (val === "null" ? null : val)),
   // Fecha local del cliente — evita problemas de timezone con el servidor
   date: z.string().datetime({ offset: true }).optional(),
 });
@@ -106,9 +110,9 @@ router.post(
       // 1. Garantizar que el perfil exista
       await profileRepository.upsert(userId, userEmail);
 
-      // 2. Resolver cuenta: usar la primera activa o crear "Efectivo"
+      // 2. Resolver cuenta base: primera activa o crear "Efectivo"
       const existingAccounts = await accountRepository.findByUserId(userId);
-      const account =
+      const defaultAccount =
         existingAccounts.length > 0
           ? existingAccounts[0]
           : await accountRepository.create({
@@ -118,11 +122,16 @@ router.post(
               isActive: true,
               profile: { connect: { userId } },
             });
-      const accountId = account.id;
 
       const created = [];
       for (const item of items) {
-        const { type, amount, description, suggestedCategoryName, categoryId, date } = item;
+        const { type, amount, description, suggestedCategoryName, categoryId, accountId: requestedAccountId, date } = item;
+
+        // Resolver cuenta: usar la del item si es válida y pertenece al usuario, sino la default
+        const resolvedAccount = requestedAccountId
+          ? (existingAccounts.find(a => a.id === requestedAccountId) ?? defaultAccount)
+          : defaultAccount;
+        const accountId = resolvedAccount.id;
 
         // 3. Resolver categoría: find-or-create por nombre, evita duplicados
         const txType = type as TransactionType;
@@ -197,9 +206,9 @@ router.post(
   validateBody(parseVoiceSchema),
   async (req: Request, res: Response) => {
     try {
-      const { transcript, categories } = req.body;
+      const { transcript, categories, accounts } = req.body;
 
-      const parsed = await voiceService.parseTranscript(transcript, categories);
+      const parsed = await voiceService.parseTranscript(transcript, categories, accounts);
 
       res.json({
         success: true,
