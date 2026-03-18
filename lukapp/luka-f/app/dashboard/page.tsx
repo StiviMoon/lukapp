@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Loader2, Plus, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
-  Sun, Sunset, Moon, Sunrise, Settings2, BarChart2,
+  Sun, Sunset, Moon, Sunrise, BarChart2, Tag, LogOut,
 } from "lucide-react";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useInactivityTimeout } from "@/lib/hooks/use-inactivity-timeout";
@@ -18,6 +18,7 @@ import { useBudgetStatus } from "@/lib/hooks/use-budgets";
 import { useSharedOverview } from "@/lib/hooks/use-spaces";
 import { formatCompact } from "@/lib/utils";
 import { BudgetBar } from "@/components/categories/BudgetBar";
+import { CategorySheet } from "@/components/categories/CategorySheet";
 import { Users } from "lucide-react";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
@@ -101,13 +102,14 @@ function TxSkeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, signOut } = useAuth();
   const router = useRouter();
   useInactivityTimeout();
 
-  const [selectedTx,     setSelectedTx]    = useState<Transaction | null>(null);
-  const [balanceVisible, setBalanceVisible] = useState(true);
-  const [visibleCount,   setVisibleCount]   = useState(6);
+  const [selectedTx,        setSelectedTx]       = useState<Transaction | null>(null);
+  const [balanceVisible,    setBalanceVisible]    = useState(true);
+  const [visibleCount,      setVisibleCount]      = useState(6);
+  const [categorySheetOpen, setCategorySheetOpen] = useState(false);
 
   const { open: openAddSheet } = useAddTransactionStore();
 
@@ -116,7 +118,9 @@ export default function DashboardPage() {
   const { data: transactions, isLoading: txLoading  } = useRecentTransactions(20);
   const { data: budgetStatuses } = useBudgetStatus();
   const { data: sharedOverview, isLoading: overviewLoading } = useSharedOverview();
-  const hasBudgets = (budgetStatuses?.length ?? 0) > 0;
+  // Solo mostrar presupuestos que tienen una categoría vinculada
+  const activeBudgets = (budgetStatuses ?? []).filter(b => b.category !== null);
+  const hasBudgets = activeBudgets.length > 0;
   const hasSharedSpaces = (sharedOverview?.spaces.length ?? 0) > 0;
 
   // useMinDelay ANTES de cualquier early return — regla de hooks
@@ -195,11 +199,11 @@ export default function DashboardPage() {
               <BarChart2 className="w-4 h-4 text-muted-foreground/60" />
             </button>
             <button
-              onClick={() => router.push("/settings")}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors active:scale-95"
-              aria-label="Ajustes"
+              onClick={async () => { await signOut(); router.push("/auth"); }}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-rose-500/10 hover:text-rose-500 transition-colors active:scale-95"
+              aria-label="Cerrar sesión"
             >
-              <Settings2 className="w-4 h-4 text-muted-foreground/60" />
+              <LogOut className="w-4 h-4 text-muted-foreground/60" />
             </button>
             <button
               onClick={() => router.push("/profile")}
@@ -278,8 +282,8 @@ export default function DashboardPage() {
                         className={[
                           "text-[12px] font-bold font-nums tabular-nums leading-none",
                           label === "Ingresos"
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-pink-600 dark:text-pink-400",
+                            ? "text-emerald-500"
+                            : "text-rose-500",
                         ].join(" ")}
                       >
                         <span className="inline-flex items-center gap-1">
@@ -300,24 +304,36 @@ export default function DashboardPage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">
               Registrar
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* Gasto */}
               <button
                 onClick={() => openAddSheet("EXPENSE")}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-95"
+                className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]"
               >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-rose-500/10 shrink-0">
-                  <Plus className="w-4 h-4 text-rose-500" />
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500/10 shrink-0">
+                  <ArrowDownLeft className="w-5 h-5 text-rose-500" />
                 </div>
-                <span className="text-[13px] font-semibold text-foreground">Gasto</span>
+                <span className="text-[12px] font-semibold text-foreground">Gasto</span>
               </button>
+              {/* Ingreso */}
               <button
                 onClick={() => openAddSheet("INCOME")}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-95"
+                className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]"
               >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-500/10 shrink-0">
-                  <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/10 shrink-0">
+                  <ArrowUpRight className="w-5 h-5 text-emerald-500" />
                 </div>
-                <span className="text-[13px] font-semibold text-foreground">Ingreso</span>
+                <span className="text-[12px] font-semibold text-foreground">Ingreso</span>
+              </button>
+              {/* Categoría */}
+              <button
+                onClick={() => setCategorySheetOpen(true)}
+                className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]"
+              >
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-primary/10 shrink-0">
+                  <Tag className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-[12px] font-semibold text-foreground">Categoría</span>
               </button>
             </div>
           </div>
@@ -337,11 +353,11 @@ export default function DashboardPage() {
                 </button>
               </div>
               <div className="flex flex-col gap-2">
-                {budgetStatuses!.map((budget) => (
+                {activeBudgets.map((budget) => (
                   <div key={budget.id} className="px-4 py-3.5 rounded-2xl bg-card">
                     <div className="flex items-center justify-between mb-2.5">
                       <p className="text-[12px] font-semibold text-foreground truncate">
-                        {budget.category?.name ?? "Presupuesto general"}
+                        {budget.category!.name}
                       </p>
                       <span className={cn(
                         "text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
@@ -478,6 +494,13 @@ export default function DashboardPage() {
       </div>
 
       <TransactionDetailSheet transaction={selectedTx} onClose={() => setSelectedTx(null)} />
+
+      <CategorySheet
+        isOpen={categorySheetOpen}
+        onClose={() => setCategorySheetOpen(false)}
+        category={null}
+        budgetStatus={null}
+      />
     </>
   );
 }

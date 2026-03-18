@@ -31,6 +31,7 @@ model Profile {
   sharedSpaces       SpaceMember[]
   spacesCreated      SharedSpace[]       @relation("SpaceCreator")
   sharedTransactions SharedTransaction[]
+  pushSubscriptions  PushSubscription[]
 
   @@map("profiles")
 }
@@ -61,13 +62,19 @@ enum ContactStatus {
 
 // ─── Sala compartida ──────────────────────────────────────────────────────────
 
+enum SpaceType {
+  PAREJA
+  FAMILIAR
+}
+
 model SharedSpace {
-  id                  String   @id @default(uuid())
-  name                String   @default("Finanzas compartidas")
+  id                  String    @id @default(uuid())
+  name                String    @default("Finanzas compartidas")
+  type                SpaceType @default(PAREJA)
   createdBy           String
   deletionRequestedBy String?  // userId quien solicitó eliminar la sala
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   creator      Profile             @relation("SpaceCreator", fields: [createdBy], references: [userId], onDelete: Cascade)
   members      SpaceMember[]
@@ -237,4 +244,19 @@ enum BudgetPeriod {
   WEEKLY
   MONTHLY
   YEARLY
+}
+
+// Push notification subscriptions
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }

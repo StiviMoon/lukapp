@@ -128,9 +128,15 @@ export class BudgetService {
 
   /**
    * Obtiene presupuestos activos y sus gastos actuales
+   * Solo devuelve presupuestos con categoría vinculada
    */
   async getBudgetStatus(userId: string, date: Date = new Date()) {
-    const activeBudgets = await budgetRepository.findActiveBudgets(userId, date);
+    // Limpiar presupuestos huérfanos (sin categoría) en background
+    budgetRepository.deleteOrphaned(userId).catch(() => {});
+
+    const allActiveBudgets = await budgetRepository.findActiveBudgets(userId, date);
+    // Solo devolver presupuestos que tienen categoría
+    const activeBudgets = allActiveBudgets.filter(b => b.categoryId !== null);
 
     const budgetsWithStatus = await Promise.all(
       activeBudgets.map(async (budget) => {

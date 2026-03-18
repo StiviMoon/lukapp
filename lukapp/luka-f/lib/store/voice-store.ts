@@ -14,6 +14,7 @@ export interface ParsedTransaction {
   amount: number;
   suggestedCategoryName: string;
   categoryId: string | null;
+  accountId: string | null;
   description: string;
   confidence: "high" | "medium" | "low";
   rawTranscript: string;

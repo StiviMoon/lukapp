@@ -10,6 +10,16 @@ export interface TransactionAccount {
   type: string;
 }
 
+export interface Account {
+  id: string;
+  name: string;
+  type: "CASH" | "CHECKING" | "SAVINGS" | "CREDIT_CARD" | "INVESTMENT" | "OTHER";
+  balance: string;
+  color: string | null;
+  icon: string | null;
+  isActive: boolean;
+}
+
 export interface Transaction {
   id: string;
   type: "INCOME" | "EXPENSE";

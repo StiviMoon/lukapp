@@ -39,6 +39,7 @@
     "groq-sdk": "^1.1.1",
     "multer": "^2.1.1",
     "openai": "^6.31.0",
+    "web-push": "^3.6.7",
     "zod": "^4.3.5"
   },
   "devDependencies": {
@@ -46,6 +47,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^20.19.30",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "prisma": "6.19.2",
     "tsc-alias": "^1.8.16",

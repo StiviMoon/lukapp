@@ -18,6 +18,15 @@ export const parseVoiceSchema = z.object({
       })
     )
     .optional(),
+  accounts: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        name: z.string(),
+        type: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export type ParseVoiceInput = z.infer<typeof parseVoiceSchema>;

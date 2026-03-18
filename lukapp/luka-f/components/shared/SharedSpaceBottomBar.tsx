@@ -4,16 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Home, Receipt, Users, Settings2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 interface Option {
   icon: React.ElementType;
   label: string;
-  sub?: string;
   action: () => void;
-  primary?: boolean;
 }
 
 interface SharedSpaceBottomBarProps {
@@ -24,11 +19,12 @@ export function SharedSpaceBottomBar({ onAddExpense }: SharedSpaceBottomBarProps
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
+  // Bottom option (closest to +) appears last in visual stack = first in array
   const options: Option[] = [
-    { icon: Settings2, label: "Ajustes", action: () => router.push("/settings") },
-    { icon: Users,     label: "Amigos",  action: () => router.push("/friends") },
-    { icon: Home,      label: "Inicio",  action: () => router.push("/dashboard") },
-    { icon: Receipt,   label: "Gasto",   action: onAddExpense, primary: true },
+    { icon: Home,      label: "Inicio",          action: () => router.push("/dashboard") },
+    { icon: Settings2, label: "Ajustes",          action: () => router.push("/settings") },
+    { icon: Users,     label: "Amigos",           action: () => router.push("/friends") },
+    { icon: Receipt,   label: "Registrar gasto",  action: onAddExpense },
   ];
 
   const handleOption = (action: () => void) => {
@@ -60,54 +56,40 @@ export function SharedSpaceBottomBar({ onAddExpense }: SharedSpaceBottomBarProps
         {/* ── Columna de opciones — derecha, encima del pill ──────────────── */}
         <AnimatePresence>
           {open && (
-            <div className="absolute bottom-[calc(100%+10px)] right-0 flex flex-col items-end gap-1.5">
+            <motion.div
+              className="absolute bottom-[calc(100%+10px)] right-0 flex flex-col items-end gap-1.5"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+            >
               {options.map((opt, i) => (
                 <motion.button
                   key={opt.label}
                   type="button"
                   onClick={() => handleOption(opt.action)}
-                  className={cn(
-                    "flex items-center gap-2.5 pl-3.5 pr-4 py-2.5 rounded-2xl text-left active:opacity-70 transition-opacity",
-                    opt.primary ? "bg-primary" : ""
-                  )}
-                  style={
-                    opt.primary
-                      ? { boxShadow: "0 4px 16px color-mix(in srgb, var(--primary) 38%, transparent)" }
-                      : {
-                          background: "color-mix(in srgb, var(--card) 92%, transparent)",
-                          backdropFilter: "blur(16px) saturate(170%)",
-                          WebkitBackdropFilter: "blur(16px) saturate(170%)",
-                          border: "1px solid color-mix(in srgb, var(--border) 40%, transparent)",
-                          boxShadow: "0 2px 10px rgba(0,0,0,0.09)",
-                        }
-                  }
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{    opacity: 0, y: 4 }}
-                  transition={{
-                    duration: 0.2,
-                    ease: EASE_OUT,
-                    delay: (options.length - 1 - i) * 0.04,
+                  className="flex items-center gap-2.5 pl-3.5 pr-4 py-2.5 rounded-2xl text-left active:opacity-70 transition-opacity"
+                  style={{
+                    background: "color-mix(in srgb, var(--card) 92%, transparent)",
+                    backdropFilter: "blur(16px) saturate(170%)",
+                    WebkitBackdropFilter: "blur(16px) saturate(170%)",
+                    border: "1px solid color-mix(in srgb, var(--border) 40%, transparent)",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.09)",
                   }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.1, delay: i * 0.02 }}
                 >
-                  <div className={cn(
-                    "w-7 h-7 rounded-xl flex items-center justify-center shrink-0",
-                    opt.primary ? "bg-white/20" : "bg-muted/70"
-                  )}>
-                    <opt.icon
-                      className={cn("w-3.5 h-3.5", opt.primary ? "text-white" : "text-foreground/65")}
-                      strokeWidth={2.0}
-                    />
+                  <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 bg-muted/70">
+                    <opt.icon className="w-3.5 h-3.5 text-foreground/65" strokeWidth={2.0} />
                   </div>
-                  <span className={cn(
-                    "text-[12px] font-bold",
-                    opt.primary ? "text-white" : "text-foreground/80"
-                  )}>
+                  <span className="text-[12px] font-bold text-foreground/80">
                     {opt.label}
                   </span>
                 </motion.button>
               ))}
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -119,8 +101,7 @@ export function SharedSpaceBottomBar({ onAddExpense }: SharedSpaceBottomBarProps
             background: "color-mix(in srgb, var(--card) 82%, transparent)",
             backdropFilter: "blur(14px) saturate(160%)",
             WebkitBackdropFilter: "blur(14px) saturate(160%)",
-            border:
-              "1px solid color-mix(in srgb, var(--border) 30%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--border) 30%, transparent)",
             boxShadow:
               "0 6px 22px rgba(0,0,0,0.18), 0 1px 0 color-mix(in srgb, var(--border) 18%, transparent) inset",
           }}

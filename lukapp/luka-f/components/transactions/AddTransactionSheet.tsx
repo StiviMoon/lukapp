@@ -10,8 +10,23 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Transaction, TransactionCategory } from "@/lib/types/transaction";
+import type { Transaction, TransactionCategory, Account } from "@/lib/types/transaction";
 import { useInvalidateTransactions } from "@/lib/hooks/use-invalidate-transactions";
+
+// ─── Account helpers ─────────────────────────────────────────────────────────
+
+const ACCOUNT_EMOJI: Record<string, string> = {
+  CASH:        "💵",
+  CHECKING:    "🏦",
+  SAVINGS:     "🏦",
+  CREDIT_CARD: "💳",
+  INVESTMENT:  "📈",
+  OTHER:       "💰",
+};
+
+function accountEmoji(type: string) {
+  return ACCOUNT_EMOJI[type] ?? "💰";
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -60,6 +75,7 @@ type SaveVars = {
   description?: string;
   suggestedCategoryName: string;
   categoryId: string | null;
+  accountId: string | null;
   date: string;
 };
 
@@ -80,6 +96,7 @@ export function AddTransactionSheet({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,6 +117,7 @@ export function AddTransactionSheet({
           setSelectedCategoryId(null);
           setSelectedCategoryName("");
         }
+        setSelectedAccountId(editingTransaction.account?.id ?? null);
       } else {
         setType(defaultType);
         setRawAmount("");
@@ -107,6 +125,7 @@ export function AddTransactionSheet({
         setNewCategoryInput("");
         setSelectedCategoryId(null);
         setSelectedCategoryName("");
+        setSelectedAccountId(null);
       }
       // Focus amount input after animation settles
       const timer = setTimeout(() => amountInputRef.current?.focus(), 350);
@@ -125,6 +144,16 @@ export function AddTransactionSheet({
   const categories =
     (categoriesRes?.data as TransactionCategory[] | undefined) ?? [];
 
+  // Fetch accounts
+  const { data: accountsRes } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: () => api.accounts.getAll(),
+    enabled: isOpen,
+    staleTime: 60_000,
+  });
+
+  const accounts = (accountsRes?.data as Account[] | undefined) ?? [];
+
   // Auto-select first category when categories load
   useEffect(() => {
     if (categories.length > 0 && !selectedCategoryId && !newCategoryInput) {
@@ -133,9 +162,24 @@ export function AddTransactionSheet({
     }
   }, [categories, selectedCategoryId, newCategoryInput]);
 
+  // Auto-select first account when accounts load
+  useEffect(() => {
+    if (accounts.length > 0 && !selectedAccountId) {
+      setSelectedAccountId(accounts[0].id);
+    }
+  }, [accounts, selectedAccountId]);
+
   // Create mutation (optimistic)
   const createMutation = useMutation({
-    mutationFn: (vars: SaveVars) => api.voice.save(vars),
+    mutationFn: (vars: SaveVars) => api.voice.save({
+      type: vars.type,
+      amount: vars.amount,
+      description: vars.description,
+      suggestedCategoryName: vars.suggestedCategoryName,
+      categoryId: vars.categoryId,
+      accountId: vars.accountId,
+      date: vars.date,
+    }),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ["transactions"] });
       await queryClient.cancelQueries({ queryKey: ["balance"] });
@@ -199,6 +243,7 @@ export function AddTransactionSheet({
         amount: vars.amount,
         description: vars.description,
         categoryId: vars.categoryId,
+        accountId: vars.accountId ?? undefined,
         date: vars.date,
       }),
     onSuccess: async (res) => {
@@ -253,6 +298,7 @@ export function AddTransactionSheet({
       description: description.trim() || undefined,
       suggestedCategoryName: categoryName,
       categoryId: newCategoryInput.trim() ? null : selectedCategoryId,
+      accountId: selectedAccountId,
       date: editingTransaction?.date ?? new Date().toISOString(),
     };
 
@@ -359,6 +405,32 @@ export function AddTransactionSheet({
                     : "Ingresa un monto"}
                 </p>
               </div>
+
+              {/* Account chips */}
+              {accounts.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50">
+                    Cuenta
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    {accounts.map((acc) => (
+                      <button
+                        key={acc.id}
+                        onClick={() => setSelectedAccountId(acc.id)}
+                        className={cn(
+                          "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150",
+                          selectedAccountId === acc.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <span>{acc.icon ?? accountEmoji(acc.type)}</span>
+                        {acc.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Category chips */}
               {categories.length > 0 && (

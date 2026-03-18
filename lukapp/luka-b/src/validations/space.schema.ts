@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 export const createSpaceSchema = z.object({
-  contactId: z.string().uuid("ID de contacto inválido"),
+  contactIds: z.array(z.string().uuid("ID de contacto inválido")).min(1, "Se requiere al menos un contacto").max(9, "Máximo 9 contactos"),
   name: z.string().max(60, "Nombre demasiado largo").optional(),
+  type: z.enum(["PAREJA", "FAMILIAR"]).default("PAREJA"),
 });
 
 export const updateSalarySchema = z.object({
@@ -43,7 +44,7 @@ export const spaceTxParamsSchema = z.object({
   txId: z.string().uuid("ID de transacción inválido"),
 });
 
-export type CreateSpaceInput = z.infer<typeof createSpaceSchema>;
+export type CreateSpaceInput  = z.infer<typeof createSpaceSchema>;
 export type UpdateSalaryInput = z.infer<typeof updateSalarySchema>;
 export type CreateSharedBudgetInput = z.infer<typeof createSharedBudgetSchema>;
 export type UpdateSharedBudgetInput = z.infer<typeof updateSharedBudgetSchema>;

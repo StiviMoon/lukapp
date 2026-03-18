@@ -40,9 +40,12 @@ export interface SharedTransaction {
   sharedBudget?: { categoryName: string } | null;
 }
 
+export type SpaceType = "PAREJA" | "FAMILIAR";
+
 export interface SharedSpace {
   id: string;
   name: string;
+  type: SpaceType;
   createdBy: string;
   deletionRequestedBy: string | null;
   members: SpaceMember[];

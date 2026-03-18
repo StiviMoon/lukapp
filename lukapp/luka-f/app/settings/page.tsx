@@ -171,12 +171,18 @@ function SettingsRow({
 // ─── Account types ───────────────────────────────────────────────────────────
 
 const ACCOUNT_TYPES = [
-  { value: "CASH", label: "Efectivo" },
-  { value: "BANK", label: "Banco" },
-  { value: "SAVINGS", label: "Ahorros" },
-  { value: "CREDIT", label: "Crédito" },
-  { value: "INVESTMENT", label: "Inversión" },
+  { value: "CASH",        label: "Efectivo" },
+  { value: "CHECKING",    label: "Cuenta bancaria" },
+  { value: "SAVINGS",     label: "Cuenta de ahorros" },
+  { value: "CREDIT_CARD", label: "Tarjeta de crédito" },
+  { value: "INVESTMENT",  label: "Inversiones" },
+  { value: "OTHER",       label: "Otra" },
 ];
+
+const ACCOUNT_EMOJI: Record<string, string> = {
+  CASH: "💵", CHECKING: "🏦", SAVINGS: "🏦",
+  CREDIT_CARD: "💳", INVESTMENT: "📈", OTHER: "💰",
+};
 
 interface AccountData {
   id: string;
@@ -194,9 +200,11 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
 
-  const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccountName, setNewAccountName] = useState("");
-  const [newAccountType, setNewAccountType] = useState("CASH");
+  const [showAddAccount,  setShowAddAccount]  = useState(false);
+  const [newAccountName,  setNewAccountName]  = useState("");
+  const [newAccountType,  setNewAccountType]  = useState("CASH");
+  const [newAccountBalance, setNewAccountBalance] = useState("");
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
 
   // Fetch accounts
   const { data: accountsRes, isLoading: accountsRaw } = useQuery({
@@ -214,7 +222,7 @@ export default function SettingsPage() {
       api.accounts.create({
         name: newAccountName.trim(),
         type: newAccountType,
-        balance: 0,
+        balance: parseFloat(newAccountBalance.replace(/\./g, "").replace(",", ".")) || 0,
       }),
     onSuccess: (res) => {
       if (!res.success) {
@@ -226,9 +234,29 @@ export default function SettingsPage() {
       toast.success("Cuenta creada");
       setNewAccountName("");
       setNewAccountType("CASH");
+      setNewAccountBalance("");
       setShowAddAccount(false);
     },
     onError: () => {
+      toast.error("Error de conexión");
+    },
+  });
+
+  // Delete account mutation
+  const deleteAccountMutation = useMutation({
+    mutationFn: (id: string) => api.accounts.delete(id),
+    onSuccess: (res) => {
+      setDeletingAccountId(null);
+      if (!res.success) {
+        toast.error(res.error?.message ?? "Error al eliminar cuenta");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["balance"] });
+      toast.success("Cuenta eliminada");
+    },
+    onError: () => {
+      setDeletingAccountId(null);
       toast.error("Error de conexión");
     },
   });
@@ -339,31 +367,67 @@ export default function SettingsPage() {
           </SettingsSection>
 
           {/* Cuentas */}
-          <SettingsSection title="Cuenta">
+          <SettingsSection title="Mis cuentas">
             {accounts.length === 0 && !showAddAccount && (
-              <div className="px-4 py-4 text-sm text-muted-foreground/50">
-                Sin cuentas registradas
+              <div className="px-4 py-4 text-[13px] text-muted-foreground/50">
+                Sin cuentas registradas. Agrega Nequi, Bancolombia, efectivo…
               </div>
             )}
 
             {accounts.map((acc) => (
-              <SettingsRow
-                key={acc.id}
-                icon={<Wallet className="w-4 h-4" />}
-                label={acc.name}
-                value={
-                  <span className="font-nums font-semibold text-foreground">
+              <div key={acc.id} className="flex items-center gap-3 px-4 py-3.5 border-b border-border/20 last:border-0">
+                {/* Emoji */}
+                <div className="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center shrink-0 text-base">
+                  {ACCOUNT_EMOJI[acc.type] ?? "💰"}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-foreground truncate">{acc.name}</p>
+                  <p className="text-[11px] text-muted-foreground/50">
+                    {ACCOUNT_TYPES.find(t => t.value === acc.type)?.label ?? acc.type}
+                  </p>
+                </div>
+                {/* Balance */}
+                <div className="text-right shrink-0">
+                  <span className="text-[13px] font-bold font-nums text-foreground">
                     {formatCOP(Number(acc.balance))}
                   </span>
-                }
-              />
+                </div>
+                {/* Delete */}
+                {deletingAccountId === acc.id ? (
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      onClick={() => deleteAccountMutation.mutate(acc.id)}
+                      disabled={deleteAccountMutation.isPending}
+                      className="px-2.5 py-1 rounded-lg bg-rose-500 text-white text-[11px] font-bold disabled:opacity-40"
+                    >
+                      Sí
+                    </button>
+                    <button
+                      onClick={() => setDeletingAccountId(null)}
+                      className="px-2.5 py-1 rounded-lg bg-muted text-muted-foreground text-[11px] font-semibold"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setDeletingAccountId(acc.id)}
+                    className="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-rose-500/10 transition-colors shrink-0 ml-1"
+                    aria-label="Eliminar cuenta"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/25 rotate-0 hidden" />
+                    <span className="text-[10px] text-muted-foreground/30 hover:text-rose-500 font-bold">✕</span>
+                  </button>
+                )}
+              </div>
             ))}
 
             {/* Add account form */}
             {showAddAccount ? (
               <div className="px-4 py-4 flex flex-col gap-3 border-t border-border/30">
                 <Input
-                  placeholder="Nombre de la cuenta"
+                  placeholder="Nombre · ej. Nequi, Bancolombia"
                   value={newAccountName}
                   onChange={(e) => setNewAccountName(e.target.value)}
                   className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
@@ -376,20 +440,29 @@ export default function SettingsPage() {
                 >
                   {ACCOUNT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
-                      {t.label}
+                      {ACCOUNT_EMOJI[t.value]} {t.label}
                     </option>
                   ))}
                 </select>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Saldo actual · ej. 9000000"
+                  value={newAccountBalance}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/[^0-9]/g, "");
+                    setNewAccountBalance(cleaned ? Number(cleaned).toLocaleString("es-CO") : "");
+                  }}
+                  className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40 font-nums"
+                />
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     className="flex-1"
-                    disabled={
-                      !newAccountName.trim() || addAccountMutation.isPending
-                    }
+                    disabled={!newAccountName.trim() || addAccountMutation.isPending}
                     onClick={() => addAccountMutation.mutate()}
                   >
-                    {addAccountMutation.isPending ? "Creando..." : "Crear"}
+                    {addAccountMutation.isPending ? "Creando..." : "Crear cuenta"}
                   </Button>
                   <Button
                     size="sm"
@@ -398,6 +471,7 @@ export default function SettingsPage() {
                     onClick={() => {
                       setShowAddAccount(false);
                       setNewAccountName("");
+                      setNewAccountBalance("");
                     }}
                   >
                     Cancelar
@@ -407,7 +481,7 @@ export default function SettingsPage() {
             ) : (
               <button
                 onClick={() => setShowAddAccount(true)}
-                className="flex items-center gap-3 w-full px-4 py-3.5 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors border-t border-border/30"
+                className="flex items-center gap-3 w-full px-4 py-3.5 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors border-t border-border/20"
               >
                 <Plus className="w-4 h-4" />
                 <span className="text-[13px] font-semibold">

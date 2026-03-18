@@ -1,5 +1,5 @@
 import { prisma } from "@/db/client";
-import { SpaceRole, Prisma } from "@prisma/client";
+import { SpaceRole, SpaceType, Prisma } from "@prisma/client";
 
 const memberProfileSelect = {
   userId: true,
@@ -9,15 +9,16 @@ const memberProfileSelect = {
 };
 
 export class SpaceRepository {
-  async createSpace(data: { name: string; createdBy: string; memberUserId: string }) {
+  async createSpace(data: { name: string; createdBy: string; memberUserIds: string[]; type: SpaceType }) {
     return prisma.sharedSpace.create({
       data: {
         name: data.name,
+        type: data.type,
         createdBy: data.createdBy,
         members: {
           create: [
             { userId: data.createdBy, role: SpaceRole.OWNER },
-            { userId: data.memberUserId, role: SpaceRole.MEMBER },
+            ...data.memberUserIds.map(userId => ({ userId, role: SpaceRole.MEMBER })),
           ],
         },
       },

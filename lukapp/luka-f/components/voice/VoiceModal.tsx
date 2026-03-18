@@ -13,7 +13,12 @@ import { VoiceWaveform } from "./VoiceWaveform";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Transaction, TransactionCategory } from "@/lib/types/transaction";
+import type { Transaction, TransactionCategory, Account } from "@/lib/types/transaction";
+
+const ACCOUNT_EMOJI: Record<string, string> = {
+  CASH: "💵", CHECKING: "🏦", SAVINGS: "🏦",
+  CREDIT_CARD: "💳", INVESTMENT: "📈", OTHER: "💰",
+};
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -86,6 +91,7 @@ export function VoiceModal() {
     description?: string;
     suggestedCategoryName: string;
     categoryId: string | null;
+    accountId: string | null;
     confidence: "high" | "medium" | "low";
     rawTranscript: string;
   }>>([]);
@@ -98,6 +104,7 @@ export function VoiceModal() {
   const [editCategoryName, setEditCategoryName] = useState("");
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [showCatPicker,    setShowCatPicker]    = useState(false);
+  const [editAccountId,    setEditAccountId]    = useState<string | null>(null);
 
   // Categorías del usuario (del cache — staleTime 5min)
   const { data: categoriesRes } = useQuery({
@@ -107,6 +114,14 @@ export function VoiceModal() {
     staleTime: 5 * 60_000,
   });
   const categories = (categoriesRes?.data as TransactionCategory[] | undefined) ?? [];
+
+  // Cuentas del usuario
+  const { data: accountsRes } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: () => api.accounts.getAll(),
+    staleTime: 60_000,
+  });
+  const accounts = (accountsRes?.data as Account[] | undefined) ?? [];
 
   // Sincronizar drafts cuando llega parsedTxs
   useEffect(() => {
@@ -129,7 +144,9 @@ export function VoiceModal() {
     setEditCategoryName(tx.suggestedCategoryName ?? "");
     setNewCategoryInput("");
     setShowCatPicker(false);
-  }, [drafts, selectedIdx]);
+    // Cuenta: usar la detectada por IA, o la primera disponible como fallback
+    setEditAccountId(tx.accountId ?? (accounts.length > 0 ? accounts[0].id : null));
+  }, [drafts, selectedIdx, accounts]);
 
   // ── Callbacks del reconocimiento de voz ──
   const handleInterim = useCallback(
@@ -150,12 +167,18 @@ export function VoiceModal() {
         const categories =
           (categoriesRes.data as Array<{ id: string; name: string; type: string }>) ?? [];
 
+        const currentAccounts = (accountsRes?.data as Account[] | undefined) ?? [];
         const result = await api.voice.parse({
           transcript: finalText.trim(),
           categories: categories.map((c) => ({
             id: c.id,
             name: c.name,
             type: c.type,
+          })),
+          accounts: currentAccounts.map((a) => ({
+            id: a.id,
+            name: a.name,
+            type: a.type,
           })),
         });
 
@@ -165,7 +188,7 @@ export function VoiceModal() {
           return;
         }
 
-        const txs = (result.data ?? []).map((t) => ({ ...t, rawTranscript: finalText.trim() }));
+        const txs = (result.data ?? []).map((t: any) => ({ ...t, rawTranscript: finalText.trim(), accountId: t.accountId ?? null }));
         setParsedTxs(txs);
         setPhase("confirming");
       } catch {
@@ -265,6 +288,7 @@ export function VoiceModal() {
             description: editDescription || undefined,
             suggestedCategoryName: finalCategoryNameSel || d.suggestedCategoryName,
             categoryId: finalCategoryIdSel ?? d.categoryId,
+            accountId: editAccountId ?? d.accountId,
           }
         : d
     );
@@ -309,6 +333,7 @@ export function VoiceModal() {
         description: t.description || undefined,
         suggestedCategoryName: t.suggestedCategoryName,
         categoryId: t.categoryId,
+        accountId: t.accountId ?? undefined,
         date: new Date().toISOString(),
       }));
 
@@ -630,6 +655,32 @@ export function VoiceModal() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Cuenta */}
+              {accounts.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    Cuenta
+                  </p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {accounts.map(acc => (
+                      <button
+                        key={acc.id}
+                        onClick={() => setEditAccountId(acc.id)}
+                        className={cn(
+                          "flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold transition-all active:scale-95",
+                          editAccountId === acc.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <span>{acc.icon ?? (ACCOUNT_EMOJI[acc.type] ?? "💰")}</span>
+                        {acc.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Descripción editable */}
               <div className="space-y-1">
