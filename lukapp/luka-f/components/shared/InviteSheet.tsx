@@ -56,7 +56,7 @@ export function InviteSheet({ isOpen, onClose }: InviteSheetProps) {
         <>
           <motion.div
             key="backdrop"
-            className="fixed inset-0 bg-black/50 z-50"
+            className="fixed inset-0 bg-black/50 z-[60]"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -65,7 +65,7 @@ export function InviteSheet({ isOpen, onClose }: InviteSheetProps) {
           />
           <motion.div
             key="sheet"
-            className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl px-5 pt-5 pb-10 max-w-sm mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-[60] bg-card rounded-t-3xl px-5 pt-5 pb-10 max-w-sm mx-auto"
             variants={sheetVariants}
             initial="hidden"
             animate="visible"
