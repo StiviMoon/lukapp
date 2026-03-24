@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sparkles, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
 const links = [
   { label: "Features", href: "#features" },
@@ -29,6 +30,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
+  const router = useRouter();
 
   useEffect(() => {
     setTimeout(() => {
@@ -88,11 +90,11 @@ export default function Navbar() {
         </button>
 
         <button
-          onClick={() => go("#waitlist")}
+          onClick={() => router.push("/auth?action=register")}
           className="flex items-center gap-2 px-5 py-2 text-[13px] font-bold text-bg bg-lime rounded-full hover:bg-lime-dark transition-colors duration-200"
         >
           <Sparkles size={14} strokeWidth={2.5} />
-          Únete
+          Empezar gratis
         </button>
         </motion.nav>
       </div>
@@ -123,10 +125,10 @@ export default function Navbar() {
             {!mounted ? <Sun size={15} /> : resolvedTheme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
           </button>
           <button
-            onClick={() => go("#waitlist")}
+            onClick={() => router.push("/auth?action=register")}
             className="px-3 py-1.5 text-[12px] font-bold text-bg bg-lime rounded-full hover:bg-lime-dark transition-colors duration-150"
           >
-            Únete
+            Entrar
           </button>
           <button
             onClick={() => setOpen(!open)}
@@ -176,10 +178,10 @@ export default function Navbar() {
                 <div className="border-t border-border dark:border-white/10 my-2 mx-3" />
                 <div className="px-3 pb-2">
                   <button
-                    onClick={() => go("#waitlist")}
+                    onClick={() => router.push("/auth?action=register")}
                     className="w-full py-3.5 rounded-xl bg-lime text-bg font-bold text-[14px] text-center hover:bg-lime-dark transition-colors duration-150"
                   >
-                    Unirme a la lista →
+                    Empezar gratis →
                   </button>
                 </div>
               </motion.div>

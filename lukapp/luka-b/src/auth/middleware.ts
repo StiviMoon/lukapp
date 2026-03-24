@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { createSupabaseClient } from "./supabase";
-import { UnauthorizedError } from "@/errors";
+import { UnauthorizedError, ForbiddenError } from "@/errors";
 import { profileRepository } from "@/repositories/profile.repository";
 
 /**
@@ -60,6 +60,29 @@ export const authenticate = async (
     // en la tabla Profile de Prisma. Sin esto, crear cuentas/transacciones falla.
     if (user.email) {
       await profileRepository.upsert(user.id, user.email);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Middleware que requiere plan Premium activo
+ * Usar después de `authenticate`
+ */
+export const requirePremium = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.userId!;
+    const profile = await profileRepository.findByUserId(userId);
+
+    if (profile?.plan !== "PREMIUM") {
+      throw new ForbiddenError("Esta función requiere el plan Premium");
     }
 
     next();

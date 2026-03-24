@@ -10,10 +10,19 @@ import { checkDatabaseConnection } from "@/db/utils";
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || "256kb";
 
 // Middleware
-app.use(compression());
-app.use(express.json());
+app.disable("x-powered-by");
+
+// Excluir SSE de compression (los streams deben llegar sin buffering)
+app.use(compression({
+  filter: (req, res) => {
+    if (req.path.includes("/coach/chat")) return false;
+    return compression.filter(req, res);
+  },
+}));
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true }));
 
 // CORS

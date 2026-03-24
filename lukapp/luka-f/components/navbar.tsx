@@ -3,9 +3,11 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, History, Mic, Users, Settings2 } from "lucide-react";
+import { Home, History, Mic, Users, BarChart3 } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
+import { haptics } from "@/lib/haptics";
 
 const SHOW_ON = ["/dashboard", "/history", "/analytics", "/settings", "/profile", "/categories", "/friends"];
 const PREFETCH_ROUTES = ["/dashboard", "/history", "/analytics", "/settings"];
@@ -61,7 +63,7 @@ export function Navbar() {
           </div>
 
           <NavLink href="/friends"    icon={Users}     label="Amigos"    pathname={pathname} prefetch={() => router.prefetch("/friends")} />
-          <NavLink href="/settings"   icon={Settings2} label="Ajustes"   pathname={pathname} prefetch={() => router.prefetch("/settings")} />
+          <NavLink href="/analytics"  icon={BarChart3} label="Análisis"  pathname={pathname} prefetch={() => router.prefetch("/analytics")} />
         </nav>
       </div>
     </div>
@@ -82,18 +84,26 @@ function NavLink({
       prefetch
       onPointerEnter={prefetch}
       onFocus={prefetch}
+      onClick={() => haptics.light()}
       className={cn(
         "relative flex flex-col items-center gap-[3px] rounded-full px-3 py-2",
         "transition-colors duration-150 active:scale-[0.96]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         active
-          ? "text-primary bg-primary/10"
+          ? "text-primary"
           : "text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-muted/30",
       )}
       aria-current={active ? "page" : undefined}
     >
-      <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.4 : 1.9} />
-      <span className="text-[9px] font-semibold tracking-wide leading-none">{label}</span>
+      {active && (
+        <motion.div
+          layoutId="nav-pill"
+          className="absolute inset-0 rounded-full bg-primary/10"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+      )}
+      <Icon className="h-[19px] w-[19px] relative z-10" strokeWidth={active ? 2.4 : 1.9} />
+      <span className="text-[9px] font-semibold tracking-wide leading-none relative z-10">{label}</span>
     </Link>
   );
 }

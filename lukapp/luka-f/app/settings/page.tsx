@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
+import { motion } from "framer-motion";
 import { toast } from "@/lib/toast";
 import {
   ArrowLeft,
@@ -36,55 +37,45 @@ function formatCOP(amount: number): string {
 
 // ─── Skeletons ───────────────────────────────────────────────────────────────
 
-function SettingsPageSkeleton() {
+function SettingsContentSkeleton() {
   return (
-    <div className="min-h-dvh bg-background">
-      <div className="px-5 pt-12 pb-20 max-w-sm mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="w-9 h-9 rounded-xl bg-card animate-pulse" />
-          <div className="w-16 h-5 rounded-lg bg-card animate-pulse" />
-          <div className="w-9" />
+    <div className="flex flex-col gap-6 pt-2">
+      {/* Perfil skeleton */}
+      <div>
+        <div className="w-12 h-3 rounded bg-muted-foreground/10 animate-pulse mb-2 ml-1" />
+        <div className="rounded-[24px] bg-card p-4 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-muted-foreground/10 animate-pulse shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3.5 w-24 rounded bg-muted-foreground/10 animate-pulse" />
+            <div className="h-2.5 w-36 rounded bg-muted-foreground/10 animate-pulse" />
+          </div>
         </div>
-        <div className="flex flex-col gap-6">
-          {/* Perfil skeleton */}
-          <div>
-            <div className="w-12 h-3 rounded bg-muted-foreground/10 animate-pulse mb-2 ml-1" />
-            <div className="rounded-[24px] bg-card p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-muted-foreground/10 animate-pulse shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-3.5 w-24 rounded bg-muted-foreground/10 animate-pulse" />
-                <div className="h-2.5 w-36 rounded bg-muted-foreground/10 animate-pulse" />
+      </div>
+      {/* Apariencia skeleton */}
+      <div>
+        <div className="w-20 h-3 rounded bg-muted-foreground/10 animate-pulse mb-2 ml-1" />
+        <div className="rounded-[24px] bg-card p-4">
+          <div className="grid grid-cols-3 gap-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-16 rounded-xl bg-muted-foreground/10 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* Cuentas skeleton */}
+      <div>
+        <div className="w-16 h-3 rounded bg-muted-foreground/10 animate-pulse mb-2 ml-1" />
+        <div className="rounded-[24px] bg-card overflow-hidden">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3.5 px-4 py-3.5 border-b border-border/20 last:border-0">
+              <div className="w-8 h-8 rounded-xl bg-muted-foreground/10 animate-pulse shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 w-20 rounded bg-muted-foreground/10 animate-pulse" />
+                <div className="h-2.5 w-12 rounded bg-muted-foreground/10 animate-pulse" />
               </div>
+              <div className="h-3 w-16 rounded bg-muted-foreground/10 animate-pulse" />
             </div>
-          </div>
-          {/* Apariencia skeleton */}
-          <div>
-            <div className="w-20 h-3 rounded bg-muted-foreground/10 animate-pulse mb-2 ml-1" />
-            <div className="rounded-[24px] bg-card p-4">
-              <div className="grid grid-cols-3 gap-2">
-                {[0,1,2].map(i => (
-                  <div key={i} className="h-16 rounded-xl bg-muted-foreground/10 animate-pulse" />
-                ))}
-              </div>
-            </div>
-          </div>
-          {/* Cuentas skeleton */}
-          <div>
-            <div className="w-16 h-3 rounded bg-muted-foreground/10 animate-pulse mb-2 ml-1" />
-            <div className="rounded-[24px] bg-card overflow-hidden">
-              {[0,1,2].map(i => (
-                <div key={i} className="flex items-center gap-3.5 px-4 py-3.5 border-b border-border/20 last:border-0">
-                  <div className="w-8 h-8 rounded-xl bg-muted-foreground/10 animate-pulse shrink-0" />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-3 w-20 rounded bg-muted-foreground/10 animate-pulse" />
-                    <div className="h-2.5 w-12 rounded bg-muted-foreground/10 animate-pulse" />
-                  </div>
-                  <div className="h-3 w-16 rounded bg-muted-foreground/10 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
@@ -289,28 +280,35 @@ export default function SettingsPage() {
     },
   ];
 
-  if (accountsLoading) return <SettingsPageSkeleton />;
-
   return (
-    <div className="min-h-dvh bg-background">
-      <div className="px-5 pt-12 pb-20 max-w-sm mx-auto">
+    <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors"
-            aria-label="Volver"
-          >
-            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-          </button>
-          <h1 className="text-base font-bold text-foreground font-display">
-            Ajustes
-          </h1>
-          <div className="w-9" />
-        </div>
+      {/* Header fijo */}
+      <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors"
+          aria-label="Volver"
+        >
+          <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <h1 className="text-base font-bold text-foreground font-display">
+          Ajustes
+        </h1>
+        <div className="w-9" />
+      </header>
 
-        <div className="flex flex-col gap-6">
+      {/* Contenido scrolleable */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36">
+        {accountsLoading ? (
+          <SettingsContentSkeleton />
+        ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-col gap-6 pt-2"
+        >
 
           {/* Perfil */}
           <SettingsSection title="Perfil">
@@ -501,7 +499,8 @@ export default function SettingsPage() {
             />
           </SettingsSection>
 
-        </div>
+        </motion.div>
+        )}
       </div>
     </div>
   );

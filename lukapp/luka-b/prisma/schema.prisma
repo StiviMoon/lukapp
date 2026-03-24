@@ -8,22 +8,32 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum UserPlan {
+  FREE
+  PREMIUM
+}
+
 // Perfil de usuario (extiende auth.users de Supabase)
 model Profile {
-  id        String   @id @default(uuid())
-  userId    String   @unique // UUID de Supabase Auth
-  email     String
-  fullName  String?
-  avatarUrl String?
-  currency  String   @default("USD")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String    @id @default(uuid())
+  userId              String    @unique // UUID de Supabase Auth
+  email               String
+  fullName            String?
+  avatarUrl           String?
+  currency            String    @default("COP")
+  plan                UserPlan  @default(FREE)
+  planActivatedAt     DateTime?
+  planExpiresAt       DateTime?
+  onboardingCompleted Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   // Relaciones personales
   accounts     Account[]
   categories   Category[]
   transactions Transaction[]
   budgets      Budget[]
+  coachInsights CoachInsight[]
 
   // Relaciones de sala compartida
   contactsRequested  Contact[]           @relation("ContactRequests")
@@ -244,6 +254,20 @@ enum BudgetPeriod {
   WEEKLY
   MONTHLY
   YEARLY
+}
+
+// Insights diarios del Coach IA (cache por día)
+model CoachInsight {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  profile Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("coach_insights")
 }
 
 // Push notification subscriptions

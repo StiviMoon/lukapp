@@ -5,9 +5,10 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Loader2, Plus, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
-  Sun, Sunset, Moon, Sunrise, BarChart2, Tag, LogOut,
+  Loader2, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
+  Sun, Sunset, Moon, Sunrise, Settings2, Tag, Crown,
 } from "lucide-react";
+import { usePlan } from "@/lib/hooks/use-plan";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useInactivityTimeout } from "@/lib/hooks/use-inactivity-timeout";
 import {
@@ -25,6 +26,8 @@ import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetail
 import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 import type { Transaction } from "@/lib/types/transaction";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/lib/hooks/use-profile";
+import { CoachCard, CoachCardSkeleton } from "@/components/coach/CoachCard";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -67,22 +70,6 @@ const MASKED = "••••••";
 
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
-function BalanceSkeleton() {
-  return (
-    <div className="animate-pulse">
-      <div className="h-[44px] w-44 rounded-xl bg-foreground/10 dark:bg-white/10 mb-4" />
-      <div className="flex gap-5">
-        {[0, 1].map((i) => (
-          <div key={i} className="min-w-0">
-            <div className="h-3 w-14 rounded bg-foreground/10 dark:bg-white/10 mb-2" />
-            <div className="h-4 w-24 rounded bg-foreground/10 dark:bg-white/10" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function TxSkeleton() {
   return (
     <div className="flex items-center gap-3.5 px-4 py-3.5 rounded-2xl bg-card animate-pulse">
@@ -99,10 +86,58 @@ function TxSkeleton() {
   );
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5 pt-1">
+      {/* Balance card */}
+      <div className="balance-card mt-1 rounded-2xl p-5 bg-white shadow-md dark:bg-[#12001f] animate-pulse">
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-2.5 w-16 rounded bg-foreground/10 dark:bg-white/10" />
+          <div className="w-4 h-4 rounded bg-foreground/10 dark:bg-white/10" />
+        </div>
+        <div className="h-[44px] w-44 rounded-xl bg-foreground/10 dark:bg-white/10 mb-4" />
+        <div className="flex gap-5">
+          {[0, 1].map((i) => (
+            <div key={i} className="min-w-0">
+              <div className="h-2.5 w-14 rounded bg-foreground/10 dark:bg-white/10 mb-2" />
+              <div className="h-3.5 w-24 rounded bg-foreground/10 dark:bg-white/10" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Coach card */}
+      <CoachCardSkeleton />
+
+      {/* Quick actions */}
+      <div>
+        <div className="h-2.5 w-20 rounded-full bg-muted-foreground/10 animate-pulse mb-3" />
+        <div className="grid grid-cols-3 gap-2.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="py-4 rounded-2xl bg-card animate-pulse flex flex-col items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-muted-foreground/10" />
+              <div className="h-2.5 w-12 rounded bg-muted-foreground/10" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Transacciones recientes */}
+      <div>
+        <div className="h-2.5 w-16 rounded-full bg-muted-foreground/10 animate-pulse mb-3" />
+        <div className="flex flex-col gap-2">
+          <TxSkeleton /><TxSkeleton /><TxSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { user, loading, isAuthenticated, signOut } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
+  const { isPremium } = usePlan();
   const router = useRouter();
   useInactivityTimeout();
 
@@ -113,6 +148,7 @@ export default function DashboardPage() {
 
   const { open: openAddSheet } = useAddTransactionStore();
 
+  const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: balance, isLoading: balanceLoading } = useTotalBalance();
   const { data: stats,   isLoading: statsLoading   } = useMonthStats();
   const { data: transactions, isLoading: txLoading  } = useRecentTransactions(20);
@@ -123,9 +159,8 @@ export default function DashboardPage() {
   const hasBudgets = activeBudgets.length > 0;
   const hasSharedSpaces = (sharedOverview?.spaces.length ?? 0) > 0;
 
-  // useMinDelay ANTES de cualquier early return — regla de hooks
-  const cardLoading = useMinDelay(balanceLoading || statsLoading);
-  const txsLoading  = useMinDelay(txLoading);
+  // Un solo estado de carga unificado — todo el contenido aparece junto
+  const isDataLoading = useMinDelay(balanceLoading || statsLoading || txLoading, 350);
 
   // Resetear paginación cuando llegan nuevas transacciones (ej. después de registrar una)
   useEffect(() => {
@@ -155,10 +190,20 @@ export default function DashboardPage() {
     if (!loading && !isAuthenticated) router.push("/auth");
   }, [loading, isAuthenticated, router]);
 
-  if (loading) {
+  // Forzar onboarding si no está completado
+  useEffect(() => {
+    if (!profileLoading && profile && !profile.onboardingCompleted) {
+      router.push("/onboarding");
+    }
+  }, [profileLoading, profile, router]);
+
+  // Mostrar loader mientras: (a) auth cargando, (b) perfil sin datos aún
+  // Esto evita el flash del dashboard antes de saber si hay que ir al onboarding
+  if (loading || (profileLoading && !profile)) {
     return (
-      <div className="flex h-dvh items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/40" />
+      <div className="flex h-dvh flex-col items-center justify-center gap-3">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
+        <p className="text-xs text-muted-foreground/40 font-medium">Cargando tus datos...</p>
       </div>
     );
   }
@@ -192,19 +237,22 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => router.push("/analytics")}
+              onClick={() => router.push("/settings")}
               className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors active:scale-95"
-              aria-label="Analíticas"
+              aria-label="Ajustes"
             >
-              <BarChart2 className="w-4 h-4 text-muted-foreground/60" />
+              <Settings2 className="w-4 h-4 text-muted-foreground/60" />
             </button>
-            <button
-              onClick={async () => { await signOut(); router.push("/auth"); }}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-rose-500/10 hover:text-rose-500 transition-colors active:scale-95"
-              aria-label="Cerrar sesión"
-            >
-              <LogOut className="w-4 h-4 text-muted-foreground/60" />
-            </button>
+            {isPremium && (
+              <button
+                onClick={() => router.push("/upgrade")}
+                className="flex items-center gap-1 px-2.5 h-9 rounded-xl bg-purple-brand/15 border border-purple-brand/25 text-purple-muted active:scale-95 transition-transform"
+                aria-label="Plan Premium"
+              >
+                <Crown className="w-3 h-3" />
+                <span className="text-[10px] font-bold">PRO</span>
+              </button>
+            )}
             <button
               onClick={() => router.push("/profile")}
               className="active:scale-95 transition-transform"
@@ -215,27 +263,30 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {/* ── Área scrolleable — todo scrollea naturalmente ── */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5 pt-1">
+        {/* ── Área scrolleable — skeleton unificado o contenido completo ── */}
+        {isDataLoading ? <DashboardSkeleton /> : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+            className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5 pt-1"
+          >
+            {/* Balance card */}
+            <div className="balance-card mt-1 rounded-2xl p-5 bg-white shadow-md dark:bg-[#12001f] dark:shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-bold tracking-[0.15em] text-foreground/45 dark:text-white/50 uppercase">
+                  Tus Lukas
+                </p>
+                <button
+                  onClick={toggleBalance}
+                  className="text-foreground/40 hover:text-foreground/70 dark:text-white/50 dark:hover:text-white/85 transition-colors active:scale-90 p-0.5 shrink-0"
+                  aria-label={balanceVisible ? "Ocultar balance" : "Mostrar balance"}
+                >
+                  {balanceVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
 
-          {/* Balance card — iOS-like (basado en PhoneMockup) */}
-          <div className="balance-card mt-1 rounded-2xl p-5 bg-white shadow-md dark:bg-[#12001f] dark:shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-bold tracking-[0.15em] text-foreground/45 dark:text-white/50 uppercase">
-                Balance Total
-              </p>
-              <button
-                onClick={toggleBalance}
-                className="text-foreground/40 hover:text-foreground/70 dark:text-white/50 dark:hover:text-white/85 transition-colors active:scale-90 p-0.5 shrink-0"
-                aria-label={balanceVisible ? "Ocultar balance" : "Mostrar balance"}
-              >
-                {balanceVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </button>
-            </div>
-
-            <div className="min-h-[88px]">
-            {cardLoading ? <BalanceSkeleton /> : (
-              <>
+              <div className="min-h-[88px]">
                 <div className="flex items-end gap-1 mb-4 min-h-[40px] w-full min-w-0 overflow-hidden">
                   <AnimatePresence mode="wait" initial={false}>
                     {balanceVisible ? (
@@ -248,11 +299,7 @@ export default function DashboardPage() {
                         className="balance-value-inner flex items-baseline gap-0.5 min-w-0 w-full font-extrabold tabular-nums font-nums leading-none text-lime"
                       >
                         <span>{balInt}</span>
-                        {balDec && (
-                          <span className="balance-value-decimal">
-                            {balDec}
-                          </span>
-                        )}
+                        {balDec && <span className="balance-value-decimal">{balDec}</span>}
                       </motion.div>
                     ) : (
                       <motion.div
@@ -275,17 +322,8 @@ export default function DashboardPage() {
                     { icon: ArrowDownLeft, label: "Gastos",   value: stats?.totalExpenses },
                   ].map(({ icon: Icon, label, value }) => (
                     <div key={label} className="min-w-0">
-                      <p className="text-[9px] text-foreground/45 dark:text-white/40 mb-0.5">
-                        {label}
-                      </p>
-                      <p
-                        className={[
-                          "text-[12px] font-bold font-nums tabular-nums leading-none",
-                          label === "Ingresos"
-                            ? "text-emerald-500"
-                            : "text-rose-500",
-                        ].join(" ")}
-                      >
+                      <p className="text-[9px] text-foreground/45 dark:text-white/40 mb-0.5">{label}</p>
+                      <p className={["text-[12px] font-bold font-nums tabular-nums leading-none", label === "Ingresos" ? "text-emerald-500" : "text-rose-500"].join(" ")}>
                         <span className="inline-flex items-center gap-1">
                           <Icon className="w-3.5 h-3.5" />
                           {value != null ? (balanceVisible ? formatCOP(value) : MASKED) : "—"}
@@ -294,120 +332,77 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              </>
-            )}
-            </div>
-          </div>
-
-          {/* Quick actions */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">
-              Registrar
-            </p>
-            <div className="grid grid-cols-3 gap-2.5">
-              {/* Gasto */}
-              <button
-                onClick={() => openAddSheet("EXPENSE")}
-                className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]"
-              >
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500/10 shrink-0">
-                  <ArrowDownLeft className="w-5 h-5 text-rose-500" />
-                </div>
-                <span className="text-[12px] font-semibold text-foreground">Gasto</span>
-              </button>
-              {/* Ingreso */}
-              <button
-                onClick={() => openAddSheet("INCOME")}
-                className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]"
-              >
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/10 shrink-0">
-                  <ArrowUpRight className="w-5 h-5 text-emerald-500" />
-                </div>
-                <span className="text-[12px] font-semibold text-foreground">Ingreso</span>
-              </button>
-              {/* Categoría */}
-              <button
-                onClick={() => setCategorySheetOpen(true)}
-                className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]"
-              >
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-primary/10 shrink-0">
-                  <Tag className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-[12px] font-semibold text-foreground">Categoría</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Presupuestos widget */}
-          {hasBudgets && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
-                  Presupuestos
-                </p>
-                <button
-                  onClick={() => router.push("/categories")}
-                  className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
-                >
-                  Ver todo <ChevronRight className="w-3 h-3" />
-                </button>
               </div>
-              <div className="flex flex-col gap-2">
-                {activeBudgets.map((budget) => (
-                  <div key={budget.id} className="px-4 py-3.5 rounded-2xl bg-card">
-                    <div className="flex items-center justify-between mb-2.5">
-                      <p className="text-[12px] font-semibold text-foreground truncate">
-                        {budget.category!.name}
-                      </p>
-                      <span className={cn(
-                        "text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
-                        budget.isExceeded
-                          ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
-                          : budget.percentage >= 90
-                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                          : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                      )}>
-                        {budget.isExceeded ? "Excedido" : `${Math.round(budget.percentage)}%`}
-                      </span>
-                    </div>
-                    <BudgetBar
-                      spent={budget.spent}
-                      total={Number(budget.amount)}
-                      percentage={budget.percentage}
-                      remaining={budget.remaining}
-                      isExceeded={budget.isExceeded}
-                      showAmounts={false}
-                    />
+            </div>
+
+            {/* Coach IA */}
+            <CoachCard />
+
+            {/* Quick actions */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">Registrar</p>
+              <div className="grid grid-cols-3 gap-2.5">
+                <button onClick={() => openAddSheet("EXPENSE")} className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500/10 shrink-0">
+                    <ArrowDownLeft className="w-5 h-5 text-rose-500" />
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* En pareja — widget compartido */}
-          {(hasSharedSpaces || overviewLoading) && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
-                  En pareja
-                </p>
-                <button
-                  onClick={() => router.push("/friends")}
-                  className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
-                >
-                  Ver todo <ChevronRight className="w-3 h-3" />
+                  <span className="text-[12px] font-semibold text-foreground">Gasto</span>
+                </button>
+                <button onClick={() => openAddSheet("INCOME")} className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/10 shrink-0">
+                    <ArrowUpRight className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <span className="text-[12px] font-semibold text-foreground">Ingreso</span>
+                </button>
+                <button onClick={() => setCategorySheetOpen(true)} className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-primary/10 shrink-0">
+                    <Tag className="w-5 h-5 text-primary" />
+                  </div>
+                  <span className="text-[12px] font-semibold text-foreground">Categoría</span>
                 </button>
               </div>
-              {overviewLoading ? (
-                <div className="px-4 py-3.5 rounded-2xl bg-card animate-pulse h-16" />
-              ) : (
+            </div>
+
+            {/* Presupuestos widget */}
+            {hasBudgets && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">Presupuestos</p>
+                  <button onClick={() => router.push("/categories")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
+                    Ver todo <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {activeBudgets.map((budget) => (
+                    <div key={budget.id} className="px-4 py-3.5 rounded-2xl bg-card">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <p className="text-[12px] font-semibold text-foreground truncate">{budget.category!.name}</p>
+                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
+                          budget.isExceeded ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                          : budget.percentage >= 90 ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                          : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400")}>
+                          {budget.isExceeded ? "Excedido" : `${Math.round(budget.percentage)}%`}
+                        </span>
+                      </div>
+                      <BudgetBar spent={budget.spent} total={Number(budget.amount)} percentage={budget.percentage} remaining={budget.remaining} isExceeded={budget.isExceeded} showAmounts={false} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* En pareja */}
+            {hasSharedSpaces && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">En pareja</p>
+                  <button onClick={() => router.push("/friends")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
+                    Ver todo <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
                 <div className="flex flex-col gap-2">
                   {sharedOverview?.spaces.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => router.push(`/shared/${s.id}`)}
-                      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.98] text-left w-full"
-                    >
+                    <button key={s.id} onClick={() => router.push(`/shared/${s.id}`)} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.98] text-left w-full">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
                         <Users className="w-4 h-4 text-primary" />
                       </div>
@@ -417,9 +412,7 @@ export default function DashboardPage() {
                       </div>
                       {s.myDeductions > 0 && (
                         <div className="text-right shrink-0">
-                          <p className="text-[12px] font-bold text-rose-400 font-nums">
-                            -{formatCompact(s.myDeductions)}
-                          </p>
+                          <p className="text-[12px] font-bold text-rose-400 font-nums">-{formatCompact(s.myDeductions)}</p>
                           <p className="text-[10px] text-muted-foreground/40">mi parte</p>
                         </div>
                       )}
@@ -428,69 +421,50 @@ export default function DashboardPage() {
                   {(sharedOverview?.totalMyDeductions ?? 0) > 0 && (sharedOverview?.spaces.length ?? 0) > 1 && (
                     <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-muted/30">
                       <p className="text-[11px] text-muted-foreground/60">Total comprometido en pareja</p>
-                      <p className="text-[12px] font-bold text-rose-400 font-nums">
-                        -{formatCompact(sharedOverview!.totalMyDeductions)}
-                      </p>
+                      <p className="text-[12px] font-bold text-rose-400 font-nums">-{formatCompact(sharedOverview!.totalMyDeductions)}</p>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Recientes */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">
-                Recientes
-              </p>
-              <button
-                onClick={() => router.push("/history")}
-                className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
-              >
-                Ver todo <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-
-            {txsLoading ? (
-              <div className="flex flex-col gap-2">
-                <TxSkeleton /><TxSkeleton /><TxSkeleton />
-              </div>
-            ) : transactions && transactions.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {transactions.slice(0, visibleCount).map(tx => (
-                  <TransactionItem key={tx.id} transaction={tx} onClick={() => setSelectedTx(tx)} />
-                ))}
-
-                {/* Cargar más / Ver todo */}
-                {transactions.length > visibleCount ? (
-                  <button
-                    onClick={() => setVisibleCount(v => v + 6)}
-                    className="w-full py-3 rounded-2xl text-[12px] font-semibold text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-muted/40 transition-all active:scale-[0.98]"
-                  >
-                    Cargar más · {transactions.length - visibleCount} restantes
-                  </button>
-                ) : visibleCount > 6 && (
-                  <button
-                    onClick={() => router.push("/history")}
-                    className="w-full py-3 rounded-2xl text-[12px] font-semibold text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-muted/40 transition-all active:scale-[0.98]"
-                  >
-                    Ver historial completo <ChevronRight className="inline w-3 h-3 mb-0.5" />
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-14 rounded-[24px] bg-card">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3.5 bg-background">
-                  <Clock className="w-5 h-5 text-muted-foreground/25" />
-                </div>
-                <p className="text-sm font-semibold text-muted-foreground/40 mb-1">Sin movimientos</p>
-                <p className="text-xs text-muted-foreground/25">Añade tu primer registro</p>
               </div>
             )}
-          </div>
 
-        </div>
+            {/* Recientes */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">Recientes</p>
+                <button onClick={() => router.push("/history")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
+                  Ver todo <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+
+              {transactions && transactions.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {transactions.slice(0, visibleCount).map(tx => (
+                    <TransactionItem key={tx.id} transaction={tx} onClick={() => setSelectedTx(tx)} />
+                  ))}
+                  {transactions.length > visibleCount ? (
+                    <button onClick={() => setVisibleCount(v => v + 6)} className="w-full py-3 rounded-2xl text-[12px] font-semibold text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-muted/40 transition-all active:scale-[0.98]">
+                      Cargar más · {transactions.length - visibleCount} restantes
+                    </button>
+                  ) : visibleCount > 6 && (
+                    <button onClick={() => router.push("/history")} className="w-full py-3 rounded-2xl text-[12px] font-semibold text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-muted/40 transition-all active:scale-[0.98]">
+                      Ver historial completo <ChevronRight className="inline w-3 h-3 mb-0.5" />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-14 rounded-[24px] bg-card">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3.5 bg-background">
+                    <Clock className="w-5 h-5 text-muted-foreground/25" />
+                  </div>
+                  <p className="text-sm font-semibold text-muted-foreground/40 mb-1">Sin movimientos aún</p>
+                  <p className="text-xs text-muted-foreground/25">Registra tu primer gasto o ingreso 👆</p>
+                </div>
+              )}
+            </div>
+
+          </motion.div>
+        )}
       </div>
 
       <TransactionDetailSheet transaction={selectedTx} onClose={() => setSelectedTx(null)} />

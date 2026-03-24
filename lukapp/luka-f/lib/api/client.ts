@@ -12,6 +12,33 @@ export type ApiResponse<T> = {
   };
 };
 
+export type AnalyticsSummary = {
+  health: {
+    score: number;
+    level: "estable" | "riesgo" | "alerta";
+    reasons: string[];
+  };
+  today: {
+    insight: string;
+    action: string;
+  };
+  balances: {
+    available: number;
+    monthlyIncome: number;
+    monthlyExpense: number;
+    monthlyNet: number;
+    burnRateDaily: number;
+    runwayDays: number | null;
+  };
+  forecast: {
+    next30Days: number;
+    next90Days: number;
+    confidence: "alta" | "media" | "baja";
+    trendDaily: number;
+  };
+  alerts: string[];
+};
+
 class ApiClient {
   private baseUrl: string;
 
@@ -256,6 +283,46 @@ export const api = {
     requestDeletion: (id: string) => apiClient.post(`/spaces/${id}/request-deletion`),
     cancelDeletion: (id: string) => apiClient.post(`/spaces/${id}/cancel-deletion`),
     confirmDeletion: (id: string) => apiClient.delete(`/spaces/${id}/confirm-deletion`),
+  },
+
+  profile: {
+    get: () => apiClient.get("/profile"),
+    update: (data: { fullName?: string; currency?: string }) =>
+      apiClient.put("/profile", data),
+    updatePlan: (plan: "FREE" | "PREMIUM") =>
+      apiClient.put("/profile/plan", { plan }),
+    completeOnboarding: () => apiClient.post("/profile/onboarding/complete"),
+  },
+
+  coach: {
+    getInsight: () => apiClient.get<{ content: string }>("/coach/insight"),
+    /** Retorna un ReadableStream de SSE para el chat en streaming */
+    streamChat: async (
+      messages: { role: "user" | "assistant"; content: string }[]
+    ): Promise<ReadableStreamDefaultReader<Uint8Array>> => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? "";
+
+      const response = await fetch(`${API_BASE_URL}/coach/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error("Error al conectar con el coach");
+      }
+
+      return response.body.getReader();
+    },
+  },
+
+  analytics: {
+    getSummary: () => apiClient.get<AnalyticsSummary>("/analytics/summary"),
   },
 
   health: () => apiClient.get("/health"),

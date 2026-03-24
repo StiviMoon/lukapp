@@ -1,6 +1,5 @@
 import { transactionRepository } from "@/repositories/transaction.repository";
 import { accountRepository } from "@/repositories/account.repository";
-import { categoryRepository } from "@/repositories/category.repository";
 import {
   CreateTransactionInput,
   UpdateTransactionInput,
@@ -8,6 +7,7 @@ import {
 } from "@/validations/transaction.schema";
 import { NotFoundError, ValidationError } from "@/errors/app-error";
 import { TransactionType } from "@prisma/client";
+import { prisma } from "@/db/client";
 
 /**
  * Servicio para lógica de negocio de transacciones
@@ -17,47 +17,6 @@ export class TransactionService {
    * Crea una nueva transacción y actualiza el balance de la cuenta
    */
   async createTransaction(userId: string, data: CreateTransactionInput) {
-    // Verificar que la cuenta existe y pertenece al usuario
-    const account = await accountRepository.findById(data.accountId, userId);
-    if (!account) {
-      throw new NotFoundError("Cuenta no encontrada");
-    }
-
-    // Verificar categoría si se proporciona
-    if (data.categoryId) {
-      const category = await categoryRepository.findById(data.categoryId, userId);
-      if (!category) {
-        throw new NotFoundError("Categoría no encontrada");
-      }
-
-      // Verificar que el tipo de transacción coincida con el tipo de categoría
-      if (category.type !== data.type) {
-        throw new ValidationError(
-          "El tipo de transacción no coincide con el tipo de categoría"
-        );
-      }
-    }
-
-    // Crear la transacción
-    const transaction = await transactionRepository.create({
-      type: data.type,
-      amount: data.amount,
-      description: data.description,
-      date: data.date ?? new Date(),
-      profile: {
-        connect: { userId },
-      },
-      account: {
-        connect: { id: data.accountId },
-      },
-      ...(data.categoryId && {
-        category: {
-          connect: { id: data.categoryId },
-        },
-      }),
-    });
-
-    // Actualizar el balance de la cuenta
     const amountToUpdate =
       data.type === TransactionType.INCOME
         ? data.amount
@@ -65,13 +24,58 @@ export class TransactionService {
         ? -data.amount
         : 0; // TRANSFER se maneja por separado
 
-    if (amountToUpdate !== 0) {
-      await accountRepository.updateBalance(
-        data.accountId,
-        userId,
-        amountToUpdate
-      );
-    }
+    const transaction = await prisma.$transaction(async (tx) => {
+      const account = await tx.account.findFirst({
+        where: { id: data.accountId, userId },
+        select: { id: true },
+      });
+      if (!account) {
+        throw new NotFoundError("Cuenta no encontrada");
+      }
+
+      if (data.categoryId) {
+        const category = await tx.category.findFirst({
+          where: { id: data.categoryId, userId },
+          select: { id: true, type: true },
+        });
+        if (!category) {
+          throw new NotFoundError("Categoría no encontrada");
+        }
+
+        if (category.type !== data.type) {
+          throw new ValidationError(
+            "El tipo de transacción no coincide con el tipo de categoría"
+          );
+        }
+      }
+
+      const created = await tx.transaction.create({
+        data: {
+          type: data.type,
+          amount: data.amount,
+          description: data.description,
+          date: data.date ?? new Date(),
+          userId,
+          accountId: data.accountId,
+          ...(data.categoryId && { categoryId: data.categoryId }),
+        },
+      });
+
+      if (amountToUpdate !== 0) {
+        await tx.account.update({
+          where: { id: data.accountId },
+          data: {
+            balance: {
+              increment: amountToUpdate,
+            },
+          },
+        });
+      }
+
+      await tx.coachInsight.deleteMany({ where: { userId } });
+
+      return created;
+    });
 
     return transaction;
   }

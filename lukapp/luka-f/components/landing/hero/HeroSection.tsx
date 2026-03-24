@@ -2,18 +2,17 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import PhoneMockup from "./PhoneMockup";
 
 const stats = [
-  { value: "50k+", label: "En espera", color: "text-accent" },
-  { value: "Abr 26", label: "MVP launch", color: "text-fg" },
-  { value: "IA", label: "Powered by", color: "text-purple-muted" },
+  { value: "$0", label: "Para siempre", color: "text-accent" },
+  { value: "IA", label: "Coach incluido", color: "text-purple-muted" },
+  { value: "Voz", label: "Registro rápido", color: "text-fg" },
 ];
 
 export default function HeroSection() {
-  const scrollToWaitlist = () => {
-    document.querySelector("#waitlist")?.scrollIntoView({ behavior: "smooth" });
-  };
+  const router = useRouter();
 
   return (
     <section
@@ -26,7 +25,6 @@ export default function HeroSection() {
 
       <div className="max-w-[1100px] mx-auto px-6 w-full relative">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Una sola animación de entrada para todo el bloque izquierdo — sin efecto doble */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -35,7 +33,7 @@ export default function HeroSection() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent-soft border border-accent-border rounded-full text-accent text-[12px] font-semibold mb-7 w-fit">
               <span className="w-[6px] h-[6px] rounded-full bg-accent animate-pulse-dot" />
-              MVP · Abril 2026
+              Ya disponible · Gratis
             </div>
 
             <h1
@@ -52,14 +50,17 @@ export default function HeroSection() {
 
             <div className="flex items-center gap-3 flex-wrap mb-12">
               <button
-                onClick={scrollToWaitlist}
+                onClick={() => router.push("/auth?action=register")}
                 className="flex items-center gap-2 px-7 py-3.5 bg-lime text-bg font-bold text-[15px] rounded-2xl hover:bg-lime-dark transition-colors duration-150"
               >
                 <Sparkles size={16} strokeWidth={2.5} />
                 Únete gratis
               </button>
-              <button className="flex items-center gap-2 px-7 py-3.5 bg-transparent text-fg border border-border font-medium text-[15px] rounded-2xl hover:border-fg/25 hover:bg-fg/4 transition-colors duration-150">
-                Ver demo
+              <button
+                onClick={() => document.querySelector("#features")?.scrollIntoView({ behavior: "smooth" })}
+                className="flex items-center gap-2 px-7 py-3.5 bg-transparent text-fg border border-border font-medium text-[15px] rounded-2xl hover:border-fg/25 hover:bg-fg/4 transition-colors duration-150"
+              >
+                Ver más
                 <ArrowRight size={15} strokeWidth={2} />
               </button>
             </div>

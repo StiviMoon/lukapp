@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function CtaSection() {
-  const scrollToWaitlist = () =>
-    document.querySelector("#waitlist")?.scrollIntoView({ behavior: "smooth" });
+  const router = useRouter();
 
   return (
     <section className="py-24 text-center relative">
@@ -24,10 +24,10 @@ export default function CtaSection() {
             ¿Listo para manejar tus lukas?
           </h2>
           <p className="text-fg/35 text-[16px] mb-9">
-            Miles ya esperan. Control, claridad y crecimiento en una sola app.
+            Tu compinche financiero ya está listo. Gratis, sin tarjeta, sin rollos.
           </p>
           <button
-            onClick={scrollToWaitlist}
+            onClick={() => router.push("/auth?action=register")}
             className="inline-flex items-center gap-2.5 px-10 py-4 bg-lime text-bg font-bold text-[16px] rounded-2xl hover:bg-lime-dark transition-colors duration-150"
           >
             <Sparkles size={18} strokeWidth={2.5} />

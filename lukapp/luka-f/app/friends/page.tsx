@@ -132,6 +132,21 @@ function ContactItem({
   );
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function FriendsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <div className="h-3 w-28 rounded bg-muted-foreground/10 animate-pulse ml-1" />
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-[68px] rounded-2xl bg-muted-foreground/10 animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyState() {
@@ -352,56 +367,61 @@ export default function FriendsPage() {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-24 pt-2 flex flex-col gap-4">
-          {/* Pendientes */}
-          <AnimatePresence>
-            {pending.length > 0 && (
-              <motion.section
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2 px-1">
-                  Invitaciones pendientes
-                </p>
-                <div className="flex flex-col gap-2">
-                  {pending.map((c) => (
-                    <PendingItem key={c.id} contact={c} />
-                  ))}
-                </div>
-              </motion.section>
-            )}
-          </AnimatePresence>
+          {isLoading ? (
+            <FriendsSkeleton />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.25 }}
+              className="flex flex-col gap-4"
+            >
+              {/* Pendientes */}
+              <AnimatePresence>
+                {pending.length > 0 && (
+                  <motion.section
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2 px-1">
+                      Invitaciones pendientes
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {pending.map((c) => (
+                        <PendingItem key={c.id} contact={c} />
+                      ))}
+                    </div>
+                  </motion.section>
+                )}
+              </AnimatePresence>
 
-          {/* Aceptados */}
-          <section>
-            <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2 px-1">
-              Mis contactos
-            </p>
-            {isLoading ? (
-              <div className="flex flex-col gap-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-[68px] rounded-2xl bg-card animate-pulse" />
-                ))}
-              </div>
-            ) : accepted.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {accepted.map((c) => {
-                  const spaceId = spaceByOtherUser.get(c.other.userId) ?? null;
-                  return (
-                    <ContactItem
-                      key={c.id}
-                      contact={c}
-                      spaceId={spaceId}
-                      onCreateSpace={(contactId) => setTypeSheetFor(contactId)}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState />
-            )}
-          </section>
+              {/* Aceptados */}
+              <section>
+                <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2 px-1">
+                  Mis contactos
+                </p>
+                {accepted.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {accepted.map((c) => {
+                      const spaceId = spaceByOtherUser.get(c.other.userId) ?? null;
+                      return (
+                        <ContactItem
+                          key={c.id}
+                          contact={c}
+                          spaceId={spaceId}
+                          onCreateSpace={(contactId) => setTypeSheetFor(contactId)}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <EmptyState />
+                )}
+              </section>
+            </motion.div>
+          )}
         </div>
       </div>
 

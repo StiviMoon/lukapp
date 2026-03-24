@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/steven/Documentos/Proyectos/Lukapp && npx tsc --noEmit 2>&1 | tail -10; cd /home/steven/Documentos/Proyectos/Lukapp/lukapp/luka-b && npx tsc --noEmit 2>&1 | tail -10"
+          }
+        ]
+      }
+    ]
+  }
+}

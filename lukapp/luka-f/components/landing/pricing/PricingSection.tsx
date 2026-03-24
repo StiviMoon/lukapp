@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Check, X, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/landing/ui/SectionHeader";
 
 const freePlan = {
@@ -37,6 +38,7 @@ const premiumPlan = {
 };
 
 export default function PricingSection() {
+  const router = useRouter();
   const scrollToWaitlist = () =>
     document.querySelector("#waitlist")?.scrollIntoView({ behavior: "smooth" });
 
@@ -91,7 +93,10 @@ export default function PricingSection() {
               ))}
             </div>
 
-            <button className="w-full py-3.5 rounded-2xl border border-fg/12 text-fg font-semibold text-[14px] hover:border-fg/25 hover:bg-fg/4 transition-colors duration-150">
+            <button
+              onClick={() => router.push("/auth?action=register")}
+              className="w-full py-3.5 rounded-2xl border border-fg/12 text-fg font-semibold text-[14px] hover:border-fg/25 hover:bg-fg/4 transition-colors duration-150"
+            >
               Empezar gratis
             </button>
           </motion.div>
@@ -132,10 +137,10 @@ export default function PricingSection() {
             </div>
 
             <button
-              onClick={scrollToWaitlist}
+              onClick={() => router.push("/auth?plan=premium")}
               className="w-full py-3.5 rounded-2xl bg-lime text-bg font-bold text-[14px] hover:bg-lime-dark transition-colors duration-150"
             >
-              Únete a la espera →
+              Obtener Premium →
             </button>
           </motion.div>
         </div>

@@ -7,9 +7,13 @@ import { SignupForm } from "@/components/auth/signup-form";
 import { toast } from "@/lib/toast";
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Si viene con ?action=register → abrir tab de registro
+  const [isLogin, setIsLogin] = useState(
+    searchParams.get("action") !== "register"
+  );
 
   useEffect(() => {
     const error = searchParams.get("error");
@@ -21,7 +25,13 @@ export default function AuthPage() {
   }, [searchParams]);
 
   const handleSuccess = () => {
-    router.push("/dashboard");
+    // Si viene con ?plan=premium → ir a /upgrade después del login
+    const plan = searchParams.get("plan");
+    if (plan === "premium") {
+      router.push("/upgrade");
+    } else {
+      router.push("/dashboard");
+    }
     router.refresh();
   };
 

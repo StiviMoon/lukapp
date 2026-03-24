@@ -27,6 +27,17 @@ function CategorySkeleton() {
   );
 }
 
+function CategoriesPageSkeleton() {
+  return (
+    <div className="flex flex-col gap-2">
+      <CategorySkeleton />
+      <CategorySkeleton />
+      <CategorySkeleton />
+      <CategorySkeleton />
+    </div>
+  );
+}
+
 // ─── Category card ───────────────────────────────────────────────────────────
 
 function CategoryCard({
@@ -106,8 +117,8 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   const { data: categories, isLoading: catsRaw } = useCategories(activeTab);
-  const catsLoading = useMinDelay(catsRaw);
-  const { data: budgetStatuses } = useBudgetStatus();
+  const { data: budgetStatuses, isLoading: budgetsRaw } = useBudgetStatus();
+  const catsLoading = useMinDelay(catsRaw || budgetsRaw);
 
   const budgetByCategory = useMemo(() => {
     const map = new Map<string, BudgetStatus>();
@@ -184,11 +195,7 @@ export default function CategoriesPage() {
               className="flex flex-col gap-2"
             >
               {catsLoading ? (
-                <>
-                  <CategorySkeleton />
-                  <CategorySkeleton />
-                  <CategorySkeleton />
-                </>
+                <CategoriesPageSkeleton />
               ) : categories && categories.length > 0 ? (
                 categories.map((cat) => (
                   <CategoryCard

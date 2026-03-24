@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import {
   startOfMonth, endOfMonth, format, addMonths, subMonths,
   parseISO, isToday, isSameMonth, addDays, startOfWeek,
@@ -71,6 +72,31 @@ function TxSkeleton() {
       <div className="flex flex-col items-end gap-1.5">
         <div className="h-3.5 w-20 rounded bg-muted-foreground/10" />
         <div className="h-2 w-8 rounded bg-muted-foreground/10" />
+      </div>
+    </div>
+  );
+}
+
+function HistorySkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* Month summary cards */}
+      <div className="grid grid-cols-2 gap-2 animate-pulse">
+        <div className="h-14 rounded-2xl bg-muted-foreground/10" />
+        <div className="h-14 rounded-2xl bg-muted-foreground/10" />
+      </div>
+      {/* Calendar */}
+      <CalendarSkeleton />
+      {/* Day panel */}
+      <div className="rounded-[24px] bg-card overflow-hidden animate-pulse">
+        <div className="px-5 pt-4 pb-3 border-b border-border/30 space-y-2">
+          <div className="h-2.5 w-32 rounded bg-muted-foreground/10" />
+          <div className="h-3.5 w-24 rounded bg-muted-foreground/10" />
+        </div>
+        <div className="p-3 space-y-2">
+          <TxSkeleton />
+          <TxSkeleton />
+        </div>
       </div>
     </div>
   );
@@ -224,125 +250,121 @@ export default function HistoryPage() {
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
-
-          {/* Resumen del mes */}
-          {isLoading ? (
-            <div className="grid grid-cols-2 gap-2 animate-pulse">
-              <div className="h-14 rounded-2xl bg-muted-foreground/10" />
-              <div className="h-14 rounded-2xl bg-muted-foreground/10" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-500/10 px-3.5 py-3">
-                <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/70 dark:text-emerald-400/70">Ingresos</p>
-                  <p className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400 font-nums leading-tight truncate">{formatCOP(monthIncome)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5 rounded-2xl bg-rose-500/10 px-3.5 py-3">
-                <TrendingDown className="w-4 h-4 text-rose-500 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-rose-600/70 dark:text-rose-400/70">Gastos</p>
-                  <p className="text-[13px] font-bold text-rose-600 dark:text-rose-400 font-nums leading-tight truncate">{formatCOP(monthExpense)}</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* ═══ CONTENIDO SCROLLEABLE ═══ */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-32 space-y-4">
 
-          {/* ── Vista calendario ── */}
-          {viewMode === "calendar" && (
-            <>
-              {isLoading ? <CalendarSkeleton /> : (
-                <div className="rounded-[28px] bg-card p-4">
-                  <FullCalendar
-                    month={currentMonth}
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    txByDate={txByDate}
-                  />
-                </div>
-              )}
-
-              {/* Panel del día seleccionado */}
-              <div className="rounded-[24px] bg-card overflow-hidden">
-                <div className="flex items-start justify-between px-5 pt-4 pb-3 border-b border-border/30">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/50 mb-1">
-                      {isToday(selectedDate)
-                        ? "Hoy · " + format(selectedDate, "d 'de' MMMM", { locale: es })
-                        : format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
-                    </p>
-                    {dayTxs.length > 0 && (
-                      <div className="flex gap-3">
-                        {dayIncome  > 0 && <span className="text-[13px] font-bold text-emerald-500 font-nums">+{formatCOP(dayIncome)}</span>}
-                        {dayExpense > 0 && <span className="text-[13px] font-bold text-rose-500 font-nums">-{formatCOP(dayExpense)}</span>}
-                      </div>
-                    )}
+          {isLoading ? (
+            <HistorySkeleton />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-4"
+            >
+              {/* Resumen del mes */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-500/10 px-3.5 py-3">
+                  <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/70 dark:text-emerald-400/70">Ingresos</p>
+                    <p className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400 font-nums leading-tight truncate">{formatCOP(monthIncome)}</p>
                   </div>
-                  <span className="text-[11px] text-muted-foreground/35 font-medium mt-0.5">
-                    {dayTxs.length} {dayTxs.length === 1 ? "mov." : "movs."}
-                  </span>
                 </div>
-                {isLoading ? (
-                  <div className="p-3 space-y-2"><TxSkeleton /><TxSkeleton /></div>
-                ) : dayTxs.length > 0 ? (
-                  <div className="p-3 space-y-1.5">
-                    {dayTxs.map(tx => (
-                      <TransactionItem key={tx.id} transaction={tx} onClick={() => setSelectedTx(tx)} />
-                    ))}
+                <div className="flex items-center gap-2.5 rounded-2xl bg-rose-500/10 px-3.5 py-3">
+                  <TrendingDown className="w-4 h-4 text-rose-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-rose-600/70 dark:text-rose-400/70">Gastos</p>
+                    <p className="text-[13px] font-bold text-rose-600 dark:text-rose-400 font-nums leading-tight truncate">{formatCOP(monthExpense)}</p>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground/35 font-medium text-center py-8">Sin movimientos este día</p>
-                )}
+                </div>
               </div>
-            </>
-          )}
 
-          {/* ── Vista lista ── */}
-          {viewMode === "list" && (
-            <>
-              {isLoading ? (
-                <div className="space-y-2">
-                  {[...Array(5)].map((_, i) => <TxSkeleton key={i} />)}
-                </div>
-              ) : sortedKeys.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 rounded-[24px] bg-card gap-1">
-                  <p className="text-sm font-semibold text-muted-foreground/40">Sin movimientos este mes</p>
-                  <p className="text-xs text-muted-foreground/25">Usa el micrófono o el botón + para registrar</p>
-                </div>
-              ) : (
-                sortedKeys.map(dk => {
-                  const dTxs  = txByDate.get(dk)!;
-                  const dDate = parseISO(dk);
-                  const dInc  = dTxs.filter(t => t.type === "INCOME") .reduce((s, t) => s + Number(t.amount), 0);
-                  const dExp  = dTxs.filter(t => t.type === "EXPENSE").reduce((s, t) => s + Number(t.amount), 0);
-                  const dNet  = dInc - dExp;
-                  const label = isToday(dDate) ? "Hoy" : format(dDate, "EEEE d", { locale: es });
-                  return (
-                    <div key={dk}>
-                      <div className="flex items-center justify-between px-1 mb-2">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/50">
-                          {label.charAt(0).toUpperCase() + label.slice(1)}
+              {/* ── Vista calendario ── */}
+              {viewMode === "calendar" && (
+                <>
+                  <div className="rounded-[28px] bg-card p-4">
+                    <FullCalendar
+                      month={currentMonth}
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      txByDate={txByDate}
+                    />
+                  </div>
+
+                  {/* Panel del día seleccionado */}
+                  <div className="rounded-[24px] bg-card overflow-hidden">
+                    <div className="flex items-start justify-between px-5 pt-4 pb-3 border-b border-border/30">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/50 mb-1">
+                          {isToday(selectedDate)
+                            ? "Hoy · " + format(selectedDate, "d 'de' MMMM", { locale: es })
+                            : format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
                         </p>
-                        <p className={cn("text-[12px] font-bold font-nums", dNet >= 0 ? "text-emerald-500" : "text-rose-500")}>
-                          {dNet >= 0 ? "+" : ""}{formatCOP(dNet)}
-                        </p>
+                        {dayTxs.length > 0 && (
+                          <div className="flex gap-3">
+                            {dayIncome  > 0 && <span className="text-[13px] font-bold text-emerald-500 font-nums">+{formatCOP(dayIncome)}</span>}
+                            {dayExpense > 0 && <span className="text-[13px] font-bold text-rose-500 font-nums">-{formatCOP(dayExpense)}</span>}
+                          </div>
+                        )}
                       </div>
-                      <div className="rounded-[20px] bg-card overflow-hidden divide-y divide-border/20">
-                        {dTxs.map(tx => (
+                      <span className="text-[11px] text-muted-foreground/35 font-medium mt-0.5">
+                        {dayTxs.length} {dayTxs.length === 1 ? "mov." : "movs."}
+                      </span>
+                    </div>
+                    {dayTxs.length > 0 ? (
+                      <div className="p-3 space-y-1.5">
+                        {dayTxs.map(tx => (
                           <TransactionItem key={tx.id} transaction={tx} onClick={() => setSelectedTx(tx)} />
                         ))}
                       </div>
-                    </div>
-                  );
-                })
+                    ) : (
+                      <p className="text-sm text-muted-foreground/35 font-medium text-center py-8">Sin movimientos este día</p>
+                    )}
+                  </div>
+                </>
               )}
-            </>
+
+              {/* ── Vista lista ── */}
+              {viewMode === "list" && (
+                <>
+                  {sortedKeys.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 rounded-[24px] bg-card gap-1">
+                      <p className="text-sm font-semibold text-muted-foreground/40">Sin movimientos este mes</p>
+                      <p className="text-xs text-muted-foreground/25">Usa el micrófono o el botón + para registrar</p>
+                    </div>
+                  ) : (
+                    sortedKeys.map(dk => {
+                      const dTxs  = txByDate.get(dk)!;
+                      const dDate = parseISO(dk);
+                      const dInc  = dTxs.filter(t => t.type === "INCOME") .reduce((s, t) => s + Number(t.amount), 0);
+                      const dExp  = dTxs.filter(t => t.type === "EXPENSE").reduce((s, t) => s + Number(t.amount), 0);
+                      const dNet  = dInc - dExp;
+                      const label = isToday(dDate) ? "Hoy" : format(dDate, "EEEE d", { locale: es });
+                      return (
+                        <div key={dk}>
+                          <div className="flex items-center justify-between px-1 mb-2">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/50">
+                              {label.charAt(0).toUpperCase() + label.slice(1)}
+                            </p>
+                            <p className={cn("text-[12px] font-bold font-nums", dNet >= 0 ? "text-emerald-500" : "text-rose-500")}>
+                              {dNet >= 0 ? "+" : ""}{formatCOP(dNet)}
+                            </p>
+                          </div>
+                          <div className="rounded-[20px] bg-card overflow-hidden divide-y divide-border/20">
+                            {dTxs.map(tx => (
+                              <TransactionItem key={tx.id} transaction={tx} onClick={() => setSelectedTx(tx)} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </>
+              )}
+            </motion.div>
           )}
 
         </div>

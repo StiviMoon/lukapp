@@ -9,11 +9,13 @@ export const useApiQuery = <T>({
   endpoint,
   params,
   enabled = true,
+  staleTime,
 }: {
   queryKey: string[];
   endpoint: string;
   params?: Record<string, any>;
   enabled?: boolean;
+  staleTime?: number;
 }) => {
   return useQuery({
     queryKey,
@@ -28,6 +30,7 @@ export const useApiQuery = <T>({
     },
     enabled,
     retry: 1,
+    ...(staleTime !== undefined && { staleTime }),
   });
 };
 

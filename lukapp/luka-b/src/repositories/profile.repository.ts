@@ -1,5 +1,5 @@
 import { prisma } from "@/db/client";
-import { Profile, Prisma } from "@prisma/client";
+import { Profile, Prisma, UserPlan } from "@prisma/client";
 import { NotFoundError } from "@/errors/app-error";
 
 /**
@@ -67,6 +67,30 @@ export class ProfileRepository {
         userId,
         email,
       } as Prisma.ProfileUncheckedCreateInput,
+    });
+  }
+
+  /**
+   * Actualiza el plan de un usuario (FREE ↔ PREMIUM)
+   */
+  async updatePlan(userId: string, plan: UserPlan): Promise<Profile> {
+    return await prisma.profile.update({
+      where: { userId },
+      data: {
+        plan,
+        planActivatedAt: plan === UserPlan.PREMIUM ? new Date() : null,
+        planExpiresAt: null,
+      },
+    });
+  }
+
+  /**
+   * Marca el onboarding como completado
+   */
+  async completeOnboarding(userId: string): Promise<Profile> {
+    return await prisma.profile.update({
+      where: { userId },
+      data: { onboardingCompleted: true },
     });
   }
 }
