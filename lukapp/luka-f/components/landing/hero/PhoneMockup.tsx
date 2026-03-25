@@ -81,10 +81,10 @@ export default function PhoneMockup() {
         </div>
       </div>
 
-      <div className="absolute top-12 -right-14 bg-bg-card dark:bg-[#111] border border-accent-border dark:border-lime/25 rounded-xl px-3 py-2 text-[11px] font-semibold text-accent dark:text-lime whitespace-nowrap animate-float-delayed shadow-lg">
+      <div className="absolute top-12 -right-4 sm:-right-14 bg-bg-card dark:bg-[#111] border border-accent-border dark:border-lime/25 rounded-xl px-3 py-2 text-[11px] font-semibold text-accent dark:text-lime whitespace-nowrap animate-float-delayed shadow-lg">
         ✦ IA activa
       </div>
-      <div className="absolute bottom-24 -left-14 bg-bg-card dark:bg-[#111] border border-purple-brand/20 dark:border-purple-brand/30 rounded-xl px-3 py-2 text-[11px] font-semibold text-purple-muted whitespace-nowrap animate-float shadow-lg">
+      <div className="absolute bottom-24 -left-4 sm:-left-14 bg-bg-card dark:bg-[#111] border border-purple-brand/20 dark:border-purple-brand/30 rounded-xl px-3 py-2 text-[11px] font-semibold text-purple-muted whitespace-nowrap animate-float shadow-lg">
         📊 +12% ahorro
       </div>
     </div>

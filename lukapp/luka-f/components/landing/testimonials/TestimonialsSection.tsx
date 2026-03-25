@@ -6,26 +6,26 @@ import SectionHeader from "@/components/landing/ui/SectionHeader";
 const testimonials = [
   {
     quote:
-      "Gasté 8 horas semanales en Excel. Con lukapp lo hago en 5 minutos y encima me dice exactamente por qué gasto tanto.",
-    name: "Juan García",
-    role: "Freelancer · 28 años",
-    initials: "JG",
+      "Descubrí que gastaba $380.000 al mes en delivery sin darme cuenta. La IA me lo mostró en 10 segundos. Desde que uso lukapp ahorro mínimo $200.000 al mes.",
+    name: "Camilo Torres",
+    role: "Desarrollador · 26 años · Bogotá",
+    initials: "CT",
     color: "lime" as const,
   },
   {
     quote:
-      "Mi pareja y yo finalmente tenemos claridad total en nuestras finanzas. Sin secretos, sin discusiones. Solo datos.",
-    name: "María & Carlos",
-    role: "Pareja · Medellín",
-    initials: "MC",
+      "Llevábamos 2 años discutiendo por plata con mi novio. Ahora tenemos el espacio compartido y cada uno ve exactamente qué pone y qué gasta. Cero peleas.",
+    name: "Valentina Ríos",
+    role: "Diseñadora · Medellín",
+    initials: "VR",
     color: "purple" as const,
   },
   {
     quote:
-      "Es como tener un asesor financiero en el bolsillo. La IA de verdad entiende mi situación, no da consejos genéricos.",
-    name: "Sandra López",
-    role: "Emprendedora · 35 años",
-    initials: "SL",
+      "Soy independiente y siempre me quedaba corto a fin de mes sin saber por qué. El coach de lukapp me armó un plan realista y por primera vez cerré el mes positivo.",
+    name: "Sebastián Mora",
+    role: "Freelancer · 31 años · Cali",
+    initials: "SM",
     color: "lime" as const,
   },
 ];

@@ -7,14 +7,14 @@ import { useRouter } from "next/navigation";
 const perks = [
   "Sin tarjeta de crédito",
   "Plan gratis para siempre",
-  "Coach IA incluido en Premium",
+  "Cancela cuando quieras",
 ];
 
 export default function WaitlistSection() {
   const router = useRouter();
 
   return (
-    <section id="waitlist" className="py-24 relative overflow-hidden">
+    <section id="cta" className="section-stripe py-24 relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] bg-purple-brand/8 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-[1100px] mx-auto px-6 relative">

@@ -6,13 +6,27 @@ import PricingSection from "@/components/landing/pricing/PricingSection";
 import TestimonialsSection from "@/components/landing/testimonials/TestimonialsSection";
 import FaqSection from "@/components/landing/faq/FaqSection";
 import WaitlistSection from "@/components/landing/waitlist/WaitlistSection";
-import CtaSection from "@/components/landing/ui/CtaSection";
 import Footer from "@/components/landing/footer/Footer";
 
 export const metadata: Metadata = {
   title: "lukapp — Maneja tus lukas. Control, claridad, crecimiento.",
   description:
     "Tus gastos, inversiones y tu plata en una app. Control total y crecimiento financiero — solo o con tu pareja.",
+  openGraph: {
+    title: "lukapp — Maneja tus lukas. Control, claridad, crecimiento.",
+    description:
+      "Tus gastos, inversiones y tu plata en una app. Control total y crecimiento financiero — solo o con tu pareja.",
+    url: "https://www.myluka.app",
+    siteName: "lukapp",
+    locale: "es_CO",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "lukapp — Maneja tus lukas. Control, claridad, crecimiento.",
+    description:
+      "Tus gastos, inversiones y tu plata en una app. Control total y crecimiento financiero — solo o con tu pareja.",
+  },
 };
 
 export default function LandingPage() {
@@ -25,7 +39,6 @@ export default function LandingPage() {
       <TestimonialsSection />
       <FaqSection />
       <WaitlistSection />
-      <CtaSection />
       <Footer />
     </main>
   );

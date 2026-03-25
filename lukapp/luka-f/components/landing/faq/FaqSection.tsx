@@ -12,23 +12,23 @@ const faqs = [
   },
   {
     q: "¿Mis datos están seguros?",
-    a: "Sí. Usamos Supabase con encriptación end-to-end, Row Level Security y cumplimiento GDPR/CCPA. Tus datos nunca se venden a terceros, jamás.",
+    a: "Sí. Usamos Supabase con encriptación end-to-end, Row Level Security y cumplimiento GDPR/CCPA. Tus datos son solo tuyos y jamás se venden a terceros.",
   },
   {
     q: "¿Funciona sin conexión?",
-    a: "Sí. Es una PWA offline-first. Registra transacciones sin conexión y sincroniza automáticamente cuando hay internet disponible.",
+    a: "Sí. lukapp es una PWA offline-first. Registra transacciones sin internet y sincroniza automáticamente cuando vuelve la conexión.",
   },
   {
     q: "¿Puedo usarlo con mi pareja?",
-    a: "Sí. Crea una relación compartida, invita por username o código y gestionen finanzas juntos sin perder privacidad individual.",
+    a: "Claro. Crea un espacio compartido, invita a tu pareja por username o código y gestionen las finanzas juntos — sin perder tu privacidad individual.",
   },
   {
-    q: "¿Cuándo sale el MVP?",
-    a: "Abril 2026. Los usuarios en la lista de espera tienen acceso beta anticipado desde marzo.",
+    q: "¿Cómo funciona el Coach IA?",
+    a: "Analiza tu historial de gastos real, detecta patrones, personaliza recomendaciones según tu situación específica y responde preguntas en tiempo real sobre tus finanzas. No es genérico — es tuyo.",
   },
   {
-    q: "¿Cómo funciona la IA?",
-    a: "Analiza tu perfil de gasto, personaliza recomendaciones según tu situación y responde preguntas en tiempo real sobre tus finanzas.",
+    q: "¿Puedo cancelar Premium cuando quiera?",
+    a: "Sí, sin penaltis ni complicaciones. Cancelas desde tu perfil en cualquier momento y conservas el acceso hasta que venza tu período pagado.",
   },
 ];
 

@@ -5,7 +5,7 @@ import {
   Sparkles,
   Mic,
   Users,
-  Gamepad2,
+  BarChart2,
   Smartphone,
 } from "lucide-react";
 import FeatureCard from "./FeatureCard";
@@ -18,7 +18,7 @@ const features = [
     label: "Control",
     title: "Finanzas 100% tuyas",
     description:
-      "Registra ingresos, egresos y metas. Tu dinero, tus reglas, sin complicaciones innecesarias.",
+      "Registra ingresos y egresos al instante. Categorización automática, metas de ahorro y saldo real siempre visible — sin hojas de cálculo.",
     accent: "lime" as const,
   },
   {
@@ -27,7 +27,7 @@ const features = [
     label: "IA",
     title: "Coach que te entiende",
     description:
-      "Análisis personalizado y recomendaciones que evolucionan con tu perfil financiero.",
+      "Detecta dónde se va tu plata, personaliza consejos según tu situación real y responde preguntas sobre tus finanzas en tiempo real. No es genérico.",
     accent: "purple" as const,
   },
   {
@@ -36,25 +36,25 @@ const features = [
     label: "Voz",
     title: "Habla, nosotros registramos",
     description:
-      '"Gasté 50k en comida" y listo. Cero fricción, máxima velocidad en cada registro.',
+      '"Gasté 50k en comida" y listo. Cero fricción, máxima velocidad. El registro más rápido que hayas usado.',
     accent: "lime" as const,
   },
   {
     icon: Users,
     number: "04",
     label: "Compartido",
-    title: "Finanzas compartidas",
+    title: "Finanzas en pareja",
     description:
-      "Gestiona con tu pareja o familia. Transparencia total con privacidad individual.",
+      "Crea un espacio compartido con tu pareja o familia. Cada uno decide qué compartir — transparencia sin perder privacidad individual.",
     accent: "purple" as const,
   },
   {
-    icon: Gamepad2,
+    icon: BarChart2,
     number: "05",
-    label: "Gamificación",
-    title: "Mascota que evoluciona",
+    label: "Reportes",
+    title: "Tendencias que hablan",
     description:
-      "Tu compañero financiero crece contigo. Badges, streaks y progreso siempre visible.",
+      "Visualiza tus patrones mes a mes. Proyecciones a 90 días, burn rate y runway financiero para saber exactamente a dónde vas.",
     accent: "lime" as const,
   },
   {
@@ -63,7 +63,7 @@ const features = [
     label: "PWA",
     title: "App sin instalación",
     description:
-      "PWA offline-first. Sin ocupar almacenamiento. Funciona en cualquier celular.",
+      "Instala desde Chrome o Safari en segundos. Sin App Store, sin ocupar almacenamiento. Funciona offline y sincroniza sola.",
     accent: "purple" as const,
   },
 ];

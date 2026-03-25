@@ -81,7 +81,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.35, delay: 0.06, ease: [0.22, 1, 0.36, 1] }}
-            className="hidden lg:flex justify-center"
+            className="flex justify-center"
           >
             <PhoneMockup />
           </motion.div>
