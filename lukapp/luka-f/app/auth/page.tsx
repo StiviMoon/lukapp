@@ -28,7 +28,12 @@ export default function AuthPage() {
     // Si viene con ?plan=premium → ir a /upgrade después del login
     const plan = searchParams.get("plan");
     if (plan === "premium") {
-      router.push("/upgrade");
+      const billing = searchParams.get("billing");
+      const q =
+        billing === "yearly" || billing === "monthly"
+          ? `?billing=${billing}`
+          : "";
+      router.push(`/upgrade${q}`);
     } else {
       router.push("/dashboard");
     }

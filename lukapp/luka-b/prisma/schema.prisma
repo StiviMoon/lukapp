@@ -13,6 +13,19 @@ enum UserPlan {
   PREMIUM
 }
 
+enum SubscriptionStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  VOIDED
+  ERROR
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
 // Perfil de usuario (extiende auth.users de Supabase)
 model Profile {
   id                  String    @id @default(uuid())
@@ -29,11 +42,13 @@ model Profile {
   updatedAt           DateTime  @updatedAt
 
   // Relaciones personales
-  accounts     Account[]
-  categories   Category[]
-  transactions Transaction[]
-  budgets      Budget[]
-  coachInsights CoachInsight[]
+  accounts        Account[]
+  categories      Category[]
+  transactions    Transaction[]
+  budgets         Budget[]
+  coachInsights   CoachInsight[]
+  subscriptions   Subscription[]
+  paymentSources  PaymentSource[]
 
   // Relaciones de sala compartida
   contactsRequested  Contact[]           @relation("ContactRequests")
@@ -268,6 +283,51 @@ model CoachInsight {
 
   @@index([userId])
   @@map("coach_insights")
+}
+
+// Suscripciones de pago (Wompi)
+model PaymentSource {
+  id            String   @id @default(uuid())
+  userId        String
+  wompiSourceId String   @unique // ID de Wompi (número entero como string)
+  type          String            // CARD, NEQUI, DAVIPLATA, BANCOLOMBIA_TRANSFER
+  last4         String?           // Últimos 4 dígitos (solo tarjetas)
+  brand         String?           // VISA, MASTERCARD, etc. (solo tarjetas)
+  isDefault     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  profile       Profile        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  @@index([userId])
+  @@map("payment_sources")
+}
+
+model Subscription {
+  id              String             @id @default(uuid())
+  userId          String
+  paymentSourceId String?            // FK a PaymentSource (null en flujo redirect)
+  wompiTxId       String             @unique // ID interno de la transacción Wompi
+  wompiRef        String             @unique // Referencia legible (ej: LUKAPP-uuid)
+  status          SubscriptionStatus @default(PENDING)
+  billingCycle    BillingCycle       @default(MONTHLY)
+  discountPercent Int                @default(0) // 10 = 10% descuento (anual)
+  baseAmountCents Int?               // precio base antes del descuento
+  amountCents     Int                // monto final cobrado por Wompi
+  planStartsAt    DateTime
+  planExpiresAt   DateTime
+  autoRenew       Boolean            @default(true)
+  nextBillingAt   DateTime?          // Fecha del próximo cobro automático
+  cancelledAt     DateTime?          // Cuándo se canceló (si aplica)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  profile       Profile        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  paymentSource PaymentSource? @relation(fields: [paymentSourceId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([nextBillingAt]) // Para el cron de renovación
+  @@map("subscriptions")
 }
 
 // Push notification subscriptions

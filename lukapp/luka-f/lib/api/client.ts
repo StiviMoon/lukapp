@@ -12,6 +12,33 @@ export type ApiResponse<T> = {
   };
 };
 
+/** Respuesta de GET /subscription/pricing (centavos COP) */
+export type SubscriptionPricingPayload = {
+  monthly: {
+    billingCycle: "MONTHLY" | "YEARLY";
+    baseAmountCents: number;
+    finalAmountCents: number;
+    discountPercent: number;
+    durationDays: number;
+    equivalentMonthlyCents?: number;
+  };
+  yearly: {
+    billingCycle: "MONTHLY" | "YEARLY";
+    baseAmountCents: number;
+    finalAmountCents: number;
+    discountPercent: number;
+    durationDays: number;
+    equivalentMonthlyCents?: number;
+  };
+};
+
+export type CheckoutResponse = {
+  paymentUrl: string;
+  reference: string;
+  amountCents: number;
+  billingCycle: "MONTHLY" | "YEARLY";
+};
+
 export type AnalyticsSummary = {
   health: {
     score: number;
@@ -323,6 +350,16 @@ export const api = {
 
   analytics: {
     getSummary: () => apiClient.get<AnalyticsSummary>("/analytics/summary"),
+  },
+
+  subscription: {
+    /** Público — sin sesión requerida */
+    getPricing: () =>
+      apiClient.get<SubscriptionPricingPayload>("/subscription/pricing"),
+    checkout: (body: { billingCycle: "MONTHLY" | "YEARLY" }) =>
+      apiClient.post<CheckoutResponse>("/subscription/checkout", body),
+    getStatus: () => apiClient.get("/subscription/status"),
+    cancelAutoRenew: () => apiClient.delete("/subscription/cancel"),
   },
 
   health: () => apiClient.get("/health"),

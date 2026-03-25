@@ -10,6 +10,7 @@ import pushRouter from "./push.routes";
 import profileRouter from "./profile.routes";
 import coachRouter from "./coach.routes";
 import analyticsRouter from "./analytics.routes";
+import subscriptionRouter from "./subscription.routes";
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.use("/spaces", spacesRouter);
 router.use("/push", pushRouter);
 router.use("/coach", coachRouter);
 router.use("/analytics", analyticsRouter);
+router.use("/subscription", subscriptionRouter);
 
 /**
  * GET /api/health

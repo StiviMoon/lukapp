@@ -5,6 +5,7 @@ import cors from "cors";
 import compression from "compression";
 import { errorHandler, notFoundHandler } from "@/middleware/error-handler";
 import apiRoutes from "@/routes";
+import webhooksWompiRouter from "@/routes/webhooks.routes";
 import { checkDatabaseConnection } from "@/db/utils";
 
 const app: Express = express();
@@ -22,6 +23,14 @@ app.use(compression({
     return compression.filter(req, res);
   },
 }));
+
+// Wompi: checksum = sha256(rawBody + secret). Requiere body sin parsear por express.json().
+app.use(
+  "/api/webhooks/wompi",
+  express.raw({ type: "application/json", limit: JSON_BODY_LIMIT }),
+  webhooksWompiRouter
+);
+
 app.use(express.json({ limit: JSON_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true }));
 
