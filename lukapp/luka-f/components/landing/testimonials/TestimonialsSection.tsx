@@ -15,16 +15,16 @@ const testimonials = [
   {
     quote:
       "Llevábamos 2 años discutiendo por plata con mi novio. Ahora tenemos el espacio compartido y cada uno ve exactamente qué pone y qué gasta. Cero peleas.",
-    name: "Valentina",
-    role: "Diseñadora · 25 años · Bogotá",
+    name: "Valentina Reyes",
+    role: "Diseñadora · 22 años · Bogotá",
     initials: "VR",
     color: "purple" as const,
   },
   {
     quote:
       "Soy independiente y siempre me quedaba corto a fin de mes sin saber por qué. El coach de lukapp me armó un plan realista y por primera vez cerré el mes positivo.",
-    name: "Steven Mora",
-    role: "Freelancer · 22 años · Cali",
+    name: "Steven",
+    role: "Freelancer · 27 años · Cali",
     initials: "SM",
     color: "lime" as const,
   },
