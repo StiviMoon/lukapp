@@ -127,7 +127,7 @@ export class SpaceService {
     });
 
     // Push notification (fire-and-forget)
-    pushService.notifyNewTransaction(spaceId, userId, data.amount, data.description).catch(() => {});
+    pushService.notifyNewTransaction(spaceId, userId, data.amount, data.description).catch((e) => console.error("[push] notifyNewTransaction failed:", e));
 
     return tx;
   }
@@ -250,7 +250,7 @@ export class SpaceService {
     const result = await spaceRepository.setDeletionRequest(spaceId, userId);
 
     // Push notification (fire-and-forget)
-    pushService.notifyDeletionRequest(spaceId, userId).catch(() => {});
+    pushService.notifyDeletionRequest(spaceId, userId).catch((e) => console.error("[push] notifyDeletionRequest failed:", e));
 
     return result;
   }

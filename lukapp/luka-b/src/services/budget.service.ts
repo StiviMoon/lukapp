@@ -132,7 +132,7 @@ export class BudgetService {
    */
   async getBudgetStatus(userId: string, date: Date = new Date()) {
     // Limpiar presupuestos huérfanos (sin categoría) en background
-    budgetRepository.deleteOrphaned(userId).catch(() => {});
+    budgetRepository.deleteOrphaned(userId).catch((e) => console.error("[budget] deleteOrphaned failed:", e));
 
     const allActiveBudgets = await budgetRepository.findActiveBudgets(userId, date);
     // Solo devolver presupuestos que tienen categoría

@@ -41,3 +41,17 @@ next-env.d.ts
 # Prisma (opcional: descomenta si no quieres subir migraciones)
 # prisma/migrations/*.sql
 # !prisma/migrations/.gitkeep
+
+# Claude Code — instrucciones privadas y config
+CLAUDE.md
+.claude/
+
+# MCP config — puede contener rutas/tokens locales
+.mcp.json
+
+# Docs internos — estrategia, notas privadas
+docs/nota.txt
+docs/MONETIZACION_PLAN.md
+docs/BACKEND_DEVELOPMENT_PLAN.md
+docs/LANDING_PAGE_PROMPT.md
+docs/CLEANUP_SUMMARY.md

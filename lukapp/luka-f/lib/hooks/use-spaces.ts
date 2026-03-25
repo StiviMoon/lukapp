@@ -38,6 +38,7 @@ export function useSpaceTransactions(id: string) {
       return (res.data ?? []) as SharedTransaction[];
     },
     enabled: !!id,
+    staleTime: 30_000,
   });
 }
 
