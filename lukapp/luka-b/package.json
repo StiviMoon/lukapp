@@ -28,7 +28,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.79.0",
     "@google/genai": "^1.46.0",
     "@prisma/client": "6.19.2",
     "@supabase/supabase-js": "^2.90.1",
