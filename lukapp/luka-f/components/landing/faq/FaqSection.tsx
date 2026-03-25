@@ -8,7 +8,7 @@ import SectionHeader from "@/components/landing/ui/SectionHeader";
 const faqs = [
   {
     q: "¿Cuánto cuesta lukapp?",
-    a: "Gratis para siempre en funcionalidades esenciales. Plan premium a $9.990/mes con Coach IA avanzada, relaciones ilimitadas y reportes detallados.",
+    a: "Gratis para siempre en funcionalidades esenciales. Plan premium a $14.900/mes — o $119.796/año (ahorra 33%). Incluye Coach IA avanzada, espacios ilimitados y reportes detallados.",
   },
   {
     q: "¿Mis datos están seguros?",

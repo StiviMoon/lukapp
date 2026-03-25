@@ -3,8 +3,8 @@
  * El frontend puede mostrar estos valores vía GET /subscription/pricing;
  * el cobro siempre se calcula aquí en el servidor.
  */
-export const PREMIUM_MONTHLY_CENTS = 999000; // $9.990 COP
-export const YEARLY_DISCOUNT_PERCENT = 10;
+export const PREMIUM_MONTHLY_CENTS = 1490000; // $14.900 COP
+export const YEARLY_DISCOUNT_PERCENT = 33;    // $119.796 COP/año (~$9.983/mes equivalente)
 
 export type BillingCycle = "MONTHLY" | "YEARLY";
 
