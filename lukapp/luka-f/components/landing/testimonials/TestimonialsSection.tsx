@@ -43,7 +43,7 @@ const colorMap = {
 
 export default function TestimonialsSection() {
   return (
-    <section className="py-24 relative">
+    <section className="section-on-bg py-24 relative">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader
           badge="Testimonios"
@@ -59,7 +59,7 @@ export default function TestimonialsSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.3, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                className="p-7 bg-bg-card border border-border dark:border-white/[0.08] rounded-3xl transition-all duration-200 hover:border-lime/15 hover:-translate-y-0.5"
+                className="p-7 bg-bg-card card-elevated border border-[#E0DFF0] dark:border-white/[0.08] rounded-3xl transition-all duration-200 hover:border-lime/20 dark:hover:border-lime/15 hover:-translate-y-0.5"
               >
                 <div className={`flex gap-0.5 mb-5 ${c.stars}`}>
                   {"★★★★★".split("").map((s, j) => (

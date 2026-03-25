@@ -12,7 +12,7 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/[0.05] pt-14 pb-8">
+    <footer className="section-stripe border-t border-[#D8D8E4] dark:border-white/[0.06] pt-14 pb-8">
       <div className="max-w-[1100px] mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between gap-12 mb-14">
           {/* Brand */}
@@ -62,7 +62,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-white/[0.04] pt-6 flex flex-col md:flex-row justify-between gap-3">
+        <div className="border-t border-[#D8D8E4] dark:border-white/[0.05] pt-6 flex flex-col md:flex-row justify-between gap-3">
           <p className="text-[13px] text-fg/15">© 2026 lukapp</p>
           <p className="text-[13px] text-fg/15">Hecho para ti</p>
         </div>

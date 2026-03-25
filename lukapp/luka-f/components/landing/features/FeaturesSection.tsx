@@ -72,7 +72,7 @@ export default function FeaturesSection() {
   return (
     <section
       id="features"
-      className="relative py-16 sm:py-20 lg:py-24 px-4 sm:px-6"
+      className="section-stripe relative py-16 sm:py-20 lg:py-24 px-4 sm:px-6"
       aria-labelledby="features-heading"
     >
       <div className="max-w-6xl mx-auto w-full">

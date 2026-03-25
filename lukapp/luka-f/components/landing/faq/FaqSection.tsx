@@ -38,7 +38,7 @@ export default function FaqSection() {
   const toggle = (i: number) => setOpen(open === i ? null : i);
 
   return (
-    <section id="faq" className="py-24 relative">
+    <section id="faq" className="section-stripe py-24 relative">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader badge="FAQ" title="Preguntas frecuentes" />
 
@@ -50,9 +50,11 @@ export default function FaqSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{ duration: 0.28, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
-              className="bg-bg-card border rounded-2xl overflow-hidden transition-colors duration-200"
+              className="bg-bg-card card-elevated rounded-2xl overflow-hidden transition-all duration-200"
               style={{
-                borderColor: open === i ? "rgba(200,212,0,0.2)" : "rgba(255,255,255,0.07)",
+                borderWidth: "1px",
+                borderStyle: "solid",
+                borderColor: open === i ? "rgba(200,212,0,0.3)" : "var(--section-divider)",
               }}
             >
               <button
@@ -60,8 +62,8 @@ export default function FaqSection() {
                 className="w-full flex items-center justify-between px-6 py-5 text-left gap-4"
               >
                 <span className="text-[15px] font-medium text-fg">{f.q}</span>
-                <div className="shrink-0 w-7 h-7 rounded-full border border-white/10 flex items-center justify-center transition-colors duration-200"
-                  style={{ borderColor: open === i ? "rgba(200,212,0,0.3)" : undefined }}>
+                <div className="shrink-0 w-7 h-7 rounded-full border border-[#D8D8E4] dark:border-white/10 flex items-center justify-center transition-colors duration-200"
+                  style={{ borderColor: open === i ? "rgba(200,212,0,0.4)" : undefined }}>
                   {open === i
                     ? <Minus size={13} className="text-lime" strokeWidth={2.5} />
                     : <Plus size={13} className="text-fg/40" strokeWidth={2.5} />

@@ -97,7 +97,7 @@ export default function PricingSection() {
   };
 
   return (
-    <section id="pricing" className="py-24 relative">
+    <section id="pricing" className="section-stripe-strong py-24 relative">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader
           badge="Precios"
@@ -144,7 +144,7 @@ export default function PricingSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.3, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
-            className="relative pt-10 pb-9 px-9 bg-bg-card border border-border rounded-3xl overflow-visible flex flex-col"
+            className="relative pt-10 pb-9 px-9 bg-bg-card card-elevated border border-[#E0DFF0] dark:border-white/[0.07] rounded-3xl overflow-visible flex flex-col"
           >
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-white dark:bg-[#111] border border-border dark:border-white/10 rounded-full shadow-sm">
               <span className="text-[12px] font-bold text-fg uppercase tracking-wider">

@@ -161,19 +161,23 @@
   --auth-input-underline-focus: #6600FF;
 
   /* Landing (light) */
-  --bg: #f5f5f6;
+  --bg: #ECEDF4;
   --text: #1a1a1a;
   --text-muted: #5c5c5c;
   --lime: #C8D400;
   --lime-dark: #A8B200;
   --purple-brand: #6600CC;
   --purple-bright: #7A00F5;
-  --purple-muted: #B18AF7;
+  --purple-muted: #9B6FF0;
   --bg-card: #ffffff;
-  --bg-elevated: #ebebec;
+  --bg-elevated: #F4F4FA;
+  --bg-stripe: #F8F7FF;
+  --bg-stripe-strong: #F2F0FB;
   --accent-text: #5c6b00;
-  --accent-soft: rgba(92, 107, 0, 0.12);
-  --accent-border: rgba(92, 107, 0, 0.25);
+  --accent-soft: rgba(92, 107, 0, 0.10);
+  --accent-border: rgba(92, 107, 0, 0.22);
+  --section-divider: rgba(0, 0, 0, 0.07);
+  --card-shadow: 0 1px 3px rgba(102,0,204,0.06), 0 1px 2px rgba(0,0,0,0.04);
   --shimmer-1: #6b7a00;
   --shimmer-2: #5a4a8a;
   --shimmer-3: #6b7a00;
@@ -239,14 +243,18 @@
   --auth-input-underline-focus: #6600FF;
 
   /* Landing (dark) */
-  --bg: #0A0A0A;
+  --bg: #08080C;
   --text: #f0f0f0;
   --text-muted: #8a8a8a;
-  --bg-card: #111111;
-  --bg-elevated: #171717;
+  --bg-card: #111118;
+  --bg-elevated: #16161F;
+  --bg-stripe: #0F0F18;
+  --bg-stripe-strong: #13101E;
   --accent-text: #C8D400;
-  --accent-soft: rgba(200, 212, 0, 0.1);
-  --accent-border: rgba(200, 212, 0, 0.25);
+  --accent-soft: rgba(200, 212, 0, 0.09);
+  --accent-border: rgba(200, 212, 0, 0.22);
+  --section-divider: rgba(255, 255, 255, 0.06);
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
   --shimmer-1: #b8c900;
   --shimmer-2: #7a5ab8;
   --shimmer-3: #b8c900;
@@ -255,10 +263,27 @@
 /* Landing utilities */
 .grid-bg {
   background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    linear-gradient(var(--section-divider) 1px, transparent 1px),
+    linear-gradient(90deg, var(--section-divider) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent);
+}
+
+/* Alternating section stripe — light: white/very-light-purple, dark: slightly lighter than bg */
+.section-stripe {
+  background-color: var(--bg-stripe);
+}
+.section-stripe-strong {
+  background-color: var(--bg-stripe-strong);
+}
+.section-on-bg {
+  background-color: var(--bg);
+}
+
+/* Card with shadow that works in both themes */
+.card-elevated {
+  background: var(--bg-card);
+  box-shadow: var(--card-shadow);
 }
 .shimmer-text {
   background: linear-gradient(90deg, var(--shimmer-1), var(--shimmer-2), var(--shimmer-3));

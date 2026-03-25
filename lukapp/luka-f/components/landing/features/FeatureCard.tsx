@@ -34,9 +34,11 @@ export default function FeatureCard({
         ease: [0.22, 1, 0.36, 1],
       }}
       className={cn(
-        "h-full flex flex-col rounded-2xl border border-border bg-bg-card",
+        "h-full flex flex-col rounded-2xl border bg-bg-card card-elevated",
+        "border-[#E0DFF0] dark:border-white/[0.07]",
         "p-5 sm:p-6 transition-all duration-200",
-        "hover:border-lime/20 hover:bg-lime/[0.04] hover:-translate-y-0.5",
+        "hover:border-purple-brand/20 hover:-translate-y-0.5",
+        "dark:hover:border-white/15",
         "focus-within:ring-2 focus-within:ring-lime/30 focus-within:border-lime/30",
         "outline-none"
       )}
