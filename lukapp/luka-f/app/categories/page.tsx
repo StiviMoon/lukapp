@@ -184,7 +184,7 @@ export default function CategoriesPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 pt-1">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pt-1" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))" }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}

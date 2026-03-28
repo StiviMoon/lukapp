@@ -20,24 +20,42 @@ const spaceMono = Space_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#5913ef",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)",  color: "#0c0c0e" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f4f4" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover", // clave para safe-area en iPhone con notch
 };
 
 export const metadata: Metadata = {
-  title: "lukapp — Maneja tus lukas. Control, claridad, crecimiento.",
+  title: "lukapp — Tus lukas. Tu control.",
   description:
-    "Tus gastos, tus inversiones, tu plata. Una app para tener el control y crecer financieramente — solo o con tu pareja.",
+    "Gastos, inversiones y claridad en una app. Crece financieramente — solo o con tu pareja.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Lukapp",
+    title: "lukapp",
+    startupImage: [
+      { url: "/icons/splash-1170x2532.png", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/icons/splash-1284x2778.png", media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" },
+    ],
   },
   icons: {
-    apple: "/icons/icon-180.png",
+    apple: [
+      { url: "/icons/icon-120.png", sizes: "120x120" },
+      { url: "/icons/icon-152.png", sizes: "152x152" },
+      { url: "/icons/icon-167.png", sizes: "167x167" },
+      { url: "/icons/icon-180.png", sizes: "180x180" },
+    ],
+    icon: [
+      { url: "/icons/icon-48.png",  sizes: "48x48"  },
+      { url: "/icons/icon-192.png", sizes: "192x192" },
+      { url: "/icons/icon-512.png", sizes: "512x512" },
+    ],
   },
 };
 

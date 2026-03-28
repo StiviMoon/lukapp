@@ -426,3 +426,30 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ─── PWA Safe Areas (iPhone notch / Dynamic Island / Android nav bar) ──── */
+
+/* Padding bottom que respeta la barra de navegación nativa */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pb-safe-nav {
+  /* navbar flotante (~80px) + safe area */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px));
+}
+/* Padding top para status bar en modo standalone */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pt-safe-header {
+  /* header de página (~56px) + status bar safe area */
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+}
+
+/* En modo standalone (instalada como PWA), el body necesita safe areas */
+@media all and (display-mode: standalone) {
+  body {
+    /* Evitar que el contenido quede bajo la status bar de iOS */
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}

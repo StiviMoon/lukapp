@@ -41,18 +41,25 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col px-6 pt-16 pb-12 max-w-sm mx-auto">
+    <div className="min-h-dvh bg-background flex flex-col px-6 pb-12 max-w-sm mx-auto" style={{ paddingTop: "max(64px, env(safe-area-inset-top, 64px))" }}>
 
       {/* Logo & Branding */}
-      <div className="mb-16">
-        <div className="relative inline-flex items-start mb-4">
-          <span className="text-5xl font-black text-primary leading-none font-display">L</span>
-          <span className="w-2.5 h-2.5 rounded-full bg-brand-lime mt-1 ml-0.5 flex-shrink-0" />
-        </div>
-        <h1 className="text-4xl font-bold tracking-tight text-foreground font-display">
-          Lukapp
-        </h1>
-        <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+      <div className="mb-12">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-morado.png"
+          alt="lukapp"
+          className="mix-blend-multiply dark:hidden mb-3"
+          style={{ height: 52, width: "auto", objectFit: "contain" }}
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-verde.png"
+          alt="lukapp"
+          className="mix-blend-screen hidden dark:block mb-3"
+          style={{ height: 52, width: "auto", objectFit: "contain" }}
+        />
+        <p className="text-[14px] text-muted-foreground leading-relaxed">
           Tus finanzas. Claras.
         </p>
       </div>

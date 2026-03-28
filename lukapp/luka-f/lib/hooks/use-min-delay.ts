@@ -1,24 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /**
- * Garantiza que el skeleton se muestre al menos `minMs` ms desde el montaje.
- * Evita el flash cuando los datos llegan muy rápido (caché, red rápida, etc.)
- * y da una sensación de carga profesional y pulida.
- *
- * Uso:
- *   const showSkeleton = useMinDelay(isLoading);
- *   if (showSkeleton) return <Skeleton />;
+ * Muestra skeleton durante al menos `minMs` ms SOLO cuando hay una carga real.
+ * Si los datos ya están en caché (isLoading=false desde el primer render),
+ * devuelve false inmediatamente — sin delay artificial, sin skeleton innecesario.
  */
 export function useMinDelay(isLoading: boolean, minMs = 380): boolean {
-  const [minElapsed, setMinElapsed] = useState(false);
+  // ¿Hubo una carga real en el montaje?
+  const wasLoadingOnMount = useRef(isLoading);
+  const [minElapsed, setMinElapsed] = useState(!isLoading); // si ya cargó, elapsed=true
 
   useEffect(() => {
+    // Solo activar el timer si había carga real al montar
+    if (!wasLoadingOnMount.current) return;
     const timer = setTimeout(() => setMinElapsed(true), minMs);
     return () => clearTimeout(timer);
-  }, []); // solo en el montaje inicial
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Muestra skeleton si: datos aún cargando  O  tiempo mínimo no alcanzado
+  // Si no hubo carga real al montar: nunca mostrar skeleton
+  if (!wasLoadingOnMount.current) return false;
+
+  // Si hubo carga real: skeleton mientras carga O mientras no pasó el tiempo mínimo
   return isLoading || !minElapsed;
 }

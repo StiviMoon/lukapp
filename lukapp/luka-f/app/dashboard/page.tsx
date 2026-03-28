@@ -84,7 +84,7 @@ function TxSkeleton() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5 pt-1">
+    <div className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))" }}>
       {/* Balance card hero — misma altura que el real */}
       <div
         className="balance-card mt-1 rounded-[28px] p-6 animate-pulse"
@@ -277,7 +277,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.25 }}
-            className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5 pt-1"
+            className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))" }}
           >
             {/* Balance card — hero gradient */}
             <div

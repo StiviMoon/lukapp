@@ -1,68 +1,128 @@
-const CACHE_NAME = "lukapp-v1";
-const STATIC_ASSETS = ["/", "/dashboard"];
+const SHELL_CACHE   = "lukapp-shell-v2";
+const DYNAMIC_CACHE = "lukapp-dynamic-v2";
 
-// Install: pre-cache shell
+const PRECACHE = [
+  "/",
+  "/dashboard",
+  "/offline",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/logo-verde.png",
+  "/logo-morado.png",
+];
+
+// ── Install: pre-cachear shell ──────────────────────────────────────────────
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(SHELL_CACHE).then((cache) =>
+      cache.addAll(PRECACHE.map((url) => new Request(url, { cache: "reload" })))
+    )
   );
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// ── Activate: limpiar caches viejos ────────────────────────────────────────
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter((k) => k !== SHELL_CACHE && k !== DYNAMIC_CACHE)
+          .map((k) => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for statics
+// ── Fetch: estrategia por tipo de recurso ──────────────────────────────────
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const { request } = event;
+  const url = new URL(request.url);
 
-  // Skip non-GET and API requests
-  if (event.request.method !== "GET" || url.pathname.startsWith("/api")) return;
+  // Solo interceptar GET del mismo origen
+  if (request.method !== "GET" || url.hostname !== self.location.hostname) return;
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
-  );
+  // API: siempre red, nunca caché
+  if (url.pathname.startsWith("/api/")) return;
+
+  // Chunks de Next.js (_next/static): cache-first permanente (tienen hash en nombre)
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) => cached ?? fetchAndCache(request, SHELL_CACHE)
+      )
+    );
+    return;
+  }
+
+  // Imágenes y fuentes: cache-first
+  if (request.destination === "image" || request.destination === "font") {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) => cached ?? fetchAndCache(request, DYNAMIC_CACHE)
+      )
+    );
+    return;
+  }
+
+  // Navegación (páginas HTML): network-first → caché → /offline
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res.ok) {
+            caches.open(DYNAMIC_CACHE).then((c) => c.put(request, res.clone()));
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(request).then((cached) => cached ?? caches.match("/offline"))
+        )
+    );
+    return;
+  }
 });
 
-// Push notifications
+async function fetchAndCache(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  } catch {
+    return new Response("", { status: 503 });
+  }
+}
+
+// ── Push notifications ──────────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
-  const data = event.data?.json() ?? { title: "Lukapp", body: "Nueva notificación" };
+  if (!event.data) return;
+  let payload = { title: "lukapp", body: "", url: "/dashboard" };
+  try { payload = { ...payload, ...event.data.json() }; } catch {}
+
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
       icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
-      data: { url: data.url ?? "/dashboard" },
+      badge: "/icons/icon-48.png",
+      vibrate: [100, 50, 100],
+      data: { url: payload.url },
     })
   );
 });
 
-// Notification click
+// ── Notification click ──────────────────────────────────────────────────────
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/dashboard";
+  const url = event.notification.data?.url ?? "/dashboard";
   event.waitUntil(
-    clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((windowClients) => {
-        const existing = windowClients.find((c) => c.url.includes(url) && "focus" in c);
-        if (existing) return existing.focus();
-        return clients.openWindow(url);
-      })
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      const existing = list.find((c) => "focus" in c);
+      if (existing) { existing.focus(); existing.navigate(url); return; }
+      clients.openWindow(url);
+    })
   );
 });

@@ -24,7 +24,7 @@ export function Navbar() {
   if (!SHOW_ON.some(p => pathname.startsWith(p))) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none pb-4 px-4">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none px-4" style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))" }}>
       <div className="pointer-events-auto relative">
         {/* ── Nav pill ─────────────────────────────────────────────── */}
         <nav

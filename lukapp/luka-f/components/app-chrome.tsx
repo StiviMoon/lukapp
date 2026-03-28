@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/toaster";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 
 const VoiceModal = dynamic(
   () => import("@/components/voice/VoiceModal").then(m => m.VoiceModal),
@@ -23,6 +24,7 @@ export function AppChrome() {
       <VoiceModal />
       <GlobalAddTransactionSheet />
       <LoadingOverlay />
+      <PwaInstallBanner />
     </>
   );
 }
