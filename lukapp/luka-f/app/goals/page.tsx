@@ -7,6 +7,41 @@ import { useRouter } from "next/navigation";
 import { useSavingGoals, useCreateSavingGoal, useUpdateSavingGoal, useDeleteSavingGoal, SavingGoal } from "@/lib/hooks/use-saving-goals";
 import { formatCOP, cn } from "@/lib/utils";
 
+const GOAL_EMOJIS = ["🎯", "🏠", "✈️", "🚗", "💻", "📱", "🎓", "💍", "🏋️", "🌴", "🛍️", "💊"] as const;
+
+const MONTH_OPTIONS = [
+  { value: "01", label: "Ene" },
+  { value: "02", label: "Feb" },
+  { value: "03", label: "Mar" },
+  { value: "04", label: "Abr" },
+  { value: "05", label: "May" },
+  { value: "06", label: "Jun" },
+  { value: "07", label: "Jul" },
+  { value: "08", label: "Ago" },
+  { value: "09", label: "Sep" },
+  { value: "10", label: "Oct" },
+  { value: "11", label: "Nov" },
+  { value: "12", label: "Dic" },
+] as const;
+
+function daysInMonth(year: number, month1to12: number): number {
+  return new Date(year, month1to12, 0).getDate();
+}
+
+/** yyyy-mm-dd si día/mes/año están completos y la fecha es válida; si no, undefined */
+function deadlineFromParts(day: string, month: string, year: string): string | undefined {
+  if (!day || !month || !year) return undefined;
+  const y = Number(year);
+  const m = Number(month);
+  const d = Number(day);
+  if (!y || !m || !d) return undefined;
+  const max = daysInMonth(y, m);
+  if (d < 1 || d > max) return undefined;
+  const mm = String(m).padStart(2, "0");
+  const dd = String(d).padStart(2, "0");
+  return `${y}-${mm}-${dd}`;
+}
+
 function GoalCard({ goal, onUpdate, onDelete }: {
   goal: SavingGoal;
   onUpdate: (id: string, data: { savedAmount?: number; completed?: boolean }) => void;
@@ -28,7 +63,7 @@ function GoalCard({ goal, onUpdate, onDelete }: {
   };
 
   const daysLeft = goal.deadline
-    ? Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / 86400000)
+    ? Math.ceil((new Date(goal.deadline).getTime() - new Date().getTime()) / 86400000)
     : null;
 
   return (
@@ -136,6 +171,10 @@ function GoalCard({ goal, onUpdate, onDelete }: {
   );
 }
 
+const selectFieldClass =
+  "min-w-0 w-full max-w-full px-2 py-2.5 text-[15px] rounded-xl bg-background border border-border text-foreground " +
+  "focus:outline-none focus:border-purple-brand focus:ring-1 focus:ring-purple-brand/30";
+
 function NewGoalSheet({ onClose, onCreate }: {
   onClose: () => void;
   onCreate: (data: { name: string; targetAmount: number; emoji: string; deadline?: string }) => void;
@@ -143,14 +182,36 @@ function NewGoalSheet({ onClose, onCreate }: {
   const [name, setName] = useState("");
   const [target, setTarget] = useState("");
   const [emoji, setEmoji] = useState("🎯");
-  const [deadline, setDeadline] = useState("");
-  const EMOJIS = ["🎯", "🏠", "✈️", "🚗", "💻", "📱", "🎓", "💍", "🏋️", "🌴", "🛍️", "💊"];
+  const [dlDay, setDlDay] = useState("");
+  const [dlMonth, setDlMonth] = useState("");
+  const [dlYear, setDlYear] = useState("");
+
+  const currentY = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 16 }, (_, i) => String(currentY + i));
+
+  const monthNum = dlMonth ? Number(dlMonth) : 0;
+  const yearForMax = dlYear ? Number(dlYear) : currentY;
+  const maxDay =
+    monthNum >= 1 && monthNum <= 12 ? daysInMonth(yearForMax, monthNum) : 31;
+  const dayOptions = Array.from({ length: maxDay }, (_, i) => String(i + 1));
 
   const handleSubmit = () => {
     const targetAmount = parseFloat(target.replace(/\./g, "").replace(",", "."));
     if (!name.trim() || isNaN(targetAmount) || targetAmount <= 0) return;
-    onCreate({ name: name.trim(), targetAmount, emoji, deadline: deadline || undefined });
+    const deadline = deadlineFromParts(dlDay, dlMonth, dlYear);
+    onCreate({ name: name.trim(), targetAmount, emoji, deadline });
     onClose();
+  };
+
+  const onMonthOrYearChange = (nextMonth: string, nextYear: string) => {
+    setDlMonth(nextMonth);
+    setDlYear(nextYear);
+    if (!dlDay) return;
+    const m = Number(nextMonth);
+    if (m < 1 || m > 12) return;
+    const y = nextYear ? Number(nextYear) : currentY;
+    const max = daysInMonth(y, m);
+    if (Number(dlDay) > max) setDlDay(String(max));
   };
 
   return (
@@ -158,7 +219,7 @@ function NewGoalSheet({ onClose, onCreate }: {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/50 flex items-end"
+      className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
@@ -166,64 +227,149 @@ function NewGoalSheet({ onClose, onCreate }: {
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 320 }}
-        className="w-full bg-card rounded-t-3xl p-6 pb-10 border-t border-border"
+        className="w-full max-w-sm bg-card rounded-t-3xl border-t border-border shadow-2xl flex flex-col max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-bottom)))]"
+        style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))" }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-bold text-[17px] text-foreground">Nueva meta</h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-muted">
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-
-        {/* Emoji picker */}
-        <div className="flex gap-2 flex-wrap mb-4">
-          {EMOJIS.map((e) => (
+        <div className="flex-none px-5 pt-5 pb-2">
+          <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-muted-foreground/25" aria-hidden />
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-[17px] text-foreground">Nueva meta</h2>
             <button
-              key={e}
-              onClick={() => setEmoji(e)}
-              className={cn(
-                "w-10 h-10 text-xl rounded-xl transition-colors",
-                emoji === e ? "bg-purple-brand/20 ring-2 ring-purple-brand" : "bg-muted hover:bg-muted/80"
-              )}
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-muted"
             >
-              {e}
+              <X className="w-4 h-4 text-muted-foreground" />
             </button>
-          ))}
-        </div>
-
-        <div className="space-y-3 mb-4">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nombre de la meta"
-            className="w-full px-4 py-3 text-[15px] rounded-2xl bg-background border border-border focus:outline-none focus:border-purple-brand"
-          />
-          <input
-            type="number"
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-            placeholder="Monto objetivo ($)"
-            className="w-full px-4 py-3 text-[15px] rounded-2xl bg-background border border-border focus:outline-none focus:border-purple-brand"
-          />
-          <div>
-            <label className="text-[12px] text-muted-foreground mb-1 block">Fecha límite (opcional)</label>
-            <input
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="w-full px-4 py-3 text-[15px] rounded-2xl bg-background border border-border focus:outline-none focus:border-purple-brand"
-            />
           </div>
         </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={!name.trim() || !target}
-          className="w-full py-3.5 bg-purple-brand text-white font-bold text-[15px] rounded-2xl hover:bg-purple-brand/90 transition-colors disabled:opacity-40"
-        >
-          Crear meta
-        </button>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pb-4 space-y-4">
+          {/* Emoji picker */}
+          <div>
+            <p className="text-[12px] text-muted-foreground mb-2">Icono</p>
+            <div className="flex gap-2 flex-wrap">
+              {GOAL_EMOJIS.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => setEmoji(e)}
+                  className={cn(
+                    "w-10 h-10 text-xl rounded-xl transition-colors shrink-0",
+                    emoji === e ? "bg-purple-brand/20 ring-2 ring-purple-brand" : "bg-muted hover:bg-muted/80"
+                  )}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="goal-name" className="text-[12px] text-muted-foreground mb-1.5 block">
+                Nombre
+              </label>
+              <input
+                id="goal-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej. Viaje a San Andrés"
+                autoComplete="off"
+                className="w-full min-w-0 px-4 py-3 text-[16px] rounded-2xl bg-background border border-border focus:outline-none focus:border-purple-brand"
+              />
+            </div>
+            <div>
+              <label htmlFor="goal-target" className="text-[12px] text-muted-foreground mb-1.5 block">
+                Monto objetivo (COP)
+              </label>
+              <input
+                id="goal-target"
+                type="number"
+                inputMode="decimal"
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                placeholder="0"
+                className="w-full min-w-0 px-4 py-3 text-[16px] rounded-2xl bg-background border border-border focus:outline-none focus:border-purple-brand"
+              />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[12px] text-muted-foreground mb-1.5 block">Fecha límite (opcional)</span>
+              <div className="grid grid-cols-3 gap-2 min-w-0">
+                <div className="min-w-0">
+                  <label htmlFor="goal-dl-day" className="sr-only">
+                    Día
+                  </label>
+                  <select
+                    id="goal-dl-day"
+                    value={dlDay}
+                    onChange={(e) => setDlDay(e.target.value)}
+                    className={selectFieldClass}
+                  >
+                    <option value="">Día</option>
+                    {dayOptions.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="min-w-0">
+                  <label htmlFor="goal-dl-month" className="sr-only">
+                    Mes
+                  </label>
+                  <select
+                    id="goal-dl-month"
+                    value={dlMonth}
+                    onChange={(e) => onMonthOrYearChange(e.target.value, dlYear)}
+                    className={selectFieldClass}
+                  >
+                    <option value="">Mes</option>
+                    {MONTH_OPTIONS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="min-w-0">
+                  <label htmlFor="goal-dl-year" className="sr-only">
+                    Año
+                  </label>
+                  <select
+                    id="goal-dl-year"
+                    value={dlYear}
+                    onChange={(e) => onMonthOrYearChange(dlMonth, e.target.value)}
+                    className={selectFieldClass}
+                  >
+                    <option value="">Año</option>
+                    {yearOptions.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground/70 mt-2 leading-snug">
+                Si no eliges día, mes y año, la meta queda sin fecha límite.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-none px-5 pt-2 border-t border-border/60 bg-card">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!name.trim() || !target}
+            className="w-full py-3.5 bg-purple-brand text-white font-bold text-[15px] rounded-2xl hover:bg-purple-brand/90 transition-colors disabled:opacity-40"
+          >
+            Crear meta
+          </button>
+        </div>
       </motion.div>
     </motion.div>
   );
