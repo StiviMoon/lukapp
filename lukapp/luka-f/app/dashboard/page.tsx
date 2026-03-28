@@ -84,7 +84,7 @@ function TxSkeleton() {
 
 function DashboardSkeleton() {
   return (
-    <div className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))" }}>
+    <div className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1 pb-app-scroll">
       {/* Balance card hero — misma altura que el real */}
       <div
         className="balance-card mt-1 rounded-[28px] p-6 animate-pulse"
@@ -277,7 +277,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.25 }}
-            className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))" }}
+            className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1 pb-app-scroll"
           >
             {/* Balance card — hero gradient */}
             <div
@@ -489,7 +489,7 @@ export default function DashboardPage() {
               </div>
 
               {transactions && transactions.length > 0 ? (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 mb-3">
                   {transactions.slice(0, visibleCount).map(tx => (
                     <TransactionItem key={tx.id} transaction={tx} onClick={() => setSelectedTx(tx)} />
                   ))}

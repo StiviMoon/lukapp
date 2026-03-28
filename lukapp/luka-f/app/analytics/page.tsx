@@ -326,7 +326,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ═══ CONTENIDO ═══ */}
-        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 0px))" }}>
+        <div className="flex-1 overflow-y-auto overscroll-contain pb-app-scroll">
           {isLoading ? (
             <AnalyticsSkeleton />
           ) : (

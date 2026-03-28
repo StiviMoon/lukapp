@@ -1,9 +1,27 @@
 import { prisma } from "@/db/client";
 import { SavingGoal, Prisma } from "@prisma/client";
 
+interface CreateGoalData {
+  userId: string;
+  name: string;
+  targetAmount: number | string;
+  savedAmount?: number | string;
+  emoji?: string | null;
+  deadline?: Date | null;
+}
+
 export class SavingGoalRepository {
-  async create(data: Prisma.SavingGoalCreateInput): Promise<SavingGoal> {
-    return prisma.savingGoal.create({ data });
+  async create(data: CreateGoalData): Promise<SavingGoal> {
+    return prisma.savingGoal.create({
+      data: {
+        userId: data.userId,
+        name: data.name,
+        targetAmount: data.targetAmount,
+        savedAmount: data.savedAmount ?? 0,
+        emoji: data.emoji ?? null,
+        deadline: data.deadline ?? null,
+      },
+    });
   }
 
   async findByUserId(userId: string): Promise<SavingGoal[]> {

@@ -366,7 +366,7 @@ export default function FriendsPage() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-24 pt-2 flex flex-col gap-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-app-scroll flex flex-col gap-4">
           {isLoading ? (
             <FriendsSkeleton />
           ) : (

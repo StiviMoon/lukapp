@@ -25,12 +25,12 @@ export class SavingGoalService {
 
   async createGoal(userId: string, data: CreateGoalInput) {
     return savingGoalRepository.create({
-      profile: { connect: { userId } },
+      userId,
       name: data.name,
       targetAmount: data.targetAmount,
       savedAmount: data.savedAmount ?? 0,
-      emoji: data.emoji,
-      deadline: data.deadline ? new Date(data.deadline) : undefined,
+      emoji: data.emoji ?? null,
+      deadline: data.deadline ? new Date(data.deadline) : null,
     });
   }
 

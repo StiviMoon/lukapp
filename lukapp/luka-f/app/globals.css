@@ -61,6 +61,10 @@
 :root {
   --radius: 0.75rem;
 
+  /* Espacio bajo el contenido scrolleable cuando hay navbar flotante + micrófono (FAB).
+     ~96px se quedaba corto en iPhone: el último botón (“Cargar más”) quedaba bajo la pill. */
+  --app-bottom-nav-clearance: 128px;
+
   /* Brand Colors - Official Palette */
   --brand-purple: #5913ef;
   --brand-purple-dark: #3d0ab5;
@@ -434,8 +438,13 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .pb-safe-nav {
-  /* navbar flotante (~80px) + safe area */
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px));
+  /* Legado: mismo criterio que .pb-app-scroll */
+  padding-bottom: calc(var(--app-bottom-nav-clearance) + env(safe-area-inset-bottom, 16px));
+}
+
+/* Contenedores scroll con navbar inferior (dashboard, historial, etc.) */
+.pb-app-scroll {
+  padding-bottom: calc(var(--app-bottom-nav-clearance) + env(safe-area-inset-bottom, 0px));
 }
 /* Padding top para status bar en modo standalone */
 .pt-safe {

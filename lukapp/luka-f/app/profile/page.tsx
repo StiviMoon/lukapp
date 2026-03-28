@@ -102,7 +102,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ═══ CONTENIDO SCROLLEABLE ═══ */}
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-32">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-app-scroll">
         {showSkeleton ? (
           <ProfileSkeleton />
         ) : (
