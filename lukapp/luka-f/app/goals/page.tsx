@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Target, Plus, CheckCircle2, Trash2, Pencil, X, Check } from "lucide-react";
+import { ArrowLeft, Target, Plus, CheckCircle2, Trash2, X, Loader2, PiggyBank } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSavingGoals, useCreateSavingGoal, useUpdateSavingGoal, useDeleteSavingGoal, SavingGoal } from "@/lib/hooks/use-saving-goals";
 import { formatCOP, cn } from "@/lib/utils";
+import { toast } from "@/lib/toast";
+import { haptics } from "@/lib/haptics";
 
 const GOAL_EMOJIS = ["🎯", "🏠", "✈️", "🚗", "💻", "📱", "🎓", "💍", "🏋️", "🌴", "🛍️", "💊"] as const;
 
@@ -42,24 +44,65 @@ function deadlineFromParts(day: string, month: string, year: string): string | u
   return `${y}-${mm}-${dd}`;
 }
 
-function GoalCard({ goal, onUpdate, onDelete }: {
+function CreatingGoalModal() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-6"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="creating-goal-title"
+      aria-busy="true"
+    >
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.96, opacity: 0 }}
+        transition={{ type: "spring", damping: 26, stiffness: 320 }}
+        className="w-full max-w-[280px] rounded-2xl bg-card border border-border px-6 py-8 flex flex-col items-center gap-3 shadow-xl"
+      >
+        <Loader2 className="w-10 h-10 text-purple-brand animate-spin shrink-0" aria-hidden />
+        <p id="creating-goal-title" className="text-[17px] font-bold text-foreground text-center">
+          Creando meta…
+        </p>
+        <p className="text-[13px] text-muted-foreground text-center leading-snug">
+          Guardando tu meta, espera un momento.
+        </p>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function GoalCard({
+  goal,
+  onAddSaved,
+  onDelete,
+  isSaving,
+}: {
   goal: SavingGoal;
-  onUpdate: (id: string, data: { savedAmount?: number; completed?: boolean }) => void;
+  onAddSaved: (id: string, newSavedTotal: number, delta: number) => Promise<void>;
   onDelete: (id: string) => void;
+  isSaving: boolean;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [sumOpen, setSumOpen] = useState(false);
   const [addAmount, setAddAmount] = useState("");
   const saved = Number(goal.savedAmount);
   const target = Number(goal.targetAmount);
   const progress = Math.min((saved / target) * 100, 100);
   const remaining = Math.max(target - saved, 0);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const amount = parseFloat(addAmount.replace(/\./g, "").replace(",", "."));
-    if (isNaN(amount) || amount <= 0) return;
-    onUpdate(goal.id, { savedAmount: saved + amount });
-    setAddAmount("");
-    setEditing(false);
+    if (isNaN(amount) || amount <= 0 || isSaving) return;
+    try {
+      await onAddSaved(goal.id, saved + amount, amount);
+      setAddAmount("");
+      setSumOpen(false);
+    } catch {
+      /* toast en el padre */
+    }
   };
 
   const daysLeft = goal.deadline
@@ -80,15 +123,15 @@ function GoalCard({ goal, onUpdate, onDelete }: {
       )}
     >
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center text-xl",
+            "w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0",
             goal.completed ? "bg-lime/20" : "bg-purple-brand/10"
           )}>
             {goal.emoji ?? "🎯"}
           </div>
-          <div>
-            <p className="font-semibold text-[15px] text-foreground leading-tight">{goal.name}</p>
+          <div className="min-w-0">
+            <p className="font-semibold text-[15px] text-foreground leading-tight truncate">{goal.name}</p>
             {daysLeft !== null && !goal.completed && (
               <p className={cn("text-[11px] mt-0.5", daysLeft < 7 ? "text-red-400" : "text-muted-foreground")}>
                 {daysLeft > 0 ? `${daysLeft} días restantes` : "Plazo vencido"}
@@ -96,20 +139,15 @@ function GoalCard({ goal, onUpdate, onDelete }: {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           {goal.completed ? (
             <CheckCircle2 className="w-5 h-5 text-lime" />
-          ) : (
-            <button
-              onClick={() => setEditing(!editing)}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
-            >
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          )}
+          ) : null}
           <button
+            type="button"
             onClick={() => onDelete(goal.id)}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-500/10 transition-colors"
+            aria-label="Eliminar meta"
           >
             <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-red-400" />
           </button>
@@ -117,9 +155,9 @@ function GoalCard({ goal, onUpdate, onDelete }: {
       </div>
 
       {/* Progress bar */}
-      <div className="mb-2">
+      <div className="mb-3">
         <div className="flex justify-between text-[12px] mb-1.5">
-          <span className="text-muted-foreground">Ahorrado</span>
+          <span className="text-muted-foreground">Llevas ahorrado</span>
           <span className="font-semibold text-foreground">{formatCOP(saved)}</span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -137,32 +175,91 @@ function GoalCard({ goal, onUpdate, onDelete }: {
       </div>
 
       {!goal.completed && remaining > 0 && (
-        <p className="text-[12px] text-muted-foreground mb-2">Faltan {formatCOP(remaining)}</p>
+        <p className="text-[12px] text-muted-foreground mb-3">Te faltan {formatCOP(remaining)} para llegar</p>
       )}
 
-      {/* Add amount input */}
-      <AnimatePresence>
-        {editing && (
+      {/* Sumar a la meta */}
+      <AnimatePresence mode="wait">
+        {!goal.completed && !sumOpen && (
+          <motion.button
+            key="cta"
+            type="button"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setSumOpen(true)}
+            disabled={isSaving}
+            className={cn(
+              "w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-[14px] transition-all active:scale-[0.98]",
+              "bg-purple-brand text-white shadow-md shadow-purple-brand/25",
+              "disabled:opacity-50 disabled:pointer-events-none",
+            )}
+          >
+            <PiggyBank className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+            Sumar a tu meta
+          </motion.button>
+        )}
+
+        {!goal.completed && sumOpen && (
           <motion.div
+            key="form"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
+            className="overflow-hidden pt-1 border-t border-border/60"
           >
-            <div className="flex gap-2 pt-2 border-t border-border mt-2">
+            <div className="space-y-3 pt-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-purple-brand/15 flex items-center justify-center shrink-0">
+                  <Plus className="w-4 h-4 text-purple-brand" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-foreground leading-tight">¿Cuánto sumas?</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Lo que apartaste para esta meta</p>
+                </div>
+              </div>
               <input
                 type="number"
+                inputMode="decimal"
                 value={addAmount}
                 onChange={(e) => setAddAmount(e.target.value)}
-                placeholder="Monto a agregar"
-                className="flex-1 px-3 py-2 text-[13px] rounded-xl bg-background border border-border focus:outline-none focus:border-purple-brand"
+                placeholder="Ej. 50000"
+                disabled={isSaving}
+                className="w-full min-w-0 px-4 py-3.5 text-[16px] rounded-2xl bg-background border border-border focus:outline-none focus:border-purple-brand focus:ring-1 focus:ring-purple-brand/25 disabled:opacity-50"
               />
-              <button onClick={handleAdd} className="w-9 h-9 flex items-center justify-center bg-purple-brand rounded-xl text-white">
-                <Check className="w-4 h-4" />
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={isSaving || !addAmount.trim()}
+                className="w-full py-3.5 rounded-2xl font-bold text-[15px] bg-purple-brand text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-40 disabled:scale-100"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sumando…
+                  </>
+                ) : (
+                  <>
+                    <PiggyBank className="w-4 h-4" strokeWidth={2.2} />
+                    Sumar a mi meta
+                  </>
+                )}
               </button>
-              <button onClick={() => setEditing(false)} className="w-9 h-9 flex items-center justify-center bg-muted rounded-xl">
-                <X className="w-4 h-4 text-muted-foreground" />
+              <button
+                type="button"
+                onClick={() => {
+                  setSumOpen(false);
+                  setAddAmount("");
+                }}
+                disabled={isSaving}
+                className="w-full py-2 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+              >
+                Cancelar
               </button>
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed text-center px-1">
+                Suma a tu progreso de meta. No crea un ingreso en tus cuentas del app.
+              </p>
             </div>
           </motion.div>
         )}
@@ -383,6 +480,17 @@ export default function GoalsPage() {
   const deleteGoal = useDeleteSavingGoal();
   const [showNew, setShowNew] = useState(false);
 
+  const handleAddSaved = async (id: string, newSavedTotal: number, delta: number) => {
+    try {
+      await updateGoal.mutateAsync({ id, savedAmount: newSavedTotal });
+      toast.success(`Sumaste ${formatCOP(delta)} a tu meta`);
+      haptics.light();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo sumar a la meta");
+      throw e;
+    }
+  };
+
   const active = goals.filter((g) => !g.completed);
   const completed = goals.filter((g) => g.completed);
   const totalSaved = goals.reduce((sum, g) => sum + Number(g.savedAmount), 0);
@@ -445,8 +553,9 @@ export default function GoalsPage() {
                     <GoalCard
                       key={goal.id}
                       goal={goal}
-                      onUpdate={(id, data) => updateGoal.mutate({ id, ...data })}
+                      onAddSaved={handleAddSaved}
                       onDelete={(id) => deleteGoal.mutate(id)}
+                      isSaving={updateGoal.isPending && updateGoal.variables?.id === goal.id}
                     />
                   ))}
                 </AnimatePresence>
@@ -461,8 +570,9 @@ export default function GoalsPage() {
                     <GoalCard
                       key={goal.id}
                       goal={goal}
-                      onUpdate={(id, data) => updateGoal.mutate({ id, ...data })}
+                      onAddSaved={handleAddSaved}
                       onDelete={(id) => deleteGoal.mutate(id)}
+                      isSaving={updateGoal.isPending && updateGoal.variables?.id === goal.id}
                     />
                   ))}
                 </AnimatePresence>
@@ -476,9 +586,18 @@ export default function GoalsPage() {
         {showNew && (
           <NewGoalSheet
             onClose={() => setShowNew(false)}
-            onCreate={(data) => createGoal.mutate(data)}
+            onCreate={(data) => {
+              createGoal.mutate(data, {
+                onSuccess: () => toast.success("Meta creada"),
+                onError: (e) => toast.error(e instanceof Error ? e.message : "No se pudo crear la meta"),
+              });
+            }}
           />
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {createGoal.isPending && <CreatingGoalModal key="creating-goal" />}
       </AnimatePresence>
     </div>
   );

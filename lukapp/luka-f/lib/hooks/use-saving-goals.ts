@@ -29,8 +29,17 @@ export function useSavingGoals() {
 export function useCreateSavingGoal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name: string; targetAmount: number; savedAmount?: number; emoji?: string; deadline?: string }) =>
-      api.savingGoals.create(data),
+    mutationFn: async (data: {
+      name: string;
+      targetAmount: number;
+      savedAmount?: number;
+      emoji?: string;
+      deadline?: string;
+    }) => {
+      const res = await api.savingGoals.create(data);
+      if (!res.success) throw new Error(res.error?.message ?? "No se pudo crear la meta");
+      return res.data;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["saving-goals"] }),
   });
 }
@@ -38,8 +47,22 @@ export function useCreateSavingGoal() {
 export function useUpdateSavingGoal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: { id: string; savedAmount?: number; name?: string; targetAmount?: number; emoji?: string; deadline?: string; completed?: boolean }) =>
-      api.savingGoals.update(id, data),
+    mutationFn: async ({
+      id,
+      ...data
+    }: {
+      id: string;
+      savedAmount?: number;
+      name?: string;
+      targetAmount?: number;
+      emoji?: string;
+      deadline?: string;
+      completed?: boolean;
+    }) => {
+      const res = await api.savingGoals.update(id, data);
+      if (!res.success) throw new Error(res.error?.message ?? "No se pudo actualizar la meta");
+      return res.data;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["saving-goals"] }),
   });
 }
