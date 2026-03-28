@@ -1,5 +1,7 @@
 import { transactionRepository } from "@/repositories/transaction.repository";
 import { accountRepository } from "@/repositories/account.repository";
+import { budgetRepository } from "@/repositories/budget.repository";
+import { pushService } from "@/services/push.service";
 import {
   CreateTransactionInput,
   UpdateTransactionInput,
@@ -76,6 +78,38 @@ export class TransactionService {
 
       return created;
     });
+
+    // Verificar si se excede algún presupuesto activo y enviar push
+    if (data.type === TransactionType.EXPENSE && data.categoryId) {
+      try {
+        const activeBudgets = await budgetRepository.findActiveBudgets(userId);
+        const matchingBudget = activeBudgets.find(
+          (b) => b.categoryId === data.categoryId || (!b.categoryId && !data.categoryId)
+        );
+
+        if (matchingBudget) {
+          const budgetCategoryId = matchingBudget.categoryId ?? undefined;
+          const spent = await transactionRepository.getTotalByType(
+            userId,
+            TransactionType.EXPENSE,
+            matchingBudget.startDate,
+            matchingBudget.endDate,
+            budgetCategoryId
+          );
+
+          if (spent > Number(matchingBudget.amount)) {
+            const categoryName = matchingBudget.category?.name ?? "General";
+            void pushService.sendToUser(userId, {
+              title: "⚠️ Presupuesto excedido",
+              body: `Superaste tu presupuesto de ${categoryName}. Gastado: $${Math.round(spent).toLocaleString("es-CO")}`,
+              url: "/analytics",
+            });
+          }
+        }
+      } catch {
+        // No interrumpir la transacción si falla el push
+      }
+    }
 
     return transaction;
   }

@@ -1,7 +1,22 @@
-const LogoMark = () => (
-  <div className="flex gap-[2px]">
-    <div className="w-[13px] h-[13px] rounded-[3px] bg-lime" />
-    <div className="w-[13px] h-[13px] rounded-[3px] bg-purple-bright" />
+// eslint-disable-next-line @next/next/no-img-element
+const FooterLogo = () => (
+  <div className="relative h-[28px] w-[88px]">
+    {/* Claro: morado con multiply para borrar fondo blanco */}
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img
+      src="/logo-morado.png"
+      alt="lukapp"
+      className="h-[28px] w-auto mix-blend-multiply dark:hidden"
+      style={{ objectFit: "contain" }}
+    />
+    {/* Oscuro: verde con screen para que el lime destaque */}
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img
+      src="/logo-verde.png"
+      alt="lukapp"
+      className="h-[28px] w-auto mix-blend-screen hidden dark:block"
+      style={{ objectFit: "contain" }}
+    />
   </div>
 );
 
@@ -17,9 +32,8 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between gap-12 mb-14">
           {/* Brand */}
           <div className="flex-shrink-0">
-            <div className="flex items-center gap-2 mb-4">
-              <LogoMark />
-              <span className="font-display font-bold text-[17px] text-fg">lukapp</span>
+            <div className="mb-4">
+              <FooterLogo />
             </div>
             <p className="text-[13px] text-fg/25 max-w-[180px] leading-[1.65]">
               Finanzas inteligentes para todos.

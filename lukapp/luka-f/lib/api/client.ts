@@ -59,6 +59,7 @@ export type AnalyticsSummary = {
   };
   forecast: {
     next30Days: number;
+    next60Days: number;
     next90Days: number;
     confidence: "alta" | "media" | "baja";
     trendDaily: number;
@@ -175,6 +176,13 @@ class ApiClient {
   async put<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "PUT",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  async patch<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
       body: body ? JSON.stringify(body) : undefined,
     });
   }
@@ -350,6 +358,13 @@ export const api = {
 
   analytics: {
     getSummary: () => apiClient.get<AnalyticsSummary>("/analytics/summary"),
+  },
+
+  savingGoals: {
+    getAll: () => apiClient.get("/saving-goals"),
+    create: (data: unknown) => apiClient.post("/saving-goals", data),
+    update: (id: string, data: unknown) => apiClient.patch(`/saving-goals/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/saving-goals/${id}`),
   },
 
   subscription: {

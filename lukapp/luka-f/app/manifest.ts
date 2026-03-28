@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Tus finanzas, en orden.",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#6600FF",
+    background_color: "#f4f4f4",
+    theme_color: "#5913ef",
     orientation: "portrait",
     icons: [
       {

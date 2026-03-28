@@ -6,6 +6,7 @@ import { Menu, X, Sparkles, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const links = [
   { label: "Features", href: "#features" },
@@ -13,18 +14,21 @@ const links = [
   { label: "FAQ", href: "#faq" },
 ];
 
-const LogoMark = ({ size = 14 }: { size?: number }) => (
-  <div className="flex gap-[2px]">
-    <div
-      style={{ width: size, height: size, borderRadius: size * 0.22 }}
-      className="bg-lime"
+// Usa mix-blend-multiply en claro (el blanco desaparece) y mix-blend-screen en oscuro (el lime destaca)
+function NavLogo({ isDark, height = 28 }: { isDark: boolean; height?: number }) {
+  const width = Math.round(height * (880 / 280)); // ratio real del logo ~3.14:1
+  return (
+    <Image
+      src={isDark ? "/logo-verde.png" : "/logo-morado.png"}
+      alt="lukapp"
+      width={width}
+      height={height}
+      priority
+      className={isDark ? "mix-blend-screen" : "mix-blend-multiply"}
+      style={{ objectFit: "contain", width: "auto", height: height }}
     />
-    <div
-      style={{ width: size, height: size, borderRadius: size * 0.22 }}
-      className="bg-purple-bright"
-    />
-  </div>
-);
+  );
+}
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -59,12 +63,9 @@ export default function Navbar() {
         {/* Logo */}
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-fg/[0.06] transition-colors duration-200"
+          className="flex items-center px-3 py-1.5 rounded-full hover:bg-fg/[0.06] transition-colors duration-200"
         >
-          <LogoMark size={13} />
-          <span className="font-display font-bold text-[15px] tracking-tight text-fg">
-            lukapp
-          </span>
+          <NavLogo isDark={mounted && resolvedTheme === "dark"} height={26} />
         </button>
 
         <div className="w-px h-4 bg-fg/10 dark:bg-white/10 mx-1" />
@@ -109,12 +110,9 @@ export default function Navbar() {
         >
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="flex items-center gap-2 py-1 shrink-0"
+          className="flex items-center py-0.5 shrink-0"
         >
-          <LogoMark size={12} />
-          <span className="font-display font-bold text-[14px] tracking-tight text-fg">
-            lukapp
-          </span>
+          <NavLogo isDark={mounted && resolvedTheme === "dark"} height={23} />
         </button>
         <div className="flex items-center gap-1.5 shrink-0">
           <button

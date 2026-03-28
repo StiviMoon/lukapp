@@ -32,6 +32,7 @@ export type AnalyticsSummary = {
   };
   forecast: {
     next30Days: number;
+    next60Days: number;
     next90Days: number;
     confidence: ForecastLevel;
     trendDaily: number;
@@ -102,12 +103,13 @@ export function buildDailySeries(
 
 export function computeForecast(dailySeries: DailyPoint[]): {
   next30Days: number;
+  next60Days: number;
   next90Days: number;
   trendDaily: number;
   confidence: ForecastLevel;
 } {
   if (dailySeries.length === 0) {
-    return { next30Days: 0, next90Days: 0, trendDaily: 0, confidence: "baja" };
+    return { next30Days: 0, next60Days: 0, next90Days: 0, trendDaily: 0, confidence: "baja" };
   }
 
   const netValues = dailySeries.map((d) => d.net);
@@ -135,6 +137,7 @@ export function computeForecast(dailySeries: DailyPoint[]): {
 
   return {
     next30Days: project(30),
+    next60Days: project(60),
     next90Days: project(90),
     trendDaily: toMoney(trendDaily),
     confidence,
@@ -327,6 +330,7 @@ export class FinancialAnalyticsService {
       },
       forecast: {
         next30Days: forecast.next30Days,
+        next60Days: forecast.next60Days,
         next90Days: forecast.next90Days,
         confidence: forecast.confidence,
         trendDaily: forecast.trendDaily,

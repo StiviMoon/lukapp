@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Loader2, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
-  Sun, Sunset, Moon, Sunrise, Settings2, Tag, Crown,
+  Settings2, Crown, Tag, Sun, Sunset, Moon, Sunrise, Target,
 } from "lucide-react";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -19,7 +19,6 @@ import { useBudgetStatus } from "@/lib/hooks/use-budgets";
 import { useSharedOverview } from "@/lib/hooks/use-spaces";
 import { formatCompact } from "@/lib/utils";
 import { BudgetBar } from "@/components/categories/BudgetBar";
-import { CategorySheet } from "@/components/categories/CategorySheet";
 import { Users } from "lucide-react";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
@@ -28,6 +27,7 @@ import type { Transaction } from "@/lib/types/transaction";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/lib/hooks/use-profile";
 import { CoachCard, CoachCardSkeleton } from "@/components/coach/CoachCard";
+import { haptics } from "@/lib/haptics";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -42,16 +42,12 @@ function getTimeOfDay(): TimeOfDay {
   return "night";
 }
 
-const TIME_CONFIG: Record<TimeOfDay, {
-  greeting: string;
-  Icon: React.ElementType;
-  iconClass: string;
-}> = {
-  dawn:      { greeting: "Buenos días",   Icon: Sunrise, iconClass: "text-orange-400" },
-  morning:   { greeting: "Buenos días",   Icon: Sun,     iconClass: "text-yellow-400" },
-  afternoon: { greeting: "Buenas tardes", Icon: Sun,     iconClass: "text-orange-400" },
-  evening:   { greeting: "Buenas tardes", Icon: Sunset,  iconClass: "text-rose-400"   },
-  night:     { greeting: "Buenas noches", Icon: Moon,    iconClass: "text-indigo-400" },
+const TIME_CONFIG: Record<TimeOfDay, { greeting: string; Icon: React.ElementType; iconClass: string }> = {
+  dawn:      { greeting: "Buenos días",   Icon: Sunrise, iconClass: "text-orange-300" },
+  morning:   { greeting: "Buenos días",   Icon: Sun,     iconClass: "text-yellow-300" },
+  afternoon: { greeting: "Buenas tardes", Icon: Sun,     iconClass: "text-orange-300" },
+  evening:   { greeting: "Buenas tardes", Icon: Sunset,  iconClass: "text-rose-300"   },
+  night:     { greeting: "Buenas noches", Icon: Moon,    iconClass: "text-indigo-300" },
 };
 
 function formatCOP(n: number) {
@@ -89,19 +85,23 @@ function TxSkeleton() {
 function DashboardSkeleton() {
   return (
     <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5 pt-1">
-      {/* Balance card */}
-      <div className="balance-card mt-1 rounded-2xl p-5 bg-white shadow-md dark:bg-[#12001f] animate-pulse">
+      {/* Balance card hero — misma altura que el real */}
+      <div
+        className="balance-card mt-1 rounded-[28px] p-6 animate-pulse"
+        style={{ background: "linear-gradient(135deg, #2a08a8, #5913ef, #7a3ff5)" }}
+      >
+        {/* Saludo skeleton */}
         <div className="flex items-center justify-between mb-4">
-          <div className="h-2.5 w-16 rounded bg-foreground/10 dark:bg-white/10" />
-          <div className="w-4 h-4 rounded bg-foreground/10 dark:bg-white/10" />
+          <div className="h-3 w-36 rounded-full bg-white/20" />
+          <div className="w-4 h-4 rounded bg-white/20" />
         </div>
-        <div className="h-[44px] w-44 rounded-xl bg-foreground/10 dark:bg-white/10 mb-4" />
-        <div className="flex gap-5">
+        {/* Label "Balance total" skeleton */}
+        <div className="h-2 w-16 rounded-full bg-white/15 mb-2" />
+        {/* Altura fija del balance: 44px */}
+        <div className="h-[44px] w-48 rounded-xl bg-white/20 mb-5" />
+        <div className="flex gap-3">
           {[0, 1].map((i) => (
-            <div key={i} className="min-w-0">
-              <div className="h-2.5 w-14 rounded bg-foreground/10 dark:bg-white/10 mb-2" />
-              <div className="h-3.5 w-24 rounded bg-foreground/10 dark:bg-white/10" />
-            </div>
+            <div key={i} className="flex-1 rounded-2xl bg-white/10 h-[56px]" />
           ))}
         </div>
       </div>
@@ -109,12 +109,12 @@ function DashboardSkeleton() {
       {/* Coach card */}
       <CoachCardSkeleton />
 
-      {/* Quick actions */}
+      {/* Quick actions 4-col */}
       <div>
         <div className="h-2.5 w-20 rounded-full bg-muted-foreground/10 animate-pulse mb-3" />
-        <div className="grid grid-cols-3 gap-2.5">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="py-4 rounded-2xl bg-card animate-pulse flex flex-col items-center gap-2.5">
+        <div className="grid grid-cols-4 gap-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="py-5 rounded-2xl bg-card animate-pulse flex flex-col items-center gap-2.5">
               <div className="w-10 h-10 rounded-2xl bg-muted-foreground/10" />
               <div className="h-2.5 w-12 rounded bg-muted-foreground/10" />
             </div>
@@ -141,10 +141,9 @@ export default function DashboardPage() {
   const router = useRouter();
   useInactivityTimeout();
 
-  const [selectedTx,        setSelectedTx]       = useState<Transaction | null>(null);
-  const [balanceVisible,    setBalanceVisible]    = useState(true);
-  const [visibleCount,      setVisibleCount]      = useState(6);
-  const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+  const [selectedTx,     setSelectedTx]    = useState<Transaction | null>(null);
+  const [balanceVisible, setBalanceVisible] = useState(true);
+  const [visibleCount,   setVisibleCount]   = useState(6);
 
   const { open: openAddSheet } = useAddTransactionStore();
 
@@ -160,7 +159,10 @@ export default function DashboardPage() {
   const hasSharedSpaces = (sharedOverview?.spaces.length ?? 0) > 0;
 
   // Un solo estado de carga unificado — todo el contenido aparece junto
-  const isDataLoading = useMinDelay(balanceLoading || statsLoading || txLoading, 350);
+  const isDataLoading = useMinDelay(
+    balanceLoading || statsLoading || txLoading || profileLoading || overviewLoading,
+    350,
+  );
 
   // Resetear paginación cuando llegan nuevas transacciones (ej. después de registrar una)
   useEffect(() => {
@@ -222,19 +224,25 @@ export default function DashboardPage() {
     <>
       <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
 
-        {/* ── Header fijo: solo saludo ── */}
+        {/* ── Header: LOGO | AJUSTES PERFIL ── */}
         <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <TimeIcon className={`w-3.5 h-3.5 ${iconClass}`} strokeWidth={2.2} />
-              <p className="text-sm text-muted-foreground font-medium leading-none">
-                {greeting},
-              </p>
-            </div>
-            <h1 className="text-[26px] font-bold tracking-tight text-foreground capitalize leading-none font-display">
-              {firstName}
-            </h1>
-          </div>
+          {/* Logo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-morado.png"
+            alt="lukapp"
+            className="mix-blend-multiply dark:hidden"
+            style={{ height: 46, width: "auto", objectFit: "contain" }}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-verde.png"
+            alt="lukapp"
+            className="mix-blend-screen hidden dark:block"
+            style={{ height: 46, width: "auto", objectFit: "contain" }}
+          />
+
+          {/* Acciones */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => router.push("/settings")}
@@ -271,64 +279,84 @@ export default function DashboardPage() {
             transition={{ duration: 0.25 }}
             className="flex-1 overflow-y-auto overscroll-contain px-5 pb-36 space-y-5 pt-1"
           >
-            {/* Balance card */}
-            <div className="balance-card mt-1 rounded-2xl p-5 bg-white shadow-md dark:bg-[#12001f] dark:shadow-lg">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-bold tracking-[0.15em] text-foreground/45 dark:text-white/50 uppercase">
-                  Tus Lukas
-                </p>
+            {/* Balance card — hero gradient */}
+            <div
+              className="balance-card mt-1 rounded-[28px] p-6 relative overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, #2a08a8 0%, #5913ef 45%, #7a3ff5 100%)",
+                boxShadow: "0 8px 32px rgba(89,19,239,0.35), 0 2px 8px rgba(0,0,0,0.2)",
+              }}
+            >
+              {/* Dot pattern overlay */}
+              <div className="absolute inset-0 balance-hero-dots opacity-40 pointer-events-none" />
+
+              {/* Glow orb top-right */}
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-purple-300/20 blur-3xl pointer-events-none" />
+
+              {/* Saludo + ojo */}
+              <div className="flex items-center justify-between mb-4 relative">
+                <div className="flex items-center gap-1.5">
+                  <TimeIcon className={`w-3.5 h-3.5 ${iconClass}`} strokeWidth={2} />
+                  <p className="text-[12px] font-medium text-white/60 leading-none">
+                    {greeting}, <span className="font-bold text-white/80 capitalize">{firstName}</span>
+                  </p>
+                </div>
                 <button
                   onClick={toggleBalance}
-                  className="text-foreground/40 hover:text-foreground/70 dark:text-white/50 dark:hover:text-white/85 transition-colors active:scale-90 p-0.5 shrink-0"
+                  className="text-white/50 hover:text-white/90 transition-colors active:scale-90 p-0.5 shrink-0"
                   aria-label={balanceVisible ? "Ocultar balance" : "Mostrar balance"}
                 >
                   {balanceVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
               </div>
 
-              <div className="min-h-[88px]">
-                <div className="flex items-end gap-1 mb-4 min-h-[40px] w-full min-w-0 overflow-hidden">
-                  <AnimatePresence mode="wait" initial={false}>
-                    {balanceVisible ? (
-                      <motion.div
-                        key="val"
-                        initial={{ opacity: 0, filter: "blur(6px)" }}
-                        animate={{ opacity: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, filter: "blur(6px)" }}
-                        transition={{ duration: 0.2 }}
-                        className="balance-value-inner flex items-baseline gap-0.5 min-w-0 w-full font-extrabold tabular-nums font-nums leading-none text-lime"
-                      >
-                        <span>{balInt}</span>
-                        {balDec && <span className="balance-value-decimal">{balDec}</span>}
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="mask"
-                        initial={{ opacity: 0, filter: "blur(6px)" }}
-                        animate={{ opacity: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, filter: "blur(6px)" }}
-                        transition={{ duration: 0.2 }}
-                        className="balance-value-inner flex items-baseline gap-0.5 min-w-0 w-full font-extrabold tabular-nums font-nums leading-none text-foreground/35 dark:text-white/55 tracking-[0.18em]"
-                      >
-                        {MASKED}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+              {/* Label balance */}
+              <p className="text-[10px] font-bold tracking-[0.16em] text-white/35 uppercase mb-2 relative">
+                Balance total
+              </p>
+
+              <div className="relative">
+                {/* Altura fija — evita layout shift al toggle de visibilidad */}
+                <div className="relative h-[44px] mb-5 w-full overflow-hidden">
+                  {/* Valor real */}
+                  <motion.div
+                    animate={{ opacity: balanceVisible ? 1 : 0, filter: balanceVisible ? "blur(0px)" : "blur(8px)" }}
+                    transition={{ duration: 0.22 }}
+                    className="absolute inset-0 balance-value-inner flex items-center gap-0.5 font-extrabold tabular-nums font-nums leading-none text-white"
+                  >
+                    <span>{balInt}</span>
+                    {balDec && <span className="balance-value-decimal text-white/70">{balDec}</span>}
+                  </motion.div>
+                  {/* Máscara ••••• */}
+                  <motion.div
+                    animate={{ opacity: balanceVisible ? 0 : 1, filter: balanceVisible ? "blur(8px)" : "blur(0px)" }}
+                    transition={{ duration: 0.22 }}
+                    className="absolute inset-0 balance-value-inner flex items-center gap-0.5 font-extrabold tabular-nums font-nums leading-none text-white/50 tracking-[0.2em]"
+                  >
+                    {MASKED}
+                  </motion.div>
                 </div>
 
-                <div className="flex gap-5">
+                {/* Income / Expense pills — altura fija, blur al ocultar */}
+                <div className="flex gap-3">
                   {[
-                    { icon: ArrowUpRight,  label: "Ingresos", value: stats?.totalIncome   },
-                    { icon: ArrowDownLeft, label: "Gastos",   value: stats?.totalExpenses },
-                  ].map(({ icon: Icon, label, value }) => (
-                    <div key={label} className="min-w-0">
-                      <p className="text-[9px] text-foreground/45 dark:text-white/40 mb-0.5">{label}</p>
-                      <p className={["text-[12px] font-bold font-nums tabular-nums leading-none", label === "Ingresos" ? "text-emerald-500" : "text-rose-500"].join(" ")}>
-                        <span className="inline-flex items-center gap-1">
-                          <Icon className="w-3.5 h-3.5" />
-                          {value != null ? (balanceVisible ? formatCOP(value) : MASKED) : "—"}
-                        </span>
-                      </p>
+                    { icon: ArrowUpRight,  label: "Ingresos", value: stats?.totalIncome,   color: "text-emerald-300" },
+                    { icon: ArrowDownLeft, label: "Gastos",   value: stats?.totalExpenses, color: "text-rose-300"   },
+                  ].map(({ icon: Icon, label, value, color }) => (
+                    <div
+                      key={label}
+                      className="flex-1 rounded-2xl px-3.5 py-3"
+                      style={{ background: "rgba(0,0,0,0.22)" }}
+                    >
+                      <p className="text-[9px] text-white/45 mb-1.5 font-semibold uppercase tracking-wider">{label}</p>
+                      <motion.div
+                        animate={{ filter: balanceVisible ? "blur(0px)" : "blur(6px)" }}
+                        transition={{ duration: 0.2 }}
+                        className={`text-[13px] font-bold font-nums tabular-nums leading-none h-[18px] flex items-center gap-1 ${color}`}
+                      >
+                        <Icon className="w-3 h-3 shrink-0" />
+                        <span>{value != null ? formatCOP(value) : "—"}</span>
+                      </motion.div>
                     </div>
                   ))}
                 </div>
@@ -338,28 +366,51 @@ export default function DashboardPage() {
             {/* Coach IA */}
             <CoachCard />
 
-            {/* Quick actions */}
+            {/* Quick actions — 3 col */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">Registrar</p>
-              <div className="grid grid-cols-3 gap-2.5">
-                <button onClick={() => openAddSheet("EXPENSE")} className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500/10 shrink-0">
-                    <ArrowDownLeft className="w-5 h-5 text-rose-500" />
-                  </div>
-                  <span className="text-[12px] font-semibold text-foreground">Gasto</span>
-                </button>
-                <button onClick={() => openAddSheet("INCOME")} className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/10 shrink-0">
-                    <ArrowUpRight className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <span className="text-[12px] font-semibold text-foreground">Ingreso</span>
-                </button>
-                <button onClick={() => setCategorySheetOpen(true)} className="flex flex-col items-center gap-2.5 py-4 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.96]">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-primary/10 shrink-0">
-                    <Tag className="w-5 h-5 text-primary" />
-                  </div>
-                  <span className="text-[12px] font-semibold text-foreground">Categoría</span>
-                </button>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">Acciones</p>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  {
+                    label: "Gasto",
+                    icon: ArrowDownLeft,
+                    bg: "bg-rose-500/10",
+                    iconColor: "text-rose-500",
+                    action: () => { haptics.light(); openAddSheet("EXPENSE"); },
+                  },
+                  {
+                    label: "Ingreso",
+                    icon: ArrowUpRight,
+                    bg: "bg-emerald-500/10",
+                    iconColor: "text-emerald-500",
+                    action: () => { haptics.light(); openAddSheet("INCOME"); },
+                  },
+                  {
+                    label: "Categoría",
+                    icon: Tag,
+                    bg: "bg-primary/10",
+                    iconColor: "text-primary",
+                    action: () => { haptics.light(); router.push("/categories"); },
+                  },
+                  {
+                    label: "Metas",
+                    icon: Target,
+                    bg: "bg-amber-500/10",
+                    iconColor: "text-amber-500",
+                    action: () => { haptics.light(); router.push("/goals"); },
+                  },
+                ].map(({ label, icon: Icon, bg, iconColor, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    className="flex flex-col items-center gap-3 py-5 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.95]"
+                  >
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${bg}`}>
+                      <Icon className={`w-5 h-5 ${iconColor}`} />
+                    </div>
+                    <span className="text-[12px] font-semibold text-foreground">{label}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -468,13 +519,6 @@ export default function DashboardPage() {
       </div>
 
       <TransactionDetailSheet transaction={selectedTx} onClose={() => setSelectedTx(null)} />
-
-      <CategorySheet
-        isOpen={categorySheetOpen}
-        onClose={() => setCategorySheetOpen(false)}
-        category={null}
-        budgetStatus={null}
-      />
     </>
   );
 }

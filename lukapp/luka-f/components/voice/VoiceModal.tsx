@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight, Mic, ChevronDown, Send } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, RotateCcw, ArrowRight, Mic, ChevronDown, Send, Banknote, Building2, PiggyBank, CreditCard, TrendingUp, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
 import { useVoiceRecognition } from "@/lib/hooks/use-voice-recognition";
@@ -15,10 +15,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Transaction, TransactionCategory, Account } from "@/lib/types/transaction";
 
-const ACCOUNT_EMOJI: Record<string, string> = {
-  CASH: "💵", CHECKING: "🏦", SAVINGS: "🏦",
-  CREDIT_CARD: "💳", INVESTMENT: "📈", OTHER: "💰",
+const ACCOUNT_ICONS: Record<string, React.ElementType> = {
+  CASH: Banknote, CHECKING: Building2, SAVINGS: PiggyBank,
+  CREDIT_CARD: CreditCard, INVESTMENT: TrendingUp, OTHER: Wallet,
 };
+
+function AccountIcon({ type }: { type: string }) {
+  const Icon = ACCOUNT_ICONS[type] ?? Wallet;
+  return <Icon className="w-3.5 h-3.5" />;
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -674,7 +679,7 @@ export function VoiceModal() {
                             : "bg-muted text-muted-foreground hover:text-foreground"
                         )}
                       >
-                        <span>{acc.icon ?? (ACCOUNT_EMOJI[acc.type] ?? "💰")}</span>
+                        <AccountIcon type={acc.type} />
                         {acc.name}
                       </button>
                     ))}

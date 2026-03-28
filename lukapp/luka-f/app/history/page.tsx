@@ -11,10 +11,11 @@ import {
 import { es } from "date-fns/locale";
 import {
   CalendarDays, List,
-  ChevronLeft, ChevronRight, TrendingDown, TrendingUp,
+  ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Crown,
 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { useMinDelay } from "@/lib/hooks/use-min-delay";
+import { usePlan } from "@/lib/hooks/use-plan";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
 import type { Transaction } from "@/lib/types/transaction";
@@ -187,7 +188,8 @@ export default function HistoryPage() {
     staleTime: 2 * 60_000,
   });
 
-  const isLoading    = useMinDelay(txRawLoading);
+  const { isPremium, isLoading: planLoading } = usePlan();
+  const isLoading    = useMinDelay(txRawLoading || planLoading);
   const transactions = txData ?? [];
   const txByDate     = useMemo(() => groupByDate(transactions), [transactions]);
   const sortedKeys   = useMemo(
@@ -264,6 +266,20 @@ export default function HistoryPage() {
               transition={{ duration: 0.25 }}
               className="space-y-4"
             >
+              {/* Banner plan FREE — historial limitado */}
+              {!isPremium && (
+                <button
+                  onClick={() => router.push("/upgrade")}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left"
+                >
+                  <Crown className="w-4 h-4 text-amber-500 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-[12px] font-bold text-amber-600 dark:text-amber-400">Historial limitado a 3 meses</p>
+                    <p className="text-[11px] text-muted-foreground">Activa Premium para ver todo tu historial.</p>
+                  </div>
+                </button>
+              )}
+
               {/* Resumen del mes */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-500/10 px-3.5 py-3">

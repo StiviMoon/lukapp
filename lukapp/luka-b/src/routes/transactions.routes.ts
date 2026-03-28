@@ -8,6 +8,7 @@ import {
   getTransactionsSchema,
 } from "@/validations/transaction.schema";
 import { transactionService } from "@/services/transaction.service";
+import { profileRepository } from "@/repositories/profile.repository";
 import { formatError } from "@/errors/error-handler";
 
 const router = Router();
@@ -53,14 +54,24 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId!;
-      const transactions = await transactionService.getTransactions(
-        userId,
-        req.query as any
-      );
+      const filters = req.query as any;
+
+      // FREE users: limit history to last 3 months
+      const profile = await profileRepository.findByUserId(userId);
+      if (profile?.plan !== "PREMIUM") {
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        if (!filters.startDate || new Date(filters.startDate) < threeMonthsAgo) {
+          filters.startDate = threeMonthsAgo.toISOString();
+        }
+      }
+
+      const transactions = await transactionService.getTransactions(userId, filters);
 
       res.json({
         success: true,
         data: transactions,
+        meta: profile?.plan === "FREE" ? { historyLimited: true, limitMonths: 3 } : undefined,
       });
     } catch (error) {
       const formattedError = formatError(error);

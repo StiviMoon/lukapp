@@ -8,17 +8,17 @@
   --color-foreground: var(--foreground);
   --color-brand-purple: var(--brand-purple);
   --color-brand-lime: var(--brand-lime);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-poppins), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, monospace;
   /* Landing */
-  --color-lime: #C8D400;
-  --color-lime-dark: #A8B200;
-  --color-purple-brand: #6600CC;
-  --color-purple-bright: #7A00F5;
-  --color-purple-muted: #B18AF7;
+  --color-lime: #baea0f;
+  --color-lime-dark: #9dc40d;
+  --color-purple-brand: #5913ef;
+  --color-purple-bright: #7a3ff5;
+  --color-purple-muted: #a07af8;
   --color-bg: var(--bg);
   --color-fg: var(--text);
-  --font-display: var(--font-syne), ui-sans-serif, sans-serif;
+  --font-display: var(--font-poppins), ui-sans-serif, sans-serif;
   --font-nums: var(--font-space-mono), ui-monospace, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -61,15 +61,16 @@
 :root {
   --radius: 0.75rem;
 
-  /* Brand Colors - New Logo Palette */
-  --brand-purple: #6600FF;
-  --brand-purple-dark: #4400CC;
-  --brand-purple-light: #8833FF;
-  --brand-lime: #C8D400;
-  --brand-lime-dark: #A0AA00;
-  --brand-lime-light: #D8E633;
-  --brand-black: #0A0A0A;
-  --brand-white: #FFFFFF;
+  /* Brand Colors - Official Palette */
+  --brand-purple: #5913ef;
+  --brand-purple-dark: #3d0ab5;
+  --brand-purple-light: #7a3ff5;
+  --brand-purple-muted: #a07af8;
+  --brand-lime: #baea0f;
+  --brand-lime-dark: #9dc40d;
+  --brand-lime-light: #cef540;
+  --brand-black: #1c1c1c;
+  --brand-white: #f4f4f4;
 
   /* Neutral Colors */
   --neutral-900: #1F1F1F;
@@ -103,21 +104,21 @@
   /* UI Colors */
   --background: var(--brand-white);
   --foreground: var(--brand-black);
-  --card: #F4F4F6;
+  --card: #ffffff;
   --card-foreground: var(--brand-black);
-  --popover: var(--brand-white);
+  --popover: #ffffff;
   --popover-foreground: var(--brand-black);
   --primary: var(--brand-purple);
-  --primary-foreground: var(--brand-white);
-  --secondary: #F0F0F2;
+  --primary-foreground: #f4f4f4;
+  --secondary: #ebebeb;
   --secondary-foreground: var(--brand-black);
-  --muted: #F0F0F2;
+  --muted: #ebebeb;
   --muted-foreground: var(--neutral-500);
   --accent: var(--brand-lime);
   --accent-foreground: var(--brand-black);
   --destructive: var(--danger-500);
-  --border: #E3E3E3;
-  --input: #F4F4F6;
+  --border: #e0e0e0;
+  --input: #ebebeb;
   --ring: var(--brand-purple);
 
   /* Charts */
@@ -158,65 +159,65 @@
   --auth-decorative-1: var(--brand-lime);
   --auth-decorative-2: var(--brand-purple);
   --auth-input-underline: #DDDDE3;
-  --auth-input-underline-focus: #6600FF;
+  --auth-input-underline-focus: #5913ef;
 
   /* Landing (light) */
-  --bg: #ECEDF4;
-  --text: #1a1a1a;
+  --bg: #eeeeee;
+  --text: #1c1c1c;
   --text-muted: #5c5c5c;
-  --lime: #C8D400;
-  --lime-dark: #A8B200;
-  --purple-brand: #6600CC;
-  --purple-bright: #7A00F5;
-  --purple-muted: #9B6FF0;
+  --lime: #baea0f;
+  --lime-dark: #9dc40d;
+  --purple-brand: #5913ef;
+  --purple-bright: #7a3ff5;
+  --purple-muted: #a07af8;
   --bg-card: #ffffff;
-  --bg-elevated: #F4F4FA;
-  --bg-stripe: #F8F7FF;
-  --bg-stripe-strong: #F2F0FB;
-  --accent-text: #5c6b00;
-  --accent-soft: rgba(92, 107, 0, 0.10);
-  --accent-border: rgba(92, 107, 0, 0.22);
+  --bg-elevated: #f4f4f4;
+  --bg-stripe: #f8f8f8;
+  --bg-stripe-strong: #f0f0f0;
+  --accent-text: #6b7c00;
+  --accent-soft: rgba(107, 124, 0, 0.10);
+  --accent-border: rgba(107, 124, 0, 0.22);
   --section-divider: rgba(0, 0, 0, 0.07);
-  --card-shadow: 0 1px 3px rgba(102,0,204,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shimmer-1: #6b7a00;
-  --shimmer-2: #5a4a8a;
-  --shimmer-3: #6b7a00;
+  --card-shadow: 0 1px 3px rgba(89,19,239,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shimmer-1: #8aae00;
+  --shimmer-2: #5913ef;
+  --shimmer-3: #8aae00;
 
   /* Avatar helper */
   --avatar-bg: color-mix(in srgb, var(--primary) 13%, var(--card));
 }
 
 .dark {
-  --background: var(--brand-black);
+  --background: #0c0c0e;
   --foreground: var(--brand-white);
-  --card: #111111;
+  --card: #161618;
   --card-foreground: var(--brand-white);
-  --popover: #111111;
+  --popover: #161618;
   --popover-foreground: var(--brand-white);
   --primary: var(--brand-purple);
-  --primary-foreground: var(--brand-white);
-  --secondary: #1A1A1A;
+  --primary-foreground: #f4f4f4;
+  --secondary: #1c1c1e;
   --secondary-foreground: var(--brand-white);
-  --muted: #1A1A1A;
-  --muted-foreground: #A0A0A0;
+  --muted: #1c1c1e;
+  --muted-foreground: #a0a0a0;
   --accent: var(--brand-lime);
-  --accent-foreground: var(--brand-black);
+  --accent-foreground: #1c1c1c;
   --destructive: var(--danger-300);
-  --border: rgba(255, 255, 255, 0.1);
-  --input: #1A1A1A;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: #1c1c1e;
   --ring: var(--brand-purple);
   --chart-1: var(--success-300);
   --chart-2: var(--danger-300);
   --chart-3: var(--brand-purple);
   --chart-4: var(--warning-300);
   --chart-5: var(--info-300);
-  --sidebar: #111111;
+  --sidebar: #161618;
   --sidebar-foreground: var(--brand-white);
   --sidebar-primary: var(--brand-purple);
-  --sidebar-primary-foreground: var(--brand-white);
-  --sidebar-accent: #1A1A1A;
+  --sidebar-primary-foreground: #f4f4f4;
+  --sidebar-accent: #1c1c1e;
   --sidebar-accent-foreground: var(--brand-white);
-  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: var(--brand-purple);
 
   /* Auth Page Colors (Dark Mode) */
@@ -240,24 +241,24 @@
   --auth-decorative-1: var(--brand-lime);
   --auth-decorative-2: var(--brand-purple);
   --auth-input-underline: #DDDDE3;
-  --auth-input-underline-focus: #6600FF;
+  --auth-input-underline-focus: #5913ef;
 
   /* Landing (dark) */
-  --bg: #08080C;
-  --text: #f0f0f0;
+  --bg: #0c0c0e;
+  --text: #f4f4f4;
   --text-muted: #8a8a8a;
-  --bg-card: #111118;
-  --bg-elevated: #16161F;
-  --bg-stripe: #0F0F18;
-  --bg-stripe-strong: #13101E;
-  --accent-text: #C8D400;
-  --accent-soft: rgba(200, 212, 0, 0.09);
-  --accent-border: rgba(200, 212, 0, 0.22);
+  --bg-card: #161618;
+  --bg-elevated: #1c1c1e;
+  --bg-stripe: #111113;
+  --bg-stripe-strong: #181820;
+  --accent-text: #baea0f;
+  --accent-soft: rgba(186, 234, 15, 0.09);
+  --accent-border: rgba(186, 234, 15, 0.22);
   --section-divider: rgba(255, 255, 255, 0.06);
   --card-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
-  --shimmer-1: #b8c900;
-  --shimmer-2: #7a5ab8;
-  --shimmer-3: #b8c900;
+  --shimmer-1: #baea0f;
+  --shimmer-2: #7a3ff5;
+  --shimmer-3: #baea0f;
 }
 
 /* Landing utilities */
@@ -387,4 +388,41 @@
 
 .delay-2000 {
   animation-delay: 2s;
+}
+
+/* ─── iOS-style glass morphism ─────────────────────────────────────────────── */
+
+.glass-card {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+/* ─── FAB pulsing ring ────────────────────────────────────────────────────── */
+
+@keyframes pulse-ring {
+  0%   { opacity: 0.55; transform: scale(1); }
+  70%  { opacity: 0;    transform: scale(1.35); }
+  100% { opacity: 0;    transform: scale(1.35); }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* ─── Balance card: gradient dark overlay dots ────────────────────────────── */
+
+.balance-hero-dots {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ─── Scrollbar hide ──────────────────────────────────────────────────────── */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

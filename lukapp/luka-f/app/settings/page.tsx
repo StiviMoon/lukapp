@@ -16,6 +16,11 @@ import {
   ChevronRight,
   Wallet,
   Tag,
+  Banknote,
+  Building2,
+  PiggyBank,
+  CreditCard,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useMinDelay } from "@/lib/hooks/use-min-delay";
@@ -170,10 +175,15 @@ const ACCOUNT_TYPES = [
   { value: "OTHER",       label: "Otra" },
 ];
 
-const ACCOUNT_EMOJI: Record<string, string> = {
-  CASH: "💵", CHECKING: "🏦", SAVINGS: "🏦",
-  CREDIT_CARD: "💳", INVESTMENT: "📈", OTHER: "💰",
+const ACCOUNT_ICONS: Record<string, React.ElementType> = {
+  CASH: Banknote, CHECKING: Building2, SAVINGS: PiggyBank,
+  CREDIT_CARD: CreditCard, INVESTMENT: TrendingUp, OTHER: Wallet,
 };
+
+function AccountIcon({ type }: { type: string }) {
+  const Icon = ACCOUNT_ICONS[type] ?? Wallet;
+  return <Icon className="w-4 h-4 text-muted-foreground/60" />;
+}
 
 interface AccountData {
   id: string;
@@ -376,7 +386,7 @@ export default function SettingsPage() {
               <div key={acc.id} className="flex items-center gap-3 px-4 py-3.5 border-b border-border/20 last:border-0">
                 {/* Emoji */}
                 <div className="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center shrink-0 text-base">
-                  {ACCOUNT_EMOJI[acc.type] ?? "💰"}
+                  <AccountIcon type={acc.type} />
                 </div>
                 {/* Info */}
                 <div className="flex-1 min-w-0">
@@ -438,7 +448,7 @@ export default function SettingsPage() {
                 >
                   {ACCOUNT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
-                      {ACCOUNT_EMOJI[t.value]} {t.label}
+                      {t.label}
                     </option>
                   ))}
                 </select>

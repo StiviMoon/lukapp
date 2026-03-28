@@ -81,7 +81,12 @@ export const requirePremium = async (
     const userId = req.userId!;
     const profile = await profileRepository.findByUserId(userId);
 
-    if (profile?.plan !== "PREMIUM") {
+    const now = new Date();
+    const isPremiumActive =
+      profile?.plan === "PREMIUM" &&
+      (!profile.planExpiresAt || profile.planExpiresAt > now);
+
+    if (!isPremiumActive) {
       throw new ForbiddenError("Esta función requiere el plan Premium");
     }
 

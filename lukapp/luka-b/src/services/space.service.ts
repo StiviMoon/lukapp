@@ -1,5 +1,6 @@
 import { contactRepository } from "@/repositories/contact.repository";
 import { spaceRepository } from "@/repositories/space.repository";
+import { profileRepository } from "@/repositories/profile.repository";
 import { pushService } from "@/services/push.service";
 import { ContactStatus, SpaceType } from "@prisma/client";
 import { NotFoundError, ValidationError, ForbiddenError } from "@/errors/app-error";
@@ -45,6 +46,15 @@ export class SpaceService {
       const existing = await spaceRepository.findSpaceBetweenUsers(userId, memberUserIds[0]);
       if (existing) {
         throw new ValidationError("Ya existe una sala compartida con este contacto");
+      }
+    }
+
+    // Verificar límite de espacios para plan FREE
+    const profile = await profileRepository.findByUserId(userId);
+    if (profile?.plan !== "PREMIUM") {
+      const existingSpaces = await spaceRepository.findSpacesByUser(userId);
+      if (existingSpaces.length >= 1) {
+        throw new ForbiddenError("El plan gratuito permite solo 1 espacio compartido. Activa Premium para crear más.");
       }
     }
 

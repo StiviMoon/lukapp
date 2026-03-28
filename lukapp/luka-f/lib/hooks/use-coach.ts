@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 
 export interface ChatMessage {
@@ -32,13 +32,17 @@ export function useCoachInsight() {
       return res.data.content;
     },
     staleTime: 60 * 60_000,
-    retry: 1,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes("403")) return false;
+      return failureCount < 1;
+    },
   });
 }
 
 // ─── Hook: chat en streaming ──────────────────────────────────────────────────
 
 export function useCoachChat() {
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
@@ -107,6 +111,8 @@ export function useCoachChat() {
         setLatestAssistantIdx(updated.length - 1);
         return updated;
       });
+      // Invalidar el insight diario para que se recargue con contexto actualizado
+      void queryClient.invalidateQueries({ queryKey: ["coach-insight"] });
     } catch {
       setMessages((prev) => [
         ...prev,

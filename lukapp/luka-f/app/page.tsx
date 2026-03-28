@@ -20,12 +20,21 @@ export const metadata: Metadata = {
     siteName: "lukapp",
     locale: "es_CO",
     type: "website",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "lukapp — Maneja tus lukas con IA",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "lukapp — Maneja tus lukas. Control, claridad, crecimiento.",
     description:
       "Tus gastos, inversiones y tu plata en una app. Control total y crecimiento financiero — solo o con tu pareja.",
+    images: ["/opengraph-image"],
   },
 };
 

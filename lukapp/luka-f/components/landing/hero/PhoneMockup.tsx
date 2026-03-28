@@ -1,5 +1,7 @@
 "use client";
 
+import { TrendingUp, Sparkles } from "lucide-react";
+
 /**
  * Mockup del celular en el hero. Usa solo clases Tailwind (dark:) para seguir
  * el tema del documento; así no hay hydration mismatch y los colores se ven
@@ -81,11 +83,13 @@ export default function PhoneMockup() {
         </div>
       </div>
 
-      <div className="absolute top-12 -right-4 sm:-right-14 bg-bg-card dark:bg-[#111] border border-accent-border dark:border-lime/25 rounded-xl px-3 py-2 text-[11px] font-semibold text-accent dark:text-lime whitespace-nowrap animate-float-delayed shadow-lg">
-        ✦ IA activa
+      <div className="absolute top-12 -right-4 sm:-right-14 bg-bg-card dark:bg-[#161618] border border-accent-border dark:border-lime/25 rounded-xl px-3 py-2 text-[11px] font-semibold text-accent dark:text-lime whitespace-nowrap animate-float-delayed shadow-lg flex items-center gap-1.5">
+        <Sparkles className="w-3 h-3" strokeWidth={2.5} />
+        IA activa
       </div>
-      <div className="absolute bottom-24 -left-4 sm:-left-14 bg-bg-card dark:bg-[#111] border border-purple-brand/20 dark:border-purple-brand/30 rounded-xl px-3 py-2 text-[11px] font-semibold text-purple-muted whitespace-nowrap animate-float shadow-lg">
-        📊 +12% ahorro
+      <div className="absolute bottom-24 -left-4 sm:-left-14 bg-bg-card dark:bg-[#161618] border border-purple-brand/20 dark:border-purple-brand/30 rounded-xl px-3 py-2 text-[11px] font-semibold text-purple-muted whitespace-nowrap animate-float shadow-lg flex items-center gap-1.5">
+        <TrendingUp className="w-3 h-3" strokeWidth={2.5} />
+        +12% ahorro
       </div>
     </div>
   );

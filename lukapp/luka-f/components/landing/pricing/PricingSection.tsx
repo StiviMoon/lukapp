@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, X, Zap } from "lucide-react";
+import {
+  Check, X, Zap, MessageSquare, Users, TrendingUp, Bell,
+  FileDown, Target, Clock, BarChart3, Flame, Headphones,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/landing/ui/SectionHeader";
 import { api, type SubscriptionPricingPayload } from "@/lib/api/client";
@@ -16,15 +19,17 @@ const freePlan = {
   period: "/mes",
   tag: "Para siempre gratis",
   features: [
-    { label: "Cuentas y gastos ilimitados",    included: true },
-    { label: "Registro con tu voz",            included: true },
-    { label: "1 espacio compartido",           included: true },
-    { label: "Insight diario del Coach",       included: true },
-    { label: "Análisis del mes actual",        included: true },
-    { label: "Chat ilimitado con Coach IA",    included: false },
-    { label: "Espacios ilimitados",            included: false },
-    { label: "Tendencias y proyecciones 90d",  included: false },
-    { label: "Alertas financieras",            included: false },
+    { label: "Cuentas y gastos ilimitados" },
+    { label: "Registro con tu voz" },
+    { label: "1 espacio compartido" },
+    { label: "Insight diario de Luka" },
+    { label: "Análisis del mes actual" },
+    { label: "Hasta 3 presupuestos activos" },
+  ],
+  locked: [
+    "Chat ilimitado con Coach IA",
+    "Historial completo sin límite",
+    "Proyecciones y alertas",
   ],
 };
 
@@ -32,14 +37,17 @@ const premiumPlan = {
   name: "Premium",
   tag: "Más popular",
   features: [
-    { label: "Todo lo del plan gratis",           included: true },
-    { label: "Chat ilimitado con Coach IA Luka",  included: true },
-    { label: "Espacios compartidos ilimitados",   included: true },
-    { label: "Tendencias y proyecciones 90 días", included: true },
-    { label: "Burn rate y runway financiero",     included: true },
-    { label: "Alertas financieras inteligentes",  included: true },
-    { label: "Acceso anticipado a features",      included: true },
-    { label: "Soporte prioritario",               included: true },
+    { icon: Check,          label: "Todo lo del plan gratis incluido" },
+    { icon: MessageSquare,  label: "Chat ilimitado con Luka Coach IA" },
+    { icon: TrendingUp,     label: "Proyecciones a 30, 60 y 90 días" },
+    { icon: Bell,           label: "Alertas cuando excedes presupuesto" },
+    { icon: Clock,          label: "Historial completo sin límite de tiempo" },
+    { icon: Target,         label: "Metas de ahorro con seguimiento visual" },
+    { icon: FileDown,       label: "Exportar reportes PDF y Excel" },
+    { icon: Users,          label: "Espacios compartidos ilimitados" },
+    { icon: Flame,          label: "Burn rate y runway financiero real" },
+    { icon: BarChart3,      label: "Comparativas detalladas mes a mes" },
+    { icon: Headphones,     label: "Soporte prioritario + acceso anticipado" },
   ],
 };
 
@@ -163,19 +171,18 @@ export default function PricingSection() {
             <div className="flex flex-col gap-3 mb-9 flex-1">
               {freePlan.features.map((f) => (
                 <div key={f.label} className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-[5px] flex items-center justify-center flex-shrink-0 ${
-                    f.included
-                      ? "bg-lime/15 border border-lime/35"
-                      : "bg-fg/[0.03] border border-border opacity-30"
-                  }`}>
-                    {f.included
-                      ? <Check size={9} className="text-lime" strokeWidth={3} />
-                      : <X size={9} className="text-fg-muted" strokeWidth={3} />
-                    }
+                  <div className="w-4 h-4 rounded-[5px] flex items-center justify-center flex-shrink-0 bg-lime/15 border border-lime/35">
+                    <Check size={9} className="text-lime" strokeWidth={3} />
                   </div>
-                  <span className={`text-[14px] ${f.included ? "text-fg/60" : "text-fg/25"}`}>
-                    {f.label}
-                  </span>
+                  <span className="text-[14px] text-fg/60">{f.label}</span>
+                </div>
+              ))}
+              {freePlan.locked.map((label) => (
+                <div key={label} className="flex items-center gap-3 opacity-35">
+                  <div className="w-4 h-4 rounded-[5px] flex items-center justify-center flex-shrink-0 bg-fg/[0.04] border border-border">
+                    <X size={9} className="text-fg/40" strokeWidth={3} />
+                  </div>
+                  <span className="text-[14px] text-fg/40">{label}</span>
                 </div>
               ))}
             </div>
@@ -198,7 +205,7 @@ export default function PricingSection() {
             className="relative pt-10 pb-9 px-9 bg-gradient-to-br from-purple-brand/14 to-purple-bright/[0.04] border-[1.5px] border-purple-brand/40 rounded-3xl overflow-visible flex flex-col"
           >
             <div className="absolute -top-20 -right-20 w-52 h-52 bg-purple-bright/15 rounded-full blur-[60px] pointer-events-none" />
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-5 py-2 bg-lime text-bg text-[12px] font-bold rounded-full whitespace-nowrap shadow-[0_4px_14px_rgba(200,212,0,0.35)] border border-lime/20">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-5 py-2 bg-lime text-bg text-[12px] font-bold rounded-full whitespace-nowrap shadow-[0_4px_14px_rgba(186,234,15,0.35)] border border-lime/20">
               <Zap size={12} strokeWidth={3} />
               {premiumPlan.tag}
             </div>
@@ -215,13 +222,13 @@ export default function PricingSection() {
             </div>
             <p className="text-[13px] text-fg/25 mb-8">{premiumCaption}</p>
 
-            <div className="flex flex-col gap-3 mb-9 flex-1">
+            <div className="flex flex-col gap-2.5 mb-9 flex-1">
               {premiumPlan.features.map((f) => (
                 <div key={f.label} className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-[5px] flex items-center justify-center flex-shrink-0 bg-purple-bright/12 border border-purple-bright/35">
-                    <Check size={9} className="text-purple-muted" strokeWidth={3} />
+                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center flex-shrink-0 bg-purple-brand/12 border border-purple-brand/25">
+                    <f.icon size={10} className="text-purple-muted" strokeWidth={2.5} />
                   </div>
-                  <span className="text-[14px] text-fg/70">{f.label}</span>
+                  <span className="text-[13px] text-fg/70">{f.label}</span>
                 </div>
               ))}
             </div>

@@ -11,6 +11,7 @@ import profileRouter from "./profile.routes";
 import coachRouter from "./coach.routes";
 import analyticsRouter from "./analytics.routes";
 import subscriptionRouter from "./subscription.routes";
+import savingGoalRouter from "./saving-goal.routes";
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use("/push", pushRouter);
 router.use("/coach", coachRouter);
 router.use("/analytics", analyticsRouter);
 router.use("/subscription", subscriptionRouter);
+router.use("/saving-goals", savingGoalRouter);
 
 /**
  * GET /api/health

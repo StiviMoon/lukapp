@@ -21,7 +21,9 @@ export function usePlan() {
 
   return {
     plan:      profile?.plan ?? "FREE",
-    isPremium: profile?.plan === "PREMIUM",
+    isPremium:
+      profile?.plan === "PREMIUM" &&
+      (!profile.planExpiresAt || new Date(profile.planExpiresAt) > new Date()),
     isLoading,
     cancelSubscription: () => cancelMutation.mutate(),
     isCancelling: cancelMutation.isPending,

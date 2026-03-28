@@ -1,25 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Syne, Space_Mono } from "next/font/google";
+import { Poppins, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AppChrome } from "../components/app-chrome";
 import { PwaRegister } from "@/components/PwaRegister";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 const spaceMono = Space_Mono({
@@ -29,7 +20,7 @@ const spaceMono = Space_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#6600FF",
+  themeColor: "#5913ef",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -58,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} ${spaceMono.variable} antialiased`}
+        className={`${poppins.variable} ${spaceMono.variable} antialiased`}
         suppressHydrationWarning
       >
         <ThemeProvider

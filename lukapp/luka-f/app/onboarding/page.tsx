@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, User, Wallet, CheckCircle2, ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
+import { Sparkles, User, Wallet, CheckCircle2, ArrowRight, ChevronLeft, Loader2, Banknote, Building2, PiggyBank } from "lucide-react";
 import { useCompleteOnboarding, useUpdateProfile } from "@/lib/hooks/use-profile";
 import { api } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
@@ -15,9 +15,9 @@ import { useQueryClient } from "@tanstack/react-query";
 const TOTAL_STEPS = 4;
 
 const ACCOUNT_TYPES = [
-  { value: "CASH",         label: "Efectivo",       emoji: "💵", desc: "Dinero en mano" },
-  { value: "CHECKING",     label: "Cuenta corriente", emoji: "🏦", desc: "Banco o nequi" },
-  { value: "SAVINGS",      label: "Ahorros",         emoji: "🐷", desc: "Cuenta de ahorros" },
+  { value: "CASH",     label: "Efectivo",         icon: Banknote,  desc: "Dinero en mano" },
+  { value: "CHECKING", label: "Cuenta corriente", icon: Building2, desc: "Banco o nequi" },
+  { value: "SAVINGS",  label: "Ahorros",          icon: PiggyBank, desc: "Cuenta de ahorros" },
 ];
 
 // ─── Slide variants ───────────────────────────────────────────────────────────
@@ -242,7 +242,7 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
           transition={{ delay: 0.2, duration: 0.3 }}
           className="text-[15px] text-muted-foreground leading-relaxed"
         >
-          Soy tu compinche financiero. En 3 pasitos dejamos tus lukas organizadas y te cuento cómo manejarlas mejor 🚀
+          Soy tu compinche financiero. En 3 pasitos dejamos tus lukas organizadas y te cuento cómo manejarlas mejor.
         </motion.p>
       </div>
 
@@ -349,7 +349,7 @@ function StepAccount({
                   : "border-border bg-card hover:border-primary/25"
               }`}
             >
-              <span className="text-2xl">{t.emoji}</span>
+              <t.icon className="w-6 h-6 text-foreground/70" />
               <span className={`text-[11px] font-semibold leading-tight text-center ${type === t.value ? "text-primary" : "text-foreground/60"}`}>
                 {t.label}
               </span>

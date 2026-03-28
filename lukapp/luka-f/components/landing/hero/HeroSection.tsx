@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import PhoneMockup from "./PhoneMockup";
 
 const stats = [
@@ -13,6 +15,10 @@ const stats = [
 
 export default function HeroSection() {
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <section
@@ -31,6 +37,22 @@ export default function HeroSection() {
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col"
           >
+            {/* Logo prominente — identidad visual antes del copy */}
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-8"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={isDark ? "/logo-verde.png" : "/logo-morado.png"}
+                alt="lukapp"
+                className={isDark ? "mix-blend-screen" : "mix-blend-multiply"}
+                style={{ height: "clamp(64px, 8vw, 100px)", width: "auto", objectFit: "contain" }}
+              />
+            </motion.div>
+
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent-soft border border-accent-border rounded-full text-accent text-[12px] font-semibold mb-7 w-fit">
               <span className="w-[6px] h-[6px] rounded-full bg-accent animate-pulse-dot" />
               Ya disponible · Gratis

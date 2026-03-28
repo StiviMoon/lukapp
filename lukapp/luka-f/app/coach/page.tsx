@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Send, Sparkles, Crown, Trash2 } from "lucide-react";
+import { ChevronLeft, Send, Sparkles, Crown, Trash2, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useCoachChat } from "@/lib/hooks/use-coach";
@@ -20,7 +20,7 @@ function ChatMarkdown({ content, isUser = false }: { content: string; isUser?: b
       components={{
         p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
         strong: ({ children }) => (
-          <strong className={cn("font-bold", isUser ? "text-primary-foreground" : "text-foreground")}>
+          <strong className={cn("font-bold", isUser ? "text-white" : "text-foreground")}>
             {children}
           </strong>
         ),
@@ -51,7 +51,7 @@ function TypewriterMarkdown({ content, isUser = false }: { content: string; isUs
       i += 1;
       setShown(i);
       if (i >= words.length) clearInterval(interval);
-    }, 28); // ~35 palabras/segundo — se siente como escritura rápida
+    }, 28);
     return () => clearInterval(interval);
   }, [content]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -92,23 +92,37 @@ function MessageBubble({
   const isUser = role === "user";
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0, y: 8, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.2, type: "spring", stiffness: 380, damping: 30 }}
       className={cn("flex gap-2.5", isUser ? "justify-end" : "justify-start")}
     >
       {!isUser && (
-        <div className="w-7 h-7 rounded-xl bg-purple-brand/20 border border-purple-brand/30 flex items-center justify-center shrink-0 mt-0.5">
-          <Sparkles className="w-3.5 h-3.5 text-purple-muted" strokeWidth={2} />
+        <div
+          className="w-8 h-8 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
+          style={{
+            background: "linear-gradient(135deg, #3d0ab5, #5913ef)",
+            boxShadow: "0 2px 8px rgba(89,19,239,0.35)",
+          }}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-white" strokeWidth={2} />
         </div>
       )}
       <div
         className={cn(
-          "max-w-[82%] px-4 py-3 rounded-2xl text-[14px] leading-relaxed",
+          "max-w-[82%] px-4 py-3 rounded-[20px] text-[14px] leading-relaxed",
           isUser
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
-            : "bg-card border border-border text-foreground rounded-tl-sm"
+            ? "text-white rounded-tr-sm"
+            : "bg-card border border-border/60 text-foreground rounded-tl-sm",
         )}
+        style={
+          isUser
+            ? {
+                background: "linear-gradient(135deg, #4510c8, #5913ef)",
+                boxShadow: "0 2px 12px rgba(89,19,239,0.25)",
+              }
+            : undefined
+        }
       >
         {typewrite && !isUser ? (
           <TypewriterMarkdown content={content} isUser={isUser} />
@@ -128,25 +142,62 @@ function MessageBubble({
 function PremiumGate() {
   const router = useRouter();
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
-      <div className="w-16 h-16 rounded-3xl bg-purple-brand/15 border border-purple-brand/25 flex items-center justify-center">
-        <Crown className="w-7 h-7 text-purple-muted" />
+    <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-6">
+      {/* Avatar grande */}
+      <div className="relative">
+        <div
+          className="w-20 h-20 rounded-[28px] flex items-center justify-center"
+          style={{
+            background: "linear-gradient(135deg, #2a08a8, #5913ef)",
+            boxShadow: "0 8px 32px rgba(89,19,239,0.35)",
+          }}
+        >
+          <Sparkles className="w-9 h-9 text-white" strokeWidth={1.8} />
+        </div>
+        {/* Crown badge */}
+        <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center shadow-md">
+          <Crown className="w-3.5 h-3.5 text-amber-900" />
+        </div>
       </div>
-      <div>
-        <h2 className="text-lg font-bold text-foreground font-display mb-2">
+
+      <div className="space-y-2">
+        <h2 className="text-xl font-bold text-foreground font-display">
           Coach IA es Premium
         </h2>
         <p className="text-sm text-muted-foreground/60 leading-relaxed">
           Hazte Premium y habla con Luka — tu compinche financiero que conoce tus datos y te ayuda a crecer de verdad.
         </p>
       </div>
+
+      {/* Benefits */}
+      <div className="w-full space-y-2.5">
+        {[
+          "Chat ilimitado con contexto real de tus finanzas",
+          "Insights diarios personalizados",
+          "Análisis de tendencias y forecast",
+        ].map((b) => (
+          <div key={b} className="flex items-start gap-2.5 text-left">
+            <div className="w-5 h-5 rounded-full bg-lime/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Check className="w-3 h-3 text-lime" strokeWidth={3} />
+            </div>
+            <p className="text-[13px] text-muted-foreground/70 leading-snug">{b}</p>
+          </div>
+        ))}
+      </div>
+
       <button
         onClick={() => router.push("/upgrade")}
-        className="flex items-center gap-2 px-6 py-3 bg-lime text-background font-bold text-[14px] rounded-2xl hover:bg-lime-dark transition-colors active:scale-95"
+        className="flex items-center gap-2 px-8 py-3.5 font-bold text-[14px] rounded-2xl transition-all active:scale-95"
+        style={{
+          background: "#baea0f",
+          color: "#0A0A0A",
+          boxShadow: "0 4px 16px rgba(200,212,0,0.35)",
+        }}
       >
-        <Sparkles className="w-4 h-4" />
+        <Crown className="w-4 h-4" />
         Activar Premium
       </button>
+
       <button
         onClick={() => router.back()}
         className="text-sm text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
@@ -168,7 +219,6 @@ export default function CoachPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll al último mensaje
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
@@ -190,7 +240,10 @@ export default function CoachPage() {
   if (planLoading) {
     return (
       <div className="h-dvh flex flex-col bg-background max-w-sm mx-auto items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-purple-brand/30 border-t-purple-muted animate-spin" />
+        <div
+          className="w-10 h-10 rounded-full border-2 border-t-purple-muted animate-spin"
+          style={{ borderColor: "rgba(89,19,239,0.2)", borderTopColor: "#5913ef" }}
+        />
       </div>
     );
   }
@@ -199,7 +252,7 @@ export default function CoachPage() {
     <div className="h-dvh flex flex-col bg-background max-w-sm mx-auto overflow-hidden">
 
       {/* Header */}
-      <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between border-b border-border/30">
+      <header className="flex-none px-5 pt-12 pb-4 flex items-center justify-between border-b border-border/30">
         <button
           onClick={() => router.back()}
           className="w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/60 hover:text-foreground transition-colors active:scale-90"
@@ -207,12 +260,22 @@ export default function CoachPage() {
           <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <div className="flex flex-col items-center">
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-purple-muted" />
-            <span className="text-[15px] font-bold text-foreground font-display">Luka</span>
+        {/* Luka identity */}
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-7 h-7 rounded-xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #3d0ab5, #5913ef)" }}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-white" strokeWidth={2} />
+            </div>
+            <span className="text-[16px] font-bold text-foreground font-display">Luka</span>
+            {/* Status dot */}
+            <div className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
           </div>
-          <span className="text-[10px] text-muted-foreground/40 font-medium -mt-0.5">
+          <span className="text-[10px] text-muted-foreground/40 font-medium">
             Coach Financiero IA
           </span>
         </div>
@@ -242,14 +305,14 @@ export default function CoachPage() {
               >
                 <MessageBubble
                   role="assistant"
-                  content={`¡Ey parcero! Soy Luka, tu coach financiero 🤝\n\nTengo acceso a tus datos — cuentas, gastos, presupuestos. Pregúntame lo que quieras sobre tu plata y te doy una respuesta honesta y con datos reales.\n\n¿Por dónde arrancamos?`}
+                  content={`¡Ey parcero! Soy Luka, tu coach financiero.\n\nTengo acceso a tus datos — cuentas, gastos, presupuestos. Pregúntame lo que quieras sobre tu plata y te doy una respuesta honesta y con datos reales.\n\n¿Por dónde arrancamos?`}
                 />
-                <div className="flex flex-col gap-2 ml-10">
+                <div className="flex flex-col gap-2 ml-11">
                   {SUGGESTIONS.map((s) => (
                     <button
                       key={s}
                       onClick={() => sendMessage(s)}
-                      className="text-left px-3.5 py-2.5 rounded-xl bg-card border border-border text-[13px] text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors active:scale-[0.98]"
+                      className="text-left px-3.5 py-2.5 rounded-xl bg-card border border-border/60 text-[13px] text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all active:scale-[0.98]"
                     >
                       {s}
                     </button>
@@ -279,17 +342,20 @@ export default function CoachPage() {
               />
             )}
 
-            {/* Indicador de "escribiendo" antes del primer chunk */}
+            {/* Indicador "escribiendo" antes del primer chunk */}
             {isStreaming && !streamingContent && (
               <div className="flex gap-2.5 justify-start">
-                <div className="w-7 h-7 rounded-xl bg-purple-brand/20 border border-purple-brand/30 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-muted" strokeWidth={2} />
+                <div
+                  className="w-8 h-8 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: "linear-gradient(135deg, #3d0ab5, #5913ef)" }}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-white" strokeWidth={2} />
                 </div>
-                <div className="px-4 py-3 bg-card border border-border rounded-2xl rounded-tl-sm flex items-center gap-1.5">
+                <div className="px-4 py-3 bg-card border border-border/60 rounded-[20px] rounded-tl-sm flex items-center gap-1.5">
                   {[0, 1, 2].map((i) => (
                     <span
                       key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-purple-muted/50 animate-bounce"
+                      className="w-1.5 h-1.5 rounded-full bg-purple-muted/60 animate-bounce"
                       style={{ animationDelay: `${i * 0.15}s` }}
                     />
                   ))}
@@ -300,9 +366,22 @@ export default function CoachPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="flex-none px-4 pt-2 border-t border-border/30" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
-            <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-4 py-3 focus-within:border-primary/40 transition-colors">
+          {/* Input — glassmorphism iOS-style */}
+          <div
+            className="flex-none px-4 pt-3 border-t border-border/20"
+            style={{
+              paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+            }}
+          >
+            <div
+              className="flex items-end gap-2 rounded-2xl px-4 py-3 transition-all"
+              style={{
+                background: "color-mix(in srgb, var(--card) 80%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--border) 50%, transparent)",
+              }}
+            >
               <textarea
                 ref={inputRef}
                 value={input}
@@ -314,14 +393,20 @@ export default function CoachPage() {
                 style={{ scrollbarWidth: "none" }}
                 disabled={isStreaming}
               />
-              <button
+              <motion.button
+                whileTap={{ scale: 0.88 }}
                 onClick={handleSend}
                 disabled={!input.trim() || isStreaming}
-                className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shrink-0 transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{
+                  background: input.trim() && !isStreaming
+                    ? "linear-gradient(135deg, #4510c8, #5913ef)"
+                    : undefined,
+                }}
                 aria-label="Enviar"
               >
                 <Send className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2.5} />
-              </button>
+              </motion.button>
             </div>
             <p className="text-[10px] text-muted-foreground/25 text-center mt-2">
               Luka usa tus datos reales · las respuestas son orientativas

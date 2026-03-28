@@ -14,7 +14,7 @@ const coachLimiter = createRateLimiter(20, 60_000);
  * Retorna el insight del día (cacheado o generado en el momento).
  * Disponible para todos los planes.
  */
-router.get("/insight", async (req: Request, res: Response, next: NextFunction) => {
+router.get("/insight", requirePremium, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const content = await coachService.getOrGenerateInsight(req.userId!);
     res.json({ success: true, data: { content } });

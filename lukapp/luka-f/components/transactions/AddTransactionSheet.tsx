@@ -5,7 +5,7 @@ import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { X } from "lucide-react";
+import { X, Banknote, Building2, PiggyBank, CreditCard, TrendingUp, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
@@ -15,17 +15,14 @@ import { useInvalidateTransactions } from "@/lib/hooks/use-invalidate-transactio
 
 // ─── Account helpers ─────────────────────────────────────────────────────────
 
-const ACCOUNT_EMOJI: Record<string, string> = {
-  CASH:        "💵",
-  CHECKING:    "🏦",
-  SAVINGS:     "🏦",
-  CREDIT_CARD: "💳",
-  INVESTMENT:  "📈",
-  OTHER:       "💰",
+const ACCOUNT_ICONS: Record<string, React.ElementType> = {
+  CASH: Banknote, CHECKING: Building2, SAVINGS: PiggyBank,
+  CREDIT_CARD: CreditCard, INVESTMENT: TrendingUp, OTHER: Wallet,
 };
 
-function accountEmoji(type: string) {
-  return ACCOUNT_EMOJI[type] ?? "💰";
+function AccountIcon({ type }: { type: string }) {
+  const Icon = ACCOUNT_ICONS[type] ?? Wallet;
+  return <Icon className="w-3.5 h-3.5" />;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -424,7 +421,7 @@ export function AddTransactionSheet({
                             : "bg-muted text-muted-foreground hover:text-foreground"
                         )}
                       >
-                        <span>{acc.icon ?? accountEmoji(acc.type)}</span>
+                        <AccountIcon type={acc.type} />
                         {acc.name}
                       </button>
                     ))}

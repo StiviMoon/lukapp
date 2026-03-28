@@ -57,6 +57,7 @@ model Profile {
   spacesCreated      SharedSpace[]       @relation("SpaceCreator")
   sharedTransactions SharedTransaction[]
   pushSubscriptions  PushSubscription[]
+  savingGoals        SavingGoal[]
 
   @@map("profiles")
 }
@@ -328,6 +329,25 @@ model Subscription {
   @@index([userId])
   @@index([nextBillingAt]) // Para el cron de renovación
   @@map("subscriptions")
+}
+
+// Metas de ahorro
+model SavingGoal {
+  id          String    @id @default(uuid())
+  userId      String
+  name        String
+  targetAmount Decimal  @db.Decimal(12, 2)
+  savedAmount  Decimal  @default(0) @db.Decimal(12, 2)
+  emoji       String?
+  deadline    DateTime?
+  completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  profile Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saving_goals")
 }
 
 // Push notification subscriptions
