@@ -496,7 +496,7 @@ export default function GoalsPage() {
   const totalSaved = goals.reduce((sum, g) => sum + Number(g.savedAmount), 0);
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-transparent pb-28">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 pt-14 pb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">

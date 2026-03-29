@@ -6,7 +6,7 @@ import { Menu, X, Sparkles, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { LukappLogo } from "@/components/ui/lukapp-logo";
 
 const links = [
   { label: "Features", href: "#features" },
@@ -14,33 +14,12 @@ const links = [
   { label: "FAQ", href: "#faq" },
 ];
 
-// Usa mix-blend-multiply en claro (el blanco desaparece) y mix-blend-screen en oscuro (el lime destaca)
-function NavLogo({ isDark, height = 28 }: { isDark: boolean; height?: number }) {
-  const width = Math.round(height * (880 / 280)); // ratio real del logo ~3.14:1
-  return (
-    <Image
-      src={isDark ? "/logo-verde.png" : "/logo-morado.png"}
-      alt="lukapp"
-      width={width}
-      height={height}
-      priority
-      className={isDark ? "mix-blend-screen" : "mix-blend-multiply"}
-      style={{ objectFit: "contain", width: "auto", height: height }}
-    />
-  );
-}
-
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
-
-  useEffect(() => {
-    setTimeout(() => {
-      setMounted(true);
-    }, 100);
-  }, []);
+  useEffect(() => { setTimeout(() => setMounted(true), 100); }, []);
 
   // Un solo tema en todo el app: al hacer clic cambiamos entre claro y oscuro (resolvedTheme = lo que se ve, incl. system)
   const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
@@ -65,7 +44,7 @@ export default function Navbar() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="flex items-center px-3 py-1.5 rounded-full hover:bg-fg/[0.06] transition-colors duration-200"
         >
-          <NavLogo isDark={mounted && resolvedTheme === "dark"} height={26} />
+          <LukappLogo variant="logotipo" height={26} priority />
         </button>
 
         <div className="w-px h-4 bg-fg/10 dark:bg-white/10 mx-1" />
@@ -112,7 +91,7 @@ export default function Navbar() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="flex items-center py-0.5 shrink-0"
         >
-          <NavLogo isDark={mounted && resolvedTheme === "dark"} height={23} />
+          <LukappLogo variant="logotipo" height={23} priority />
         </button>
         <div className="flex items-center gap-1.5 shrink-0">
           <button

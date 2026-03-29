@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Share, Plus, Download } from "lucide-react";
+import { LukappLogo } from "@/components/ui/lukapp-logo";
 
 type Platform = "android" | "ios" | null;
 
@@ -77,12 +78,9 @@ export function PwaInstallBanner() {
           <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/icons/icon-192.png"
-                alt="lukapp"
-                className="w-12 h-12 rounded-2xl shrink-0"
-              />
+              <div className="w-12 h-12 rounded-2xl shrink-0 flex items-center justify-center bg-[#0c0c0e]">
+                <LukappLogo variant="isotipo" height={36} color="degradado" />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-[15px] text-foreground leading-tight">
                   Instala lukapp

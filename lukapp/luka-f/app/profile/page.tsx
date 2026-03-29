@@ -92,7 +92,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
+    <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
 
       {/* ═══ HEADER FIJO ═══ */}
       <div className="flex-none px-5 pt-12 pb-3">
@@ -235,7 +235,7 @@ export default function ProfilePage() {
                     <Users className="w-4 h-4 text-muted-foreground/50" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-foreground">Amigos</p>
+                    <p className="text-sm font-medium text-foreground">Panas</p>
                     <p className="text-xs text-muted-foreground/40 mt-0.5">
                       Gastos compartidos · próximamente
                     </p>

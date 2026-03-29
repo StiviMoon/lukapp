@@ -62,7 +62,7 @@ export function Navbar() {
             </button>
           </div>
 
-          <NavLink href="/friends"    icon={Users}     label="Amigos"    pathname={pathname} prefetch={() => router.prefetch("/friends")} />
+          <NavLink href="/friends"    icon={Users}     label="Panas"     pathname={pathname} prefetch={() => router.prefetch("/friends")} />
           <NavLink href="/analytics"  icon={BarChart3} label="Análisis"  pathname={pathname} prefetch={() => router.prefetch("/analytics")} />
         </nav>
       </div>

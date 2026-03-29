@@ -1,23 +1,7 @@
-// eslint-disable-next-line @next/next/no-img-element
+import { LukappLogo } from "@/components/ui/lukapp-logo";
+
 const FooterLogo = () => (
-  <div className="relative h-[28px] w-[88px]">
-    {/* Claro: morado con multiply para borrar fondo blanco */}
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img
-      src="/logo-morado.png"
-      alt="lukapp"
-      className="h-[28px] w-auto mix-blend-multiply dark:hidden"
-      style={{ objectFit: "contain" }}
-    />
-    {/* Oscuro: verde con screen para que el lime destaque */}
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img
-      src="/logo-verde.png"
-      alt="lukapp"
-      className="h-[28px] w-auto mix-blend-screen hidden dark:block"
-      style={{ objectFit: "contain" }}
-    />
-  </div>
+  <LukappLogo variant="logotipo" height={28} color="auto" />
 );
 
 const footerLinks = {

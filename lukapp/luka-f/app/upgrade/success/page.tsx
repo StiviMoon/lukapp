@@ -74,7 +74,7 @@ export default function UpgradeSuccessPage() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col items-center justify-center px-6 max-w-sm mx-auto">
+    <div className="min-h-dvh bg-transparent flex flex-col items-center justify-center px-6 max-w-sm mx-auto">
       <AnimatePresence mode="wait">
 
         {/* ── VERIFICANDO ── */}

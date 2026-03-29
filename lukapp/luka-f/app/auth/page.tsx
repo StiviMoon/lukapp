@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { SignupForm } from "@/components/auth/signup-form";
 import { toast } from "@/lib/toast";
+import { LukappLogo } from "@/components/ui/lukapp-logo";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -41,24 +42,11 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col px-6 pb-12 max-w-sm mx-auto" style={{ paddingTop: "max(64px, env(safe-area-inset-top, 64px))" }}>
+    <div className="min-h-dvh bg-transparent flex flex-col px-6 pb-12 max-w-sm mx-auto" style={{ paddingTop: "max(64px, env(safe-area-inset-top, 64px))" }}>
 
       {/* Logo & Branding */}
       <div className="mb-12">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo-morado.png"
-          alt="lukapp"
-          className="mix-blend-multiply dark:hidden mb-3"
-          style={{ height: 52, width: "auto", objectFit: "contain" }}
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo-verde.png"
-          alt="lukapp"
-          className="mix-blend-screen hidden dark:block mb-3"
-          style={{ height: 52, width: "auto", objectFit: "contain" }}
-        />
+        <LukappLogo variant="logotipo" height={52} color="degradado" priority className="mb-3" />
         <p className="text-[14px] text-muted-foreground leading-relaxed">
           Tus finanzas. Claras.
         </p>

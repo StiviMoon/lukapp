@@ -160,7 +160,7 @@ export default function UpgradePage() {
   const facturaLabel = billingUi === "monthly" ? "Cada mes" : "Un solo pago por 1 año";
 
   return (
-    <div className="h-dvh flex flex-col bg-background max-w-sm mx-auto overflow-hidden">
+    <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto overflow-hidden">
 
       {/* Header */}
       <header className="flex-none px-5 pt-12 pb-4 flex items-center gap-3 border-b border-border/30">

@@ -778,7 +778,7 @@ export default function SharedSpacePage() {
   // ─── Full-page skeleton while loading space ────────────────────────────────
   if (spaceLoading) {
     return (
-      <div className="h-dvh flex flex-col bg-background max-w-sm mx-auto">
+      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
         <header className="flex-none px-5 pt-12 pb-3 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-card animate-pulse shrink-0" />
           <div className="flex-1 h-5 rounded-xl bg-card animate-pulse" />
@@ -806,7 +806,7 @@ export default function SharedSpacePage() {
 
   return (
     <>
-      <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
+      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">

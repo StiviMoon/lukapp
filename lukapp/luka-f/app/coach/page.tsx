@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { useCoachChat } from "@/lib/hooks/use-coach";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { useProfile } from "@/lib/hooks/use-profile";
 import { cn } from "@/lib/utils";
 
 // ─── Renderer de markdown para burbujas ──────────────────────────────────────
@@ -214,6 +215,8 @@ export default function CoachPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { isPremium, isLoading: planLoading } = usePlan();
+  const { data: profile } = useProfile();
+  const firstName = profile?.fullName?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "parcero";
   const { messages, sendMessage, isStreaming, streamingContent, clearChat, latestAssistantIdx } = useCoachChat();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -239,7 +242,7 @@ export default function CoachPage() {
 
   if (planLoading) {
     return (
-      <div className="h-dvh flex flex-col bg-background max-w-sm mx-auto items-center justify-center">
+      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto items-center justify-center">
         <div
           className="w-10 h-10 rounded-full border-2 border-t-purple-muted animate-spin"
           style={{ borderColor: "rgba(89,19,239,0.2)", borderTopColor: "#5913ef" }}
@@ -249,7 +252,7 @@ export default function CoachPage() {
   }
 
   return (
-    <div className="h-dvh flex flex-col bg-background max-w-sm mx-auto overflow-hidden">
+    <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto overflow-hidden">
 
       {/* Header */}
       <header className="flex-none px-5 pt-12 pb-4 flex items-center justify-between border-b border-border/30">
@@ -305,7 +308,7 @@ export default function CoachPage() {
               >
                 <MessageBubble
                   role="assistant"
-                  content={`¡Ey parcero! Soy Luka, tu coach financiero.\n\nTengo acceso a tus datos — cuentas, gastos, presupuestos. Pregúntame lo que quieras sobre tu plata y te doy una respuesta honesta y con datos reales.\n\n¿Por dónde arrancamos?`}
+                  content={`¡Ey ${firstName}! Soy Luka, tu coach financiero.\n\nTengo acceso a tus datos — cuentas, gastos, presupuestos. Pregúntame lo que quieras sobre tu plata y te doy una respuesta honesta y con datos reales.\n\n¿Por dónde arrancamos?`}
                 />
                 <div className="flex flex-col gap-2 ml-11">
                   {SUGGESTIONS.map((s) => (

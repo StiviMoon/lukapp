@@ -344,7 +344,7 @@ export default function FriendsPage() {
 
   return (
     <>
-      <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
+      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
         {/* Header */}
         <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
           <button
@@ -354,7 +354,7 @@ export default function FriendsPage() {
           >
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
           </button>
-          <h1 className="text-base font-bold text-foreground font-display">Amigos</h1>
+          <h1 className="text-base font-bold text-foreground font-display">Panas</h1>
           <button
             type="button"
             onClick={() => setInviteOpen(true)}

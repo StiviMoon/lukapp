@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import PhoneMockup from "./PhoneMockup";
+import { LukappLogo } from "@/components/ui/lukapp-logo";
 
 const stats = [
   { value: "$0", label: "Para siempre", color: "text-accent" },
@@ -44,13 +45,7 @@ export default function HeroSection() {
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="mb-8"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={isDark ? "/logo-verde.png" : "/logo-morado.png"}
-                alt="lukapp"
-                className={isDark ? "mix-blend-screen" : "mix-blend-multiply"}
-                style={{ height: "clamp(64px, 8vw, 100px)", width: "auto", objectFit: "contain" }}
-              />
+              <LukappLogo variant="logotipo" height={80} color="degradado" priority />
             </motion.div>
 
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent-soft border border-accent-border rounded-full text-accent text-[12px] font-semibold mb-7 w-fit">

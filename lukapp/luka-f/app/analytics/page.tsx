@@ -284,7 +284,7 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
+      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
 
         {/* ═══ HEADER ═══ */}
         <div className="flex-none px-5 pt-12 pb-3 space-y-3">

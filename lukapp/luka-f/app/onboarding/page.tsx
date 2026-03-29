@@ -120,7 +120,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col max-w-sm mx-auto px-6 pt-14 pb-10">
+    <div className="min-h-dvh bg-transparent flex flex-col max-w-sm mx-auto px-6 pt-14 pb-10">
 
       {/* Header: progress + back */}
       <div className="flex items-center justify-between mb-10">

@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useProfile } from "@/lib/hooks/use-profile";
 import { CoachCard, CoachCardSkeleton } from "@/components/coach/CoachCard";
 import { haptics } from "@/lib/haptics";
+import { LukappLogo } from "@/components/ui/lukapp-logo";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -222,25 +223,12 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="h-dvh flex flex-col bg-background overflow-hidden max-w-sm mx-auto">
+      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
 
         {/* ── Header: LOGO | AJUSTES PERFIL ── */}
         <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
           {/* Logo */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-morado.png"
-            alt="lukapp"
-            className="mix-blend-multiply dark:hidden"
-            style={{ height: 46, width: "auto", objectFit: "contain" }}
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-verde.png"
-            alt="lukapp"
-            className="mix-blend-screen hidden dark:block"
-            style={{ height: 46, width: "auto", objectFit: "contain" }}
-          />
+          <LukappLogo variant="logotipo" height={46} color="degradado" priority />
 
           {/* Acciones */}
           <div className="flex items-center gap-1.5">
