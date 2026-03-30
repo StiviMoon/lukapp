@@ -87,7 +87,7 @@ export function InviteSheet({ isOpen, onClose }: InviteSheetProps) {
 
             {sent ? (
               <div className="flex flex-col items-center py-8 gap-3">
-                <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+                <CheckCircle2 className="w-12 h-12 text-lime" />
                 <p className="text-sm font-semibold text-foreground">¡Invitación enviada!</p>
               </div>
             ) : (

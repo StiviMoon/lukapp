@@ -19,10 +19,10 @@ const CONFIG: Record<ToastType, {
 }> = {
   success: {
     icon: CheckCircle2,
-    iconClass: "text-emerald-500",
-    bgVar:       "color-mix(in srgb, #10b981 9%, var(--background))",
-    borderVar:   "color-mix(in srgb, #10b981 35%, transparent)",
-    progressVar: "#10b981",
+    iconClass: "text-lime",
+    bgVar:       "color-mix(in srgb, var(--brand-lime) 9%, var(--background))",
+    borderVar:   "color-mix(in srgb, var(--brand-lime) 35%, transparent)",
+    progressVar: "var(--brand-lime)",
   },
   error: {
     icon: XCircle,
@@ -40,10 +40,10 @@ const CONFIG: Record<ToastType, {
   },
   info: {
     icon: Info,
-    iconClass: "text-blue-500",
-    bgVar:       "color-mix(in srgb, #3b82f6 9%, var(--background))",
-    borderVar:   "color-mix(in srgb, #3b82f6 35%, transparent)",
-    progressVar: "#3b82f6",
+    iconClass: "text-brand-blue",
+    bgVar:       "color-mix(in srgb, var(--brand-blue) 9%, var(--background))",
+    borderVar:   "color-mix(in srgb, var(--brand-blue) 35%, transparent)",
+    progressVar: "var(--brand-blue)",
   },
   loading: {
     icon: Loader2,

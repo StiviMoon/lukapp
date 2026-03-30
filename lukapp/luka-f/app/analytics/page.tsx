@@ -396,13 +396,13 @@ export default function AnalyticsPage() {
                                 className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-[14px] tabular-nums shrink-0"
                                 style={{
                                   background: mathData.health.level === "estable"
-                                    ? "linear-gradient(135deg, #2F5D50, #4F8F7A)"
+                                    ? "linear-gradient(135deg, var(--brand-lime-dark), var(--brand-lime))"
                                     : mathData.health.level === "riesgo"
                                     ? "linear-gradient(135deg, #B88A1E, #E0B84C)"
                                     : "linear-gradient(135deg, #8B2E3A, #C45A67)",
-                                  color: "white",
+                                  color: "#1c1c1c",
                                   boxShadow: mathData.health.level === "estable"
-                                    ? "0 3px 10px rgba(79,143,122,0.45)"
+                                    ? "0 3px 14px rgba(186,234,15,0.45)"
                                     : mathData.health.level === "riesgo"
                                     ? "0 3px 10px rgba(224,184,76,0.45)"
                                     : "0 3px 10px rgba(196,90,103,0.45)",
@@ -422,7 +422,7 @@ export default function AnalyticsPage() {
                               <p className="text-[10px] text-muted-foreground/40 mb-0.5">En 30 días</p>
                               <p className={cn(
                                 "text-[14px] font-bold font-nums tabular-nums",
-                                (mathData.forecast?.next30Days ?? 0) >= 0 ? "text-emerald-500" : "text-rose-500",
+                                (mathData.forecast?.next30Days ?? 0) >= 0 ? "text-lime" : "text-rose-500",
                               )}>
                                 {(mathData.forecast?.next30Days ?? 0) >= 0 ? "+" : ""}
                                 {formatCompact(mathData.forecast?.next30Days ?? 0)}
@@ -455,8 +455,8 @@ export default function AnalyticsPage() {
                               <AreaChart data={chartTxData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                                 <defs>
                                   <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%"  stopColor="#4F8F7A" stopOpacity={0.5} />
-                                    <stop offset="95%" stopColor="#4F8F7A" stopOpacity={0.02} />
+                                    <stop offset="5%"  stopColor="var(--brand-lime)" stopOpacity={0.45} />
+                                    <stop offset="95%" stopColor="var(--brand-lime)" stopOpacity={0.02} />
                                   </linearGradient>
                                   <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%"  stopColor="#C45A67" stopOpacity={0.5} />
@@ -490,13 +490,13 @@ export default function AnalyticsPage() {
                                   labelStyle={{ fontWeight: 600, marginBottom: 4, fontSize: 11 }}
                                   cursor={{ stroke: "rgba(128,128,128,0.15)", strokeWidth: 1 }}
                                 />
-                                <Area type="monotone" dataKey="income"  stroke="#4F8F7A" strokeWidth={2} fill="url(#gradIncome)"  dot={false} />
+                                <Area type="monotone" dataKey="income"  stroke="var(--brand-lime)" strokeWidth={2} fill="url(#gradIncome)"  dot={false} />
                                 <Area type="monotone" dataKey="expense" stroke="#C45A67" strokeWidth={2} fill="url(#gradExpense)" dot={false} />
                               </AreaChart>
                             </ResponsiveContainer>
                             <div className="flex items-center gap-4 mt-2 px-1">
                               <div className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full" style={{ background: "#4F8F7A" }} />
+                                <div className="w-2 h-2 rounded-full" style={{ background: "var(--brand-lime)" }} />
                                 <span className="text-[10px] text-muted-foreground/50 font-medium">Ingresos</span>
                               </div>
                               <div className="flex items-center gap-1.5">
@@ -521,14 +521,14 @@ export default function AnalyticsPage() {
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
                                   <p className="text-[11px] text-muted-foreground mb-1">Ingresos</p>
-                                  <p className={cn("text-[15px] font-bold font-nums", incPct >= 0 ? "text-emerald-500" : "text-rose-500")}>
+                                  <p className={cn("text-[15px] font-bold font-nums", incPct >= 0 ? "text-lime" : "text-rose-500")}>
                                     {incPct >= 0 ? "+" : ""}{incPct.toFixed(1)}%
                                   </p>
                                   <p className="text-[11px] text-muted-foreground/50">{formatCompact(last.income)}</p>
                                 </div>
                                 <div>
                                   <p className="text-[11px] text-muted-foreground mb-1">Gastos</p>
-                                  <p className={cn("text-[15px] font-bold font-nums", expPct <= 0 ? "text-emerald-500" : "text-rose-500")}>
+                                  <p className={cn("text-[15px] font-bold font-nums", expPct <= 0 ? "text-lime" : "text-rose-500")}>
                                     {expPct >= 0 ? "+" : ""}{expPct.toFixed(1)}%
                                   </p>
                                   <p className="text-[11px] text-muted-foreground/50">{formatCompact(last.expense)}</p>
@@ -570,14 +570,14 @@ export default function AnalyticsPage() {
 
                           {/* Runway */}
                           <div className="flex items-center gap-3 px-4 py-3.5">
-                            <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-                              <Clock className="w-4 h-4 text-blue-500" />
+                            <div className="w-9 h-9 rounded-xl bg-brand-blue/10 flex items-center justify-center shrink-0">
+                              <Clock className="w-4 h-4 text-brand-blue" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[12px] font-semibold text-foreground">Días que te alcanza</p>
                               <p className="text-[10px] text-muted-foreground/50 mt-0.5">Con el ritmo actual de gastos</p>
                             </div>
-                            <p className="text-[14px] font-bold font-nums text-blue-500 tabular-nums shrink-0">
+                            <p className="text-[14px] font-bold font-nums text-brand-blue tabular-nums shrink-0">
                               {mathData.balances?.runwayDays != null ? `${mathData.balances.runwayDays}d` : "—"}
                             </p>
                           </div>
@@ -595,7 +595,7 @@ export default function AnalyticsPage() {
                             </div>
                             <p className={cn(
                               "text-[14px] font-bold font-nums tabular-nums shrink-0",
-                              (mathData.forecast?.next30Days ?? 0) >= 0 ? "text-emerald-500" : "text-rose-500",
+                              (mathData.forecast?.next30Days ?? 0) >= 0 ? "text-lime" : "text-rose-500",
                             )}>
                               {(mathData.forecast?.next30Days ?? 0) >= 0 ? "+" : ""}{formatCompact(mathData.forecast?.next30Days ?? 0)}
                             </p>
@@ -603,8 +603,8 @@ export default function AnalyticsPage() {
 
                           {/* Forecast 60d */}
                           <div className="flex items-center gap-3 px-4 py-3.5">
-                            <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-                              <Clock className="w-4 h-4 text-blue-500" />
+                            <div className="w-9 h-9 rounded-xl bg-brand-blue/10 flex items-center justify-center shrink-0">
+                              <Clock className="w-4 h-4 text-brand-blue" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[12px] font-semibold text-foreground">Proyección 60 días</p>
@@ -612,7 +612,7 @@ export default function AnalyticsPage() {
                             </div>
                             <p className={cn(
                               "text-[14px] font-bold font-nums tabular-nums shrink-0",
-                              (mathData.forecast?.next60Days ?? 0) >= 0 ? "text-emerald-500" : "text-rose-500",
+                              (mathData.forecast?.next60Days ?? 0) >= 0 ? "text-lime" : "text-rose-500",
                             )}>
                               {(mathData.forecast?.next60Days ?? 0) >= 0 ? "+" : ""}{formatCompact(mathData.forecast?.next60Days ?? 0)}
                             </p>
@@ -629,7 +629,7 @@ export default function AnalyticsPage() {
                             </div>
                             <p className={cn(
                               "text-[14px] font-bold font-nums tabular-nums shrink-0",
-                              (mathData.forecast?.next90Days ?? 0) >= 0 ? "text-emerald-500" : "text-rose-500",
+                              (mathData.forecast?.next90Days ?? 0) >= 0 ? "text-lime" : "text-rose-500",
                             )}>
                               {(mathData.forecast?.next90Days ?? 0) >= 0 ? "+" : ""}{formatCompact(mathData.forecast?.next90Days ?? 0)}
                             </p>
@@ -662,21 +662,21 @@ export default function AnalyticsPage() {
                     className="rounded-2xl px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.97]"
                     style={{
                       background: activeType === "INCOME"
-                        ? "color-mix(in srgb, #10b981 18%, transparent)"
-                        : "color-mix(in srgb, #10b981 8%, transparent)",
-                      boxShadow: activeType === "INCOME" ? "0 0 0 1.5px color-mix(in srgb, #10b981 45%, transparent)" : "none",
+                        ? "color-mix(in srgb, var(--brand-lime) 18%, transparent)"
+                        : "color-mix(in srgb, var(--brand-lime) 8%, transparent)",
+                      boxShadow: activeType === "INCOME" ? "0 0 0 1.5px color-mix(in srgb, var(--brand-lime) 45%, transparent)" : "none",
                     }}
                   >
                     <div className="flex items-center gap-1.5 mb-2">
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/60 dark:text-emerald-400/50">
+                      <TrendingUp className="w-3.5 h-3.5 text-lime" />
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-lime-dark/60 dark:text-lime/50">
                         Ingresos
                       </span>
                     </div>
-                    <p className="text-[17px] font-black text-emerald-600 dark:text-emerald-400 font-nums leading-none">
+                    <p className="text-[17px] font-black text-lime-dark dark:text-lime font-nums leading-none">
                       {formatCompact(totalIncome)}
                     </p>
-                    <p className="text-[10px] text-emerald-600/40 dark:text-emerald-400/35 mt-1.5 font-medium">
+                    <p className="text-[10px] text-lime-dark/40 dark:text-lime/35 mt-1.5 font-medium">
                       {transactions.filter(t => t.type === "INCOME").length} movimientos
                     </p>
                   </button>
@@ -712,7 +712,7 @@ export default function AnalyticsPage() {
                   className="flex items-center justify-between px-4 py-3 rounded-2xl"
                   style={{
                     background: net >= 0
-                      ? "color-mix(in srgb, #10b981 7%, transparent)"
+                      ? "color-mix(in srgb, var(--brand-lime) 7%, transparent)"
                       : "color-mix(in srgb, #f43f5e 7%, transparent)",
                   }}
                 >
@@ -726,7 +726,7 @@ export default function AnalyticsPage() {
                   </div>
                   <p className={cn(
                     "text-[18px] font-black font-nums tabular-nums",
-                    net >= 0 ? "text-emerald-500" : "text-rose-500",
+                    net >= 0 ? "text-lime" : "text-rose-500",
                   )}>
                     {net >= 0 ? "+" : ""}{formatCompact(net)}
                   </p>
@@ -807,7 +807,7 @@ export default function AnalyticsPage() {
                             <p className="text-[13px] font-bold text-foreground">{selectedCategory}</p>
                             <span className="text-[11px] text-muted-foreground/50">· {filteredTxs.length} movs.</span>
                           </div>
-                          <p className={cn("text-[15px] font-black font-nums", activeType === "INCOME" ? "text-emerald-500" : "text-rose-500")}>
+                          <p className={cn("text-[15px] font-black font-nums", activeType === "INCOME" ? "text-lime" : "text-rose-500")}>
                             {activeType === "INCOME" ? "+" : "-"}{formatCompact(selectedTotal)}
                           </p>
                         </div>
@@ -871,7 +871,7 @@ function CategoryCard({ cat, type, onSelect }: { cat: CategoryRow; type: TxType;
         </p>
       </div>
 
-      <p className={cn("text-[14px] font-bold font-nums shrink-0 ml-1", isExpense ? "text-rose-500" : "text-emerald-500")}>
+      <p className={cn("text-[14px] font-bold font-nums shrink-0 ml-1", isExpense ? "text-rose-500" : "text-lime")}>
         {formatCompact(cat.amount)}
       </p>
     </button>

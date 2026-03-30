@@ -496,55 +496,63 @@ export default function GoalsPage() {
   const totalSaved = goals.reduce((sum, g) => sum + Number(g.savedAmount), 0);
 
   return (
-    <div className="min-h-screen bg-transparent pb-28">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 pt-14 pb-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <div>
-            <h1 className="font-bold text-[18px] text-foreground leading-tight">Metas de ahorro</h1>
-            {goals.length > 0 && (
-              <p className="text-[12px] text-muted-foreground">{formatCOP(totalSaved)} ahorrado en total</p>
-            )}
-          </div>
-        </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-purple-brand text-white"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="px-4 py-5 space-y-3">
-        {isLoading ? (
-          Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-32 rounded-2xl bg-card animate-pulse" />
-          ))
-        ) : goals.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 text-center"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-purple-brand/10 flex items-center justify-center mb-4">
-              <Target className="w-8 h-8 text-purple-brand" />
-            </div>
-            <h3 className="font-bold text-[17px] text-foreground mb-2">Sin metas aún</h3>
-            <p className="text-[14px] text-muted-foreground max-w-[240px] mb-6">
-              Crea tu primera meta de ahorro y empieza a hacer seguimiento visual de tu progreso.
-            </p>
+    <>
+      {/* Misma cáscara que /friends: transparente → se ve el fondo + figuras del root layout */}
+      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto overflow-hidden">
+        <header className="flex-none px-4 pt-12 pb-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => setShowNew(true)}
-              className="px-6 py-3 bg-purple-brand text-white font-bold text-[14px] rounded-2xl"
+              type="button"
+              onClick={() => router.back()}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors shrink-0"
+              aria-label="Volver"
             >
-              Crear primera meta
+              <ArrowLeft className="w-4 h-4 text-muted-foreground" />
             </button>
-          </motion.div>
-        ) : (
-          <>
+            <div className="min-w-0">
+              <h1 className="font-bold text-[18px] text-foreground font-display leading-tight truncate">Metas de ahorro</h1>
+              {goals.length > 0 && (
+                <p className="text-[12px] text-muted-foreground truncate">{formatCOP(totalSaved)} ahorrado en total</p>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowNew(true)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-primary active:scale-95 transition-transform shrink-0"
+            aria-label="Nueva meta"
+          >
+            <Plus className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 space-y-3 pb-[max(2.5rem,env(safe-area-inset-bottom,0px))]">
+          {isLoading ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-32 rounded-2xl bg-card animate-pulse" />
+            ))
+          ) : goals.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-purple-brand/10 flex items-center justify-center mb-4">
+                <Target className="w-8 h-8 text-purple-brand" />
+              </div>
+              <h3 className="font-bold text-[17px] text-foreground mb-2">Sin metas aún</h3>
+              <p className="text-[14px] text-muted-foreground max-w-[240px] mb-6">
+                Crea tu primera meta de ahorro y empieza a hacer seguimiento visual de tu progreso.
+              </p>
+              <button
+                onClick={() => setShowNew(true)}
+                className="px-6 py-3 bg-purple-brand text-white font-bold text-[14px] rounded-2xl"
+              >
+                Crear primera meta
+              </button>
+            </motion.div>
+          ) : (
+            <>
             {active.length > 0 && (
               <>
                 <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider px-1">En progreso</p>
@@ -578,8 +586,9 @@ export default function GoalsPage() {
                 </AnimatePresence>
               </>
             )}
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       <AnimatePresence>
@@ -599,6 +608,6 @@ export default function GoalsPage() {
       <AnimatePresence>
         {createGoal.isPending && <CreatingGoalModal key="creating-goal" />}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

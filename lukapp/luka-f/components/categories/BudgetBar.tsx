@@ -16,13 +16,13 @@ interface BudgetBarProps {
 function getBarColor(percentage: number): string {
   if (percentage >= 90) return "#f43f5e";   // rose
   if (percentage >= 70) return "#f59e0b";   // amber
-  return "#10b981";                          // emerald
+  return "var(--brand-lime)";
 }
 
 function getTextColor(percentage: number): string {
   if (percentage >= 90) return "text-rose-500";
   if (percentage >= 70) return "text-amber-500";
-  return "text-emerald-500";
+  return "text-lime";
 }
 
 export function BudgetBar({

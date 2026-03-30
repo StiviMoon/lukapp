@@ -94,7 +94,7 @@ export function TransactionItem({ transaction, onClick }: TransactionItemProps) 
       <div className="flex flex-col items-end shrink-0 gap-0.5">
         <span
           className={`text-[15px] font-bold font-nums leading-tight tabular-nums ${
-            isIncome ? "text-emerald-500" : "text-rose-500"
+            isIncome ? "text-lime" : "text-rose-500"
           }`}
         >
           {isIncome ? "+" : "-"}

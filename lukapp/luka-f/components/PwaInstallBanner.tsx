@@ -126,8 +126,8 @@ export function PwaInstallBanner() {
             {showIos && iosGuide && (
               <div className="px-4 pb-4 space-y-2.5">
                 <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/50">
-                  <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
-                    <Share className="w-4 h-4 text-blue-500" />
+                  <div className="w-7 h-7 rounded-lg bg-brand-blue/15 flex items-center justify-center shrink-0">
+                    <Share className="w-4 h-4 text-brand-blue" />
                   </div>
                   <p className="text-[13px] text-foreground">
                     Toca el botón <span className="font-bold">Compartir</span> en Safari

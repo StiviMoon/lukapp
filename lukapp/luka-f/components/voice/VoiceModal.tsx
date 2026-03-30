@@ -556,7 +556,7 @@ export function VoiceModal() {
                   className={cn(
                     "text-xs font-bold px-2.5 py-1 rounded-full",
                     current.type === "INCOME"
-                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                      ? "bg-lime/15 text-lime-dark dark:text-lime"
                       : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
                   )}
                 >
@@ -728,7 +728,7 @@ export function VoiceModal() {
               animate={{ scale: 1 }}
               transition={{ type: "spring", damping: 12, stiffness: 300 }}
             >
-              <CheckCircle2 className="w-14 h-14 text-emerald-500" />
+              <CheckCircle2 className="w-14 h-14 text-lime" />
             </motion.div>
             <p className="text-base font-semibold text-foreground">
               Transacción registrada

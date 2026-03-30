@@ -150,7 +150,7 @@ function FullCalendar({
               <span className="leading-none">{day.getDate()}</span>
               {txs.length > 0 && (
                 <span className="flex gap-[3px] mt-[3px]">
-                  {hasInc && <span className={cn("w-[5px] h-[5px] rounded-full", isSel ? "bg-white/70" : "bg-emerald-500")} />}
+                  {hasInc && <span className={cn("w-[5px] h-[5px] rounded-full", isSel ? "bg-white/70" : "bg-lime")} />}
                   {hasExp && <span className={cn("w-[5px] h-[5px] rounded-full", isSel ? "bg-white/50" : "bg-rose-500")} />}
                 </span>
               )}
@@ -282,11 +282,11 @@ export default function HistoryPage() {
 
               {/* Resumen del mes */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-500/10 px-3.5 py-3">
-                  <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
+                <div className="flex items-center gap-2.5 rounded-2xl bg-lime/10 px-3.5 py-3">
+                  <TrendingUp className="w-4 h-4 text-lime shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/70 dark:text-emerald-400/70">Ingresos</p>
-                    <p className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400 font-nums leading-tight truncate">{formatCOP(monthIncome)}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-lime-dark/70 dark:text-lime/70">Ingresos</p>
+                    <p className="text-[13px] font-bold text-lime-dark dark:text-lime font-nums leading-tight truncate">{formatCOP(monthIncome)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 rounded-2xl bg-rose-500/10 px-3.5 py-3">
@@ -321,7 +321,7 @@ export default function HistoryPage() {
                         </p>
                         {dayTxs.length > 0 && (
                           <div className="flex gap-3">
-                            {dayIncome  > 0 && <span className="text-[13px] font-bold text-emerald-500 font-nums">+{formatCOP(dayIncome)}</span>}
+                            {dayIncome  > 0 && <span className="text-[13px] font-bold text-lime font-nums">+{formatCOP(dayIncome)}</span>}
                             {dayExpense > 0 && <span className="text-[13px] font-bold text-rose-500 font-nums">-{formatCOP(dayExpense)}</span>}
                           </div>
                         )}
@@ -365,7 +365,7 @@ export default function HistoryPage() {
                             <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/50">
                               {label.charAt(0).toUpperCase() + label.slice(1)}
                             </p>
-                            <p className={cn("text-[12px] font-bold font-nums", dNet >= 0 ? "text-emerald-500" : "text-rose-500")}>
+                            <p className={cn("text-[12px] font-bold font-nums", dNet >= 0 ? "text-lime" : "text-rose-500")}>
                               {dNet >= 0 ? "+" : ""}{formatCOP(dNet)}
                             </p>
                           </div>

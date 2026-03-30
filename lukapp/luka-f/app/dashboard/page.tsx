@@ -321,7 +321,7 @@ export default function DashboardPage() {
                 {/* Income / Expense pills — altura fija, blur al ocultar */}
                 <div className="flex gap-3">
                   {[
-                    { icon: ArrowUpRight,  label: "Ingresos", value: stats?.totalIncome,   color: "text-emerald-300" },
+                    { icon: ArrowUpRight,  label: "Ingresos", value: stats?.totalIncome,   color: "text-lime" },
                     { icon: ArrowDownLeft, label: "Gastos",   value: stats?.totalExpenses, color: "text-rose-300"   },
                   ].map(({ icon: Icon, label, value, color }) => (
                     <div
@@ -362,8 +362,8 @@ export default function DashboardPage() {
                   {
                     label: "Ingreso",
                     icon: ArrowUpRight,
-                    bg: "bg-emerald-500/10",
-                    iconColor: "text-emerald-500",
+                    bg: "bg-lime/10",
+                    iconColor: "text-lime",
                     action: () => { haptics.light(); openAddSheet("INCOME"); },
                   },
                   {
@@ -412,7 +412,7 @@ export default function DashboardPage() {
                         <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
                           budget.isExceeded ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
                           : budget.percentage >= 90 ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                          : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400")}>
+                          : "bg-lime/15 text-lime-dark dark:text-lime")}>
                           {budget.isExceeded ? "Excedido" : `${Math.round(budget.percentage)}%`}
                         </span>
                       </div>

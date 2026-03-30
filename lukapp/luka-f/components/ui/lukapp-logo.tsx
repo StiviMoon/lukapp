@@ -39,8 +39,7 @@ interface LukappLogoProps {
 /**
  * Logo oficial de lukapp.
  * - Por defecto usa el degradado (isotipo/logotipo degradado) en ambos modos.
- * - Con color="auto": dark → blanco, light → negro.
- * - El isotipo degradado funciona perfecto sobre fondos oscuros y claros.
+ * - Con color="auto": dark → blanco, light → morado (marca sobre fondo claro del layout).
  */
 export function LukappLogo({
   variant = "isotipo",
@@ -58,7 +57,7 @@ export function LukappLogo({
   // Resolver qué color usar
   const resolvedColor =
     color === "auto"
-      ? isDark ? "blanco" : "degradado"
+      ? isDark ? "blanco" : "morado"
       : color;
 
   const src =

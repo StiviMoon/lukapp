@@ -277,7 +277,7 @@ export function CategorySheet({
                       className={cn(
                         "py-2.5 rounded-xl text-sm font-bold transition-all duration-200",
                         type === "INCOME"
-                          ? "bg-emerald-500 text-white shadow-sm"
+                          ? "bg-lime text-background shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -289,7 +289,7 @@ export function CategorySheet({
                     <span className={cn(
                       "px-3 py-1 rounded-full text-xs font-bold",
                       (category?.type ?? type) === "INCOME"
-                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                        ? "bg-lime/15 text-lime-dark dark:text-lime"
                         : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
                     )}>
                       {(category?.type ?? type) === "INCOME" ? "Ingreso" : "Gasto"}

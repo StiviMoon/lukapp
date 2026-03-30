@@ -275,7 +275,7 @@ export default function CoachPage() {
             <span className="text-[16px] font-bold text-foreground font-display">Luka</span>
             {/* Status dot */}
             <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
             </div>
           </div>
           <span className="text-[10px] text-muted-foreground/40 font-medium">

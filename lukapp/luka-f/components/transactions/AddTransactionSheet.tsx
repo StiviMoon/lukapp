@@ -373,7 +373,7 @@ export function AddTransactionSheet({
                   className={cn(
                     "py-3 rounded-xl text-sm font-bold transition-all duration-200",
                     type === "INCOME"
-                      ? "bg-emerald-500 text-white shadow-sm"
+                      ? "bg-lime text-background shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -393,7 +393,7 @@ export function AddTransactionSheet({
                   placeholder="0"
                   className={cn(
                     "w-full text-center text-5xl font-black font-nums bg-transparent border-0 outline-none focus:outline-none placeholder:text-muted-foreground/30",
-                    type === "INCOME" ? "text-emerald-500" : "text-foreground"
+                    type === "INCOME" ? "text-lime" : "text-foreground"
                   )}
                 />
                 <p className="text-sm text-muted-foreground font-nums">

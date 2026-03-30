@@ -271,8 +271,8 @@ function StepName({
   return (
     <div className="flex flex-col gap-10 h-full">
       <div className="flex-1 flex flex-col justify-center">
-        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-10">
-          <User className="w-6 h-6 text-blue-400" />
+        <div className="w-14 h-14 rounded-2xl bg-brand-blue/10 flex items-center justify-center mb-10">
+          <User className="w-6 h-6 text-brand-blue" />
         </div>
 
         <h2 className="text-[30px] font-bold tracking-tight text-foreground font-display mb-3">
@@ -323,8 +323,8 @@ function StepAccount({
     <div className="flex flex-col gap-6 h-full">
       <div className="flex-1 flex flex-col justify-center space-y-6">
         <div>
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-8">
-            <Wallet className="w-6 h-6 text-emerald-400" />
+          <div className="w-14 h-14 rounded-2xl bg-lime/10 flex items-center justify-center mb-8">
+            <Wallet className="w-6 h-6 text-lime" />
           </div>
           <h2 className="text-[30px] font-bold tracking-tight text-foreground font-display mb-3">
             ¿Dónde guardas<br />tus lukas?

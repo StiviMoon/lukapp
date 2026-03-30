@@ -202,7 +202,7 @@ function TransactionDetailContent({
         <span
           className={`text-xs font-bold px-3 py-1.5 rounded-full ${
             isIncome
-              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+              ? "bg-lime/15 text-lime-dark dark:text-lime"
               : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
           }`}
         >
@@ -217,7 +217,7 @@ function TransactionDetailContent({
         </p>
         <p
           className={`text-[42px] font-black tracking-tight leading-none font-nums ${
-            isIncome ? "text-emerald-500" : "text-foreground"
+            isIncome ? "text-lime" : "text-foreground"
           }`}
         >
           {formatCOP(numAmount)}

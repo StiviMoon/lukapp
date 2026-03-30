@@ -8,11 +8,15 @@
   --color-foreground: var(--foreground);
   --color-brand-purple: var(--brand-purple);
   --color-brand-lime: var(--brand-lime);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-dark: var(--brand-blue-dark);
+  --color-brand-blue-light: var(--brand-blue-light);
   --font-sans: var(--font-poppins), ui-sans-serif, sans-serif;
   --font-mono: var(--font-space-mono), ui-monospace, monospace;
-  /* Landing */
-  --color-lime: #baea0f;
-  --color-lime-dark: #9dc40d;
+  /* Brand lime — ingresos / positivo / éxito (única paleta verde en app) */
+  --color-lime: var(--brand-lime);
+  --color-lime-dark: var(--brand-lime-dark);
+  --color-lime-light: var(--brand-lime-light);
   --color-purple-brand: #5913ef;
   --color-purple-bright: #7a3ff5;
   --color-purple-muted: #a07af8;
@@ -73,6 +77,10 @@
   --brand-lime: #baea0f;
   --brand-lime-dark: #9dc40d;
   --brand-lime-light: #cef540;
+  /* Azul de marca — acentos, info, quinta serie en gráficos */
+  --brand-blue: #5295fe;
+  --brand-blue-dark: #3d7ef5;
+  --brand-blue-light: #8eb3ff;
   --brand-black: #1c1c1c;
   --brand-white: #f4f4f4;
 
@@ -84,11 +92,11 @@
   --neutral-100: #F8F8F8;
   --neutral-white: #FFFFFF;
 
-  /* Semantic Colors */
-  --success-700: #2F5D50;
-  --success-500: #4F8F7A;
-  --success-300: #9ED3C2;
-  --success-100: #E6F4EF;
+  /* Semantic “success” alineado con brand lime (evita verdes sueltos fuera de paleta) */
+  --success-700: var(--brand-lime-dark);
+  --success-500: var(--brand-lime);
+  --success-300: color-mix(in srgb, var(--brand-lime) 55%, white);
+  --success-100: color-mix(in srgb, var(--brand-lime) 14%, white);
 
   --danger-700: #8B2E3A;
   --danger-500: #C45A67;
@@ -100,10 +108,10 @@
   --warning-300: #F3DA9C;
   --warning-100: #FFF6DE;
 
-  --info-700: #2F3E46;
-  --info-500: #6C7A89;
-  --info-300: #AFC3D6;
-  --info-100: #EAF0F6;
+  --info-700: color-mix(in srgb, var(--brand-blue) 72%, #0f172a);
+  --info-500: var(--brand-blue);
+  --info-300: color-mix(in srgb, var(--brand-blue) 42%, white);
+  --info-100: color-mix(in srgb, var(--brand-blue) 9%, white);
 
   /* UI Colors */
   --background: var(--brand-white);
@@ -125,12 +133,12 @@
   --input: #ebebeb;
   --ring: var(--brand-purple);
 
-  /* Charts */
-  --chart-1: var(--success-500);
+  /* Charts (serie positiva / ingresos = brand lime) */
+  --chart-1: var(--brand-lime);
   --chart-2: var(--danger-500);
   --chart-3: var(--brand-purple);
   --chart-4: var(--warning-500);
-  --chart-5: var(--info-500);
+  --chart-5: var(--brand-blue);
 
   /* Sidebar */
   --sidebar: var(--brand-white);
@@ -210,11 +218,11 @@
   --border: rgba(255, 255, 255, 0.08);
   --input: #1c1c1e;
   --ring: var(--brand-purple);
-  --chart-1: var(--success-300);
+  --chart-1: var(--brand-lime);
   --chart-2: var(--danger-300);
   --chart-3: var(--brand-purple);
   --chart-4: var(--warning-300);
-  --chart-5: var(--info-300);
+  --chart-5: var(--brand-blue-light);
   --sidebar: #161618;
   --sidebar-foreground: var(--brand-white);
   --sidebar-primary: var(--brand-purple);

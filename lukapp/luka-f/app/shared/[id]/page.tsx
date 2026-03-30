@@ -407,7 +407,7 @@ function MemberSalaryCard({
                 <span className="text-[10px] font-semibold text-muted-foreground/60">Libre</span>
                 <span className={cn(
                   "text-[12px] font-extrabold font-nums tabular-nums",
-                  isNegative ? "text-rose-500" : "text-emerald-500"
+                  isNegative ? "text-rose-500" : "text-lime"
                 )}>
                   {formatCompact(available)}
                 </span>
@@ -641,7 +641,7 @@ function MonthSummary({
           className="h-full bg-primary/70 transition-all duration-700"
           style={{ width: `${myPct}%` }}
         />
-        <div className="flex-1 h-full bg-emerald-500/50" />
+        <div className="flex-1 h-full bg-lime/50" />
       </div>
 
       <div className="flex items-center justify-between text-[11px]">
@@ -653,7 +653,7 @@ function MonthSummary({
         <div className="flex items-center gap-1.5">
           <span className="font-bold text-foreground font-nums tabular-nums">{formatCompact(partnerSpent)}</span>
           <span className="text-muted-foreground/60">{partnerName}</span>
-          <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
+          <div className="w-2 h-2 rounded-full bg-lime/50" />
         </div>
       </div>
     </div>

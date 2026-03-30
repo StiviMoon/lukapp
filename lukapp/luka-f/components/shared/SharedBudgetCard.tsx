@@ -18,7 +18,7 @@ interface SharedBudgetCardProps {
 function barColor(pct: number) {
   if (pct >= 90) return "#f43f5e";
   if (pct >= 70) return "#f59e0b";
-  return "#10b981";
+  return "var(--brand-lime)";
 }
 
 export function SharedBudgetCard({
@@ -106,7 +106,7 @@ export function SharedBudgetCard({
             <div className="flex items-baseline gap-1 min-w-0">
               <span className={cn(
                 "text-[12px] font-extrabold font-nums tabular-nums",
-                isExceeded ? "text-rose-500" : percentage >= 70 ? "text-amber-500" : "text-emerald-500"
+                isExceeded ? "text-rose-500" : percentage >= 70 ? "text-amber-500" : "text-lime"
               )}>
                 {formatCompact(spent)}
               </span>

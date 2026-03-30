@@ -37,7 +37,7 @@ export default function PhoneMockup() {
             <div className="flex gap-4">
               <div>
                 <p className="text-[9px] text-fg/50 dark:text-fg/30">Ingresos</p>
-                <p className="text-[11px] font-bold text-green-600 dark:text-green-400">↑ $3.5M</p>
+                <p className="text-[11px] font-bold text-lime-dark dark:text-lime">↑ $3.5M</p>
               </div>
               <div>
                 <p className="text-[9px] text-fg/50 dark:text-fg/30">Gastos</p>
@@ -63,7 +63,7 @@ export default function PhoneMockup() {
           <div className="flex flex-col">
             {[
               { icon: "🍔", name: "Rappi", amount: "-$45K", color: "text-pink-600 dark:text-pink-400" },
-              { icon: "💼", name: "Nómina", amount: "+$3.5M", color: "text-green-600 dark:text-green-400" },
+              { icon: "💼", name: "Nómina", amount: "+$3.5M", color: "text-lime-dark dark:text-lime" },
               { icon: "📺", name: "Netflix", amount: "-$19K", color: "text-pink-600 dark:text-pink-400" },
             ].map((tx) => (
               <div
