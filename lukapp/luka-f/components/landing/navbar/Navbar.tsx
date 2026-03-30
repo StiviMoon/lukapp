@@ -44,7 +44,7 @@ export default function Navbar() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="flex items-center px-3 py-1.5 rounded-full hover:bg-fg/[0.06] transition-colors duration-200"
         >
-          <LukappLogo variant="logotipo" height={26} priority />
+          <LukappLogo variant="logotipo" height={39} priority />
         </button>
 
         <div className="w-px h-4 bg-fg/10 dark:bg-white/10 mx-1" />
@@ -91,7 +91,7 @@ export default function Navbar() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="flex items-center py-0.5 shrink-0"
         >
-          <LukappLogo variant="logotipo" height={23} priority />
+          <LukappLogo variant="logotipo" height={34} priority />
         </button>
         <div className="flex items-center gap-1.5 shrink-0">
           <button

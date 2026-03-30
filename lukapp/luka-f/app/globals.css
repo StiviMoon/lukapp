@@ -108,7 +108,7 @@
   /* UI Colors */
   --background: var(--brand-white);
   --foreground: var(--brand-black);
-  --card: #ffffff;
+  --card: #ffffffd4;
   --card-foreground: var(--brand-black);
   --popover: #ffffff;
   --popover-foreground: var(--brand-black);
@@ -166,7 +166,7 @@
   --auth-input-underline-focus: #5913ef;
 
   /* Landing (light) */
-  --bg: #eeeeee;
+  --bg: #b9b9b9;
   --text: #1c1c1c;
   --text-muted: #5c5c5c;
   --lime: #baea0f;
@@ -194,7 +194,7 @@
 .dark {
   --background: #0c0c0e;
   --foreground: var(--brand-white);
-  --card: #161618;
+  --card: #251c48f6;
   --card-foreground: var(--brand-white);
   --popover: #161618;
   --popover-foreground: var(--brand-white);
@@ -203,7 +203,7 @@
   --secondary: #1c1c1e;
   --secondary-foreground: var(--brand-white);
   --muted: #1c1c1e;
-  --muted-foreground: #a0a0a0;
+  --muted-foreground: #d2d2d2;
   --accent: var(--brand-lime);
   --accent-foreground: #1c1c1c;
   --destructive: var(--danger-300);
@@ -248,7 +248,7 @@
   --auth-input-underline-focus: #5913ef;
 
   /* Landing (dark) */
-  --bg: #0c0c0e;
+  --bg: #10062e;
   --text: #f4f4f4;
   --text-muted: #8a8a8a;
   --bg-card: #161618;
@@ -265,14 +265,41 @@
   --shimmer-3: #baea0f;
 }
 
-/* Landing utilities */
-.grid-bg {
-  background-image:
-    linear-gradient(var(--section-divider) 1px, transparent 1px),
-    linear-gradient(90deg, var(--section-divider) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent);
+/* Figuras: light → variantes claras, dark → variantes oscuras */
+.bg-fig-dark { display: none; }
+.bg-fig-light { display: block; }
+.dark .bg-fig-dark  { display: block; }
+.dark .bg-fig-light { display: none; }
+
+/* Figuras decorativas — responsive */
+.bg-fig { position: absolute; user-select: none; }
+
+/* Mobile first — light mode */
+.bg-fig-1 { top: 5%;    left: -6%;  width: 100%; opacity: 0.25; }
+.bg-fig-2 { top: 40%;   left: -15%;  width: 80%;  opacity: 0.25; }
+.bg-fig-3 { bottom: 5%; right: -21%; width: 100%; opacity: 0.25; }
+.bg-fig-4 { top: -5%;   right: -15%; width: 80%;  opacity: 0.25; }
+
+/* Mobile — dark mode (ajustar independientemente) */
+.dark .bg-fig-dark.bg-fig-1 { top: 6%;    left: -22%;  width: 100%; opacity: 0.25; }
+.dark .bg-fig-dark.bg-fig-2 { top: 40%;   left: -15%;  width: 80%;  opacity: 0.25; }
+.dark .bg-fig-dark.bg-fig-3 { bottom: 5%; right: -21%; width: 100%; opacity: 0.25; }
+.dark .bg-fig-dark.bg-fig-4 { top: -5%;   right: -15%; width: 80%;  opacity: 0.25; }
+
+/* Desktop */
+@media (min-width: 768px) {
+  .bg-fig-1 { top: 5%;     left: -8%;   width: 42%; max-width: 520px; opacity: 0.25; }
+  .bg-fig-2 { top: 40%;    left: -8%;   width: 38%; max-width: 480px; opacity: 0.25; }
+  .bg-fig-3 { bottom: 5%;  right: -8%;  width: 42%; max-width: 520px; opacity: 0.25; }
+  .bg-fig-4 { top: -5%;    right: -8%;  width: 38%; max-width: 480px; opacity: 0.25; }
+
+  .dark .bg-fig-dark.bg-fig-1 { top: 5%;     left: -8%;   width: 42%; max-width: 520px; opacity: 0.25; }
+  .dark .bg-fig-dark.bg-fig-2 { top: 40%;    left: -8%;   width: 38%; max-width: 480px; opacity: 0.25; }
+  .dark .bg-fig-dark.bg-fig-3 { bottom: 5%;  right: -8%;  width: 42%; max-width: 520px; opacity: 0.25; }
+  .dark .bg-fig-dark.bg-fig-4 { top: -5%;    right: -8%;  width: 38%; max-width: 480px; opacity: 0.25; }
 }
+
+/* Landing utilities */
 
 /* Alternating section stripe — light: white/very-light-purple, dark: slightly lighter than bg */
 .section-stripe {
@@ -414,14 +441,38 @@
 .animate-pulse-ring {
   animation: pulse-ring 2s ease-out infinite;
 }
-
-/* ─── Balance card: gradient dark overlay dots ────────────────────────────── */
-
-.balance-hero-dots {
-  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
-  background-size: 20px 20px;
+/* ─── Balance card: base ─── */
+.balance-card-themed {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  transition: all 0.3s ease;
 }
 
+/* ─── Light mode (gradiente premium) ─── */
+.balance-card-themed {
+  background: linear-gradient(
+    150deg,
+    #3a00b7dd 0%,
+    #793ff5cb 40%,
+    #2b0a74 100%
+  );
+
+  box-shadow:
+    0 10px 30px rgba(89, 19, 239, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* ─── Dark mode (glassmorphism PRO) ─── */
+.dark .balance-card-themed {
+  background: rgba(40, 30, 89, 0.861); /* base glass */
+  backdrop-filter: blur(18px) saturate(180%) contrast(115%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%) contrast(115%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 8px 32px rgba(10, 8, 40, 0.619),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
 /* ─── Scrollbar hide ──────────────────────────────────────────────────────── */
 .scrollbar-hide {
   scrollbar-width: none;

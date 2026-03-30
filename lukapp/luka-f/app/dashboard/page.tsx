@@ -228,7 +228,7 @@ export default function DashboardPage() {
         {/* ── Header: LOGO | AJUSTES PERFIL ── */}
         <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
           {/* Logo */}
-          <LukappLogo variant="logotipo" height={46} color="degradado" priority />
+          <LukappLogo variant="logotipo" height={65} color="auto" priority />
 
           {/* Acciones */}
           <div className="flex items-center gap-1.5">
@@ -242,7 +242,7 @@ export default function DashboardPage() {
             {isPremium && (
               <button
                 onClick={() => router.push("/upgrade")}
-                className="flex items-center gap-1 px-2.5 h-9 rounded-xl bg-purple-brand/15 border border-purple-brand/25 text-purple-muted active:scale-95 transition-transform"
+                className="flex items-center gap-1 px-2.5 h-9 rounded-xl bg-purple-brand/15 border border-purple-brand/25 text-purple-muted active:scale-95 transition-transform backdrop-blur-[4px]"
                 aria-label="Plan Premium"
               >
                 <Crown className="w-3 h-3" />
@@ -269,15 +269,8 @@ export default function DashboardPage() {
           >
             {/* Balance card — hero gradient */}
             <div
-              className="balance-card mt-1 rounded-[28px] p-6 relative overflow-hidden"
-              style={{
-                background: "linear-gradient(135deg, #2a08a8 0%, #5913ef 45%, #7a3ff5 100%)",
-                boxShadow: "0 8px 32px rgba(89,19,239,0.35), 0 2px 8px rgba(0,0,0,0.2)",
-              }}
+              className="balance-card mt-1 rounded-[28px] p-6 relative overflow-hidden balance-card-themed"
             >
-              {/* Dot pattern overlay */}
-              <div className="absolute inset-0 balance-hero-dots opacity-40 pointer-events-none" />
-
               {/* Glow orb top-right */}
               <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-purple-300/20 blur-3xl pointer-events-none" />
 
@@ -356,7 +349,7 @@ export default function DashboardPage() {
 
             {/* Quick actions — 3 col */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">Acciones</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60 mb-3">Acciones</p>
               <div className="grid grid-cols-4 gap-2">
                 {[
                   {
@@ -406,8 +399,8 @@ export default function DashboardPage() {
             {hasBudgets && (
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">Presupuestos</p>
-                  <button onClick={() => router.push("/categories")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">Presupuestos</p>
+                  <button onClick={() => router.push("/categories")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground dark:hover:text-white/70 transition-colors">
                     Ver todo <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
@@ -434,8 +427,8 @@ export default function DashboardPage() {
             {hasSharedSpaces && (
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">En pareja</p>
-                  <button onClick={() => router.push("/friends")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">En pareja</p>
+                  <button onClick={() => router.push("/friends")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground dark:hover:text-white/70 transition-colors">
                     Ver todo <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
@@ -470,8 +463,8 @@ export default function DashboardPage() {
             {/* Recientes */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40">Recientes</p>
-                <button onClick={() => router.push("/history")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">Recientes</p>
+                <button onClick={() => router.push("/history")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground/80 dark:hover:text-white/70 transition-colors">
                   Ver todo <ChevronRight className="w-3 h-3" />
                 </button>
               </div>

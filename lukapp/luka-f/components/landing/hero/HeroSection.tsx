@@ -18,7 +18,11 @@ export default function HeroSection() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setTimeout(() => {
+      setMounted(true);
+    }, 100);
+  }, []);
   const isDark = mounted && resolvedTheme === "dark";
 
   return (
@@ -28,7 +32,6 @@ export default function HeroSection() {
     >
       <div className="absolute -top-24 -left-24 w-[600px] h-[600px] bg-purple-brand/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute -bottom-16 -right-16 w-[500px] h-[500px] bg-lime/[0.07] rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute inset-0 grid-bg pointer-events-none" />
 
       <div className="max-w-[1100px] mx-auto px-6 w-full relative">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">

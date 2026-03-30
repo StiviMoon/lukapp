@@ -21,7 +21,7 @@ const spaceMono = Space_Mono({
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)",  color: "#0c0c0e" },
+    { media: "(prefers-color-scheme: dark)",  color: "#10062e" },
     { media: "(prefers-color-scheme: light)", color: "#f4f4f4" },
   ],
   width: "device-width",
@@ -71,77 +71,32 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {/* ── Capa 0: color base ── */}
-        <div className="fixed inset-0 bg-background" style={{ zIndex: 0 }} />
+        <div className="fixed inset-0 bg-background dark:bg-bg" style={{ zIndex: 0 }} />
 
-        {/* ── Capa 1: figuras lineales eco del isotipo ── */}
-        <svg
+        {/* ── Capa 1: figuras SVG decorativas (dark mode) ── */}
+        <div
           aria-hidden="true"
-          style={{ zIndex: 1 }}
-          className="pointer-events-none fixed inset-0 w-full h-full"
-          viewBox="0 0 390 844"
-          preserveAspectRatio="xMidYMid slice"
-          xmlns="http://www.w3.org/2000/svg"
+          style={{ zIndex: 1, position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden" }}
         >
-          <defs>
-            {/* Gradiente principal del isotipo: morado → azul → lima */}
-            <linearGradient id="lg-main" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%"   stopColor="#5913ef" stopOpacity="0.55" />
-              <stop offset="50%"  stopColor="#5295fe" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#baea0f" stopOpacity="0.30" />
-            </linearGradient>
-            <linearGradient id="lg-inv" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%"   stopColor="#baea0f" stopOpacity="0.25" />
-              <stop offset="50%"  stopColor="#5295fe" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#5913ef" stopOpacity="0.45" />
-            </linearGradient>
-            <linearGradient id="lg-blue" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%"   stopColor="#5913ef" stopOpacity="0.40" />
-              <stop offset="100%" stopColor="#5295fe" stopOpacity="0.20" />
-            </linearGradient>
-          </defs>
-
-          {/* ── Círculo grande superior izquierdo (eco del círculo del isotipo) ── */}
-          <circle
-            cx="-20" cy="100" r="190"
-            fill="none" stroke="url(#lg-main)" strokeWidth="3.5"
-          />
-          <circle
-            cx="-20" cy="100" r="130"
-            fill="none" stroke="url(#lg-main)" strokeWidth="2"
-          />
-
-          {/* ── Curva fluida superior ── */}
-          <path
-            d="M -20 0 C 40 40, 120 10, 200 55 C 265 92, 330 65, 390 95"
-            fill="none" stroke="url(#lg-main)" strokeWidth="3"
-          />
-
-          {/* ── Círculo grande inferior derecho ── */}
-          <circle
-            cx="420" cy="760" r="180"
-            fill="none" stroke="url(#lg-inv)" strokeWidth="3.5"
-          />
-          <circle
-            cx="420" cy="760" r="110"
-            fill="none" stroke="url(#lg-inv)" strokeWidth="2"
-          />
-
-          {/* ── Curva fluida inferior ── */}
-          <path
-            d="M 0 844 C 60 800, 160 830, 240 790 C 310 758, 370 780, 390 760"
-            fill="none" stroke="url(#lg-inv)" strokeWidth="3"
-          />
-
-          {/* ── Arco lateral derecho ── */}
-          <path
-            d="M 390 200 C 340 280, 360 380, 390 440"
-            fill="none" stroke="url(#lg-blue)" strokeWidth="3"
-          />
-          <path
-            d="M 390 220 C 320 310, 345 410, 390 470"
-            fill="none" stroke="url(#lg-blue)" strokeWidth="2"
-          />
-        </svg>
+          {/* Variantes light */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figuras/fig1.svg" alt="" className="bg-fig bg-fig-1 bg-fig-light" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figuras/fig2.svg" alt="" className="bg-fig bg-fig-2 bg-fig-light" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figuras/fig3.svg" alt="" className="bg-fig bg-fig-3 bg-fig-light" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figuras/fig4.svg" alt="" className="bg-fig bg-fig-4 bg-fig-light" />
+          {/* Variantes dark */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figuras/fig1%20oscuro.svg" alt="" className="bg-fig bg-fig-1 bg-fig-dark" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figuras/Fig2%20oscuro.svg" alt="" className="bg-fig bg-fig-2 bg-fig-dark" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figuras/fig3%20oscuro.svg" alt="" className="bg-fig bg-fig-3 bg-fig-dark" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/figuras/fig4%20oscuro.svg" alt="" className="bg-fig bg-fig-4 bg-fig-dark" />
+        </div>
 
         {/* ── Capa 2: todo el contenido de la app ── */}
         <div style={{ position: "relative", zIndex: 2 }}>

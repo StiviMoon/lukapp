@@ -598,13 +598,10 @@ function MonthSummary({
   transactions: SharedTransaction[]; myUserId: string; partnerName: string; spaceName: string;
 }) {
   const now = new Date();
-  const thisMonth = useMemo(() =>
-    transactions.filter(tx => {
-      const d = new Date(tx.date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }),
-    [transactions]
-  );
+  const thisMonth = transactions.filter(tx => {
+    const d = new Date(tx.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
 
   if (thisMonth.length === 0) return null;
 
