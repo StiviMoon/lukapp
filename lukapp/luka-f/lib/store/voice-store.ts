@@ -50,7 +50,7 @@ const initialState = {
 export const useVoiceStore = create<VoiceState>((set, get) => ({
   ...initialState,
 
-  openVoice: () => set({ isOpen: true, phase: "idle" }),
+  openVoice: () => set({ isOpen: true, phase: "listening" }),
 
   closeVoice: () => {
     get().reset();

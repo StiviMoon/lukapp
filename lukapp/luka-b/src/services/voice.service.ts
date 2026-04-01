@@ -1,6 +1,30 @@
 import Groq from "groq-sdk";
 import { AppError } from "@/errors/app-error";
 
+function extractJSON(text: string): ParsedTransaction[] | null {
+  const stripped = text
+    .replace(/```json\n?/g, "")
+    .replace(/```\n?/g, "")
+    .trim();
+
+  const arrayMatch = stripped.match(/\[[\s\S]*\]/);
+  if (arrayMatch) {
+    try { return JSON.parse(arrayMatch[0]); } catch {}
+  }
+
+  const objMatch = stripped.match(/\{[\s\S]*\}/);
+  if (objMatch) {
+    try { return JSON.parse(`[${objMatch[0]}]`); } catch {}
+  }
+
+  try {
+    const parsed = JSON.parse(stripped);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch {}
+
+  return null;
+}
+
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export interface ParsedTransaction {
@@ -135,8 +159,8 @@ CONFIANZA:
         throw new AppError("Respuesta vacía del asistente", 500, "AI_ERROR");
       }
 
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
+      const parsed = extractJSON(text);
+      if (!parsed || parsed.length === 0) {
         throw new AppError(
           "No pude interpretar la respuesta del asistente",
           500,
@@ -144,12 +168,7 @@ CONFIANZA:
         );
       }
 
-      const parsed = JSON.parse(jsonMatch[0]) as ParsedTransaction[];
-      if (!Array.isArray(parsed) || parsed.length === 0) {
-        throw new AppError("No pude entender ninguna transacción", 422, "PARSE_ERROR");
-      }
-
-      const cleaned = parsed.filter((p) =>
+      const cleaned = (parsed as ParsedTransaction[]).filter((p) =>
         p &&
         (p.type === "INCOME" || p.type === "EXPENSE") &&
         typeof p.amount === "number" &&

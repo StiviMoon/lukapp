@@ -6,6 +6,7 @@ import { authenticate } from "@/auth/middleware";
 import { validateBody } from "@/middleware/validation";
 import { parseVoiceSchema } from "@/validations/voice.schema";
 import { voiceService } from "@/services/voice.service";
+import { voiceParserService } from "@/services/voice-parser.service";
 import { formatError } from "@/errors/error-handler";
 import { AppError } from "@/errors/app-error";
 import { categoryRepository } from "@/repositories/category.repository";
@@ -208,6 +209,14 @@ router.post(
     try {
       const { transcript, categories, accounts } = req.body;
 
+      // Intentar parser de reglas primero (0 tokens de IA)
+      const ruleResult = voiceParserService.parse(transcript, categories, accounts);
+      if (ruleResult) {
+        res.json({ success: true, data: ruleResult });
+        return;
+      }
+
+      // Fallback a Llama si las reglas no resolvieron
       const parsed = await voiceService.parseTranscript(transcript, categories, accounts);
 
       res.json({

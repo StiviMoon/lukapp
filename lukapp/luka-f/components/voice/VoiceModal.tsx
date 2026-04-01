@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
@@ -102,6 +102,22 @@ export function VoiceModal() {
   }>>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
+  // ── Indicador de pausa (usuario paró de hablar, esperando resultado final) ──
+  const [isPaused, setIsPaused] = useState(false);
+  const lastInterimTimeRef = useRef<number>(0);
+  const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Ejemplo rotante (mientras no hay voz) ──
+  const EXAMPLES = useMemo(() => [
+    "gasté 50k en almuerzo",
+    "pagué arriendo 800 mil",
+    "recibí nómina 2 millones",
+    "compré mercado 150k",
+    "me llegó un palo del cliente",
+    "pagué Netflix 20 mil",
+  ], []);
+  const [exampleIdx, setExampleIdx] = useState(0);
+
   // Estado local para edición del item seleccionado
   const [editAmount,       setEditAmount]       = useState("");
   const [editDescription,  setEditDescription]  = useState("");
@@ -111,11 +127,11 @@ export function VoiceModal() {
   const [showCatPicker,    setShowCatPicker]    = useState(false);
   const [editAccountId,    setEditAccountId]    = useState<string | null>(null);
 
-  // Categorías del usuario (del cache — staleTime 5min)
+  // Categorías del usuario (del cache — staleTime 5min, cargar al abrir para tenerlas listas al parsear)
   const { data: categoriesRes } = useQuery({
     queryKey: ["categories"],
     queryFn: () => api.categories.getAll(),
-    enabled: phase === "confirming",
+    enabled: isOpen,
     staleTime: 5 * 60_000,
   });
   const categories = (categoriesRes?.data as TransactionCategory[] | undefined) ?? [];
@@ -167,11 +183,7 @@ export function VoiceModal() {
       setPhase("processing");
 
       try {
-        // Traer categorías del usuario para mejor matching
-        const categoriesRes = await api.categories.getAll();
-        const categories =
-          (categoriesRes.data as Array<{ id: string; name: string; type: string }>) ?? [];
-
+        // Usar categorías y cuentas del cache de React Query (ya disponibles en el componente)
         const currentAccounts = (accountsRes?.data as Account[] | undefined) ?? [];
         const result = await api.voice.parse({
           transcript: finalText.trim(),
@@ -201,22 +213,30 @@ export function VoiceModal() {
         setPhase("error");
       }
     },
-    [setTranscript, setPhase, setParsedTxs, setError]
+    [setTranscript, setPhase, setParsedTxs, setError, categories, accountsRes]
   );
 
   const handleRecognitionError = useCallback(
     (message: string) => {
+      vibrate([80, 40, 80]); // patrón de error
       setError(message);
       setPhase("error");
     },
     [setError, setPhase]
   );
 
-  const { isSupported, startListening, stopListening } = useVoiceRecognition({
+  const { isSupported, usingNativeApi, startListening, stopListening } = useVoiceRecognition({
     onInterim: handleInterim,
     onFinal: handleFinal,
     onError: handleRecognitionError,
   });
+
+  // ── Haptic feedback (PWA mobile) ─────────────────────────────────────────
+  const vibrate = useCallback((pattern: number | number[]) => {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(pattern);
+    }
+  }, []);
 
   // ── Timer (UI tipo WhatsApp) ─────────────────────────────────────────────
   const [recordStartMs, setRecordStartMs] = useState<number | null>(null);
@@ -241,6 +261,33 @@ export function VoiceModal() {
     return `${m}:${s}`;
   }, [elapsedMs]);
 
+  // ── Ejemplo rotante cada 2.5s cuando no hay voz ──
+  useEffect(() => {
+    if (phase !== "listening") return;
+    const hasVoice = !!(interimTranscript && interimTranscript !== "..." && interimTranscript !== "escuchando...");
+    if (hasVoice) return;
+    const id = setInterval(() => setExampleIdx((i) => (i + 1) % EXAMPLES.length), 2500);
+    return () => clearInterval(id);
+  }, [phase, interimTranscript, EXAMPLES.length]);
+
+  // ── Detectar pausa: cuando deja de llegar interim ──
+  useEffect(() => {
+    if (phase !== "listening") { setIsPaused(false); return; }
+    const hasVoice = !!(interimTranscript && interimTranscript !== "..." && interimTranscript !== "escuchando...");
+    if (hasVoice) {
+      lastInterimTimeRef.current = Date.now();
+      setIsPaused(false);
+      if (pauseTimerRef.current) { clearTimeout(pauseTimerRef.current); pauseTimerRef.current = null; }
+    } else if (lastInterimTimeRef.current > 0 && !pauseTimerRef.current) {
+      // Hubo voz antes y ahora no → iniciar espera de "pausa"
+      pauseTimerRef.current = setTimeout(() => {
+        setIsPaused(true);
+        pauseTimerRef.current = null;
+      }, 800);
+    }
+    return () => { if (pauseTimerRef.current) { clearTimeout(pauseTimerRef.current); pauseTimerRef.current = null; } };
+  }, [phase, interimTranscript]);
+
   // ── Iniciar escucha cuando el modal abre ──
   useEffect(() => {
     if (isOpen && phase === "listening") {
@@ -249,6 +296,10 @@ export function VoiceModal() {
         setPhase("error");
         return;
       }
+      lastInterimTimeRef.current = 0;
+      setIsPaused(false);
+      setExampleIdx(0);
+      vibrate(40); // feedback táctil al empezar a escuchar
       startListening();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -257,6 +308,7 @@ export function VoiceModal() {
   // ── Fase done: invalidar cache y cerrar ──
   useEffect(() => {
     if (phase === "done") {
+      vibrate([50, 40, 100]); // doble pulso de éxito
       toast.success("Transacción registrada");
       invalidateTransactions();
       const timer = setTimeout(() => closeVoice(), 1400);
@@ -402,11 +454,11 @@ export function VoiceModal() {
             <div className="flex flex-col items-center gap-3 pt-1">
               <button
                 type="button"
-                onClick={() => setPhase("listening")}
+                onClick={() => { vibrate(40); setPhase("listening"); }}
                 className={cn(
                   "h-16 w-16 rounded-full flex items-center justify-center",
                   "bg-primary text-primary-foreground shadow-sm",
-                  "hover:bg-primary/90 transition-colors active:scale-[0.98]",
+                  "hover:bg-primary/90 transition-all active:scale-95",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 )}
                 aria-label="Empezar a grabar"
@@ -424,84 +476,151 @@ export function VoiceModal() {
           </motion.div>
         );
 
-      case "listening":
+      case "listening": {
+        const hasVoice = !!(interimTranscript && interimTranscript !== "..." && interimTranscript !== "escuchando...");
         return (
           <div className="flex flex-col items-center gap-4 py-2">
-            {/* Barra superior: dot + timer */}
+            {/* Barra superior */}
             <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <motion.span
+                  className="w-2 h-2 rounded-full bg-rose-500"
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                />
                 <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-                  Grabando
+                  {usingNativeApi ? "Escuchando" : "Grabando"}
                 </p>
               </div>
-              <span className="text-xs font-semibold text-muted-foreground/60 font-nums tabular-nums">
-                {elapsedLabel}
-              </span>
+              {/* Timer solo en modo Whisper (nativeApi para automáticamente) */}
+              {!usingNativeApi && (
+                <span className="text-xs font-semibold text-muted-foreground/60 tabular-nums">
+                  {elapsedLabel}
+                </span>
+              )}
             </div>
 
-            <VoiceWaveform isListening={true} />
+            <VoiceWaveform isListening={true} hasActivity={hasVoice} />
 
-            {/* Lo que va detectando el micrófono */}
-            <div className="w-full min-h-[44px] flex items-center justify-center px-2">
-              <p className="text-sm text-muted-foreground/70 text-center leading-relaxed">
-                {interimTranscript && interimTranscript !== "..."
-                  ? `"${interimTranscript}"`
-                  : "Habla normal. Cuando termines, toca Enviar."}
-              </p>
+            {/* Transcript en tiempo real / indicador de pausa / ejemplo */}
+            <div className="w-full min-h-[52px] flex items-center justify-center px-2">
+              <AnimatePresence mode="wait">
+                {isPaused ? (
+                  // Pausa detectada: usuario paró de hablar, esperando resultado final
+                  <motion.div
+                    key="paused"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {[0, 1, 2].map((i) => (
+                        <motion.span
+                          key={i}
+                          className="w-1.5 h-1.5 rounded-full bg-primary"
+                          animate={{ opacity: [0.3, 1, 0.3] }}
+                          transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/60">Procesando…</p>
+                  </motion.div>
+                ) : hasVoice ? (
+                  // Transcript en tiempo real
+                  <motion.p
+                    key="transcript"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-sm text-foreground text-center leading-relaxed font-medium"
+                  >
+                    &ldquo;{interimTranscript}&rdquo;
+                  </motion.p>
+                ) : (
+                  // Ejemplo rotante cuando no hay voz
+                  <motion.div
+                    key={`example-${exampleIdx}`}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    <p className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">
+                      Di algo como
+                    </p>
+                    <p className="text-sm text-muted-foreground/80 font-medium text-center">
+                      &ldquo;{EXAMPLES[exampleIdx]}&rdquo;
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* Barra inferior tipo WhatsApp */}
+            {/* Controles: X siempre · Enviar solo en modo Whisper */}
             <div className="w-full flex items-center gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleClose}
-                className="h-12 w-12 rounded-full bg-muted/60 hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground"
+                className="h-12 w-12 rounded-full bg-muted/60 hover:bg-muted transition-colors flex items-center justify-center text-muted-foreground active:scale-95"
                 aria-label="Cancelar"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="flex-1 h-12 rounded-full bg-muted/40 px-4 flex items-center text-[12px] text-muted-foreground/60">
-                {recordStartMs ? "Grabando…" : "Preparando…"}
+              <div className="flex-1 h-12 rounded-full bg-muted/40 px-4 flex items-center">
+                <p className="text-[12px] text-muted-foreground/50">
+                  {usingNativeApi
+                    ? "Para automáticamente al terminar"
+                    : (recordStartMs ? "Grabando…" : "Preparando…")}
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  // UX: parar el timer/estado de grabación inmediatamente
-                  // (el MediaRecorder se detiene y luego llega el transcript en onstop)
-                  setInterim("Procesando…");
-                  setPhase("processing");
-                  stopListening();
-                }}
-                className={cn(
-                  "h-12 w-12 rounded-full bg-primary text-primary-foreground",
-                  "hover:bg-primary/90 transition-colors active:scale-[0.98]",
-                  "flex items-center justify-center",
-                )}
-                aria-label="Enviar"
-              >
-                <Send className="w-5 h-5" />
-              </button>
+              {/* Botón Enviar: solo en modo Whisper */}
+              {!usingNativeApi && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    vibrate(30);
+                    setInterim("Procesando…");
+                    setPhase("processing");
+                    stopListening();
+                  }}
+                  className={cn(
+                    "h-12 w-12 rounded-full bg-primary text-primary-foreground",
+                    "transition-all active:scale-95",
+                    "flex items-center justify-center",
+                  )}
+                  aria-label="Enviar"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              )}
             </div>
           </div>
         );
+      }
 
       case "processing":
         return (
           <div className="flex flex-col items-center gap-6 py-4">
-            <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-              Analizando...
-            </p>
+            {transcript && (
+              <div className="w-full rounded-xl bg-muted/30 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                  Escuché
+                </p>
+                <p className="text-sm text-foreground italic leading-relaxed">
+                  &ldquo;{transcript}&rdquo;
+                </p>
+              </div>
+            )}
 
             <VoiceWaveform isListening={false} isProcessing={true} />
 
-            {transcript && (
-              <p className="text-sm text-muted-foreground text-center px-4 italic">
-                &ldquo;{transcript}&rdquo;
-              </p>
-            )}
+            <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+              Interpretando con IA...
+            </p>
           </div>
         );
 
