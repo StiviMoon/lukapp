@@ -10,13 +10,14 @@ import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Settings2,
-  AlertCircle, Zap, Clock, Target, Download,
+  AlertCircle, Zap, Clock, Target, Download, RefreshCw, Crown,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { api, type AnalyticsSummary } from "@/lib/api/client";
+import { api, type AnalyticsSummary, type RecurringExpense } from "@/lib/api/client";
 import { useMinDelay } from "@/lib/hooks/use-min-delay";
+import { usePlan } from "@/lib/hooks/use-plan";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
 import type { Transaction } from "@/lib/types/transaction";
@@ -161,6 +162,7 @@ function exportCSV(transactions: Transaction[], monthLabel: string) {
 
 export default function AnalyticsPage() {
   const router = useRouter();
+  const { isPremium } = usePlan();
   const [currentMonth,      setCurrentMonth]      = useState(() => new Date());
   const [activeType,        setActiveType]        = useState<TxType>("EXPENSE");
   const [selectedCategory,  setSelectedCategory]  = useState<string | null>(null);
@@ -233,6 +235,18 @@ export default function AnalyticsPage() {
         .map(r => r.value);
     },
     staleTime: 5 * 60_000,
+    retry: 0,
+  });
+
+  const { data: recurringData } = useQuery<RecurringExpense[]>({
+    queryKey: ["analytics", "recurring"],
+    queryFn: async () => {
+      const res = await api.analytics.getRecurring();
+      if (!res.success || !res.data) return [];
+      return res.data;
+    },
+    staleTime: 10 * 60_000,
+    enabled: isPremium,
     retry: 0,
   });
 
@@ -443,7 +457,43 @@ export default function AnalyticsPage() {
                               </p>
                             </div>
                           )}
+
+                          {/* Razones del score — chips contextuales */}
+                          {(mathData.health.reasons?.length ?? 0) > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {mathData.health.reasons.map((reason) => (
+                                <span
+                                  key={reason}
+                                  className={cn(
+                                    "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium leading-tight",
+                                    mathData.health.level === "estable"
+                                      ? "bg-lime/10 text-lime-dark dark:text-lime"
+                                      : mathData.health.level === "riesgo"
+                                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                      : "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+                                  )}
+                                >
+                                  {reason}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
+
+                        {/* Alertas activas — solo visible si llegan del backend (Premium) */}
+                        {(mathData.alerts?.length ?? 0) > 0 && (
+                          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/6 px-4 py-3 space-y-2">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600/60 dark:text-amber-400/60">
+                              Alertas financieras
+                            </p>
+                            {mathData.alerts!.map((alert) => (
+                              <div key={alert} className="flex items-start gap-2">
+                                <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                                <p className="text-[12px] text-foreground/75 leading-snug">{alert}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
                         {/* Gráfico tendencia */}
                         {chartTxData && chartTxData.length > 1 ? (
@@ -732,6 +782,67 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
               </div>
+
+              {/* ── Gastos recurrentes (Premium) ── */}
+              {isPremium ? (
+                (recurringData?.length ?? 0) > 0 ? (
+                  <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
+                      <RefreshCw className="w-3.5 h-3.5 text-brand-blue shrink-0" />
+                      <p className="text-[12px] font-bold text-foreground/80">Gastos recurrentes</p>
+                      <span className="ml-auto text-[10px] text-muted-foreground/40 font-medium">{recurringData!.length} detectados</span>
+                    </div>
+                    <div className="divide-y divide-border/30">
+                      {recurringData!.map((item) => {
+                        const today = new Date();
+                        const nextDate = new Date(item.nextExpectedDate + "T00:00:00");
+                        const daysUntil = Math.ceil((nextDate.getTime() - today.getTime()) / 86_400_000);
+                        const freqLabel = item.frequency === "monthly" ? "Mensual" : item.frequency === "biweekly" ? "Quincenal" : "Semanal";
+                        const isOverdue = daysUntil < 0;
+                        const isSoon = daysUntil >= 0 && daysUntil <= 3;
+                        return (
+                          <div key={`${item.name}-${item.frequency}`} className="flex items-center gap-3 px-4 py-3">
+                            <div className="w-9 h-9 rounded-xl bg-brand-blue/10 flex items-center justify-center shrink-0">
+                              <RefreshCw className="w-4 h-4 text-brand-blue" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-semibold text-foreground truncate">{item.name}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-brand-blue/10 text-brand-blue">
+                                  {freqLabel}
+                                </span>
+                                <span className={cn(
+                                  "text-[10px] font-medium",
+                                  isOverdue ? "text-rose-500" : isSoon ? "text-amber-500" : "text-muted-foreground/50",
+                                )}>
+                                  {isOverdue
+                                    ? `Vencido hace ${Math.abs(daysUntil)}d`
+                                    : daysUntil === 0
+                                    ? "Vence hoy"
+                                    : `En ${daysUntil} días`}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-[14px] font-bold font-nums text-rose-500 tabular-nums shrink-0">
+                              -{formatCompact(item.averageAmount)}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null
+              ) : (
+                <div className="rounded-2xl border border-brand-blue/20 bg-brand-blue/5 px-4 py-3.5 flex items-start gap-3">
+                  <Crown className="w-4 h-4 text-brand-blue shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground/80">Gastos recurrentes</p>
+                    <p className="text-[11px] text-muted-foreground/50 mt-0.5 leading-snug">
+                      Detecta automáticamente Netflix, arriendo, suscripciones y más. Disponible en Premium.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* ── Category breakdown / tx list ── */}
               {categoryRows.length === 0 ? (

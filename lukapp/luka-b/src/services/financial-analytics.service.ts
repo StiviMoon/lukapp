@@ -167,8 +167,57 @@ export function computeAnomalyAlerts(
   });
 }
 
+// ─── Health reasons builder ───────────────────────────────────────────────────
+function buildHealthReasons(savingsRate: number, runwayDays: number | null, budgetOverruns: number): string[] {
+  const reasons: string[] = [];
+
+  if (savingsRate >= 20) {
+    reasons.push(`Ahorrando el ${savingsRate.toFixed(1)}% de tus ingresos — excelente ritmo.`);
+  } else if (savingsRate >= 10) {
+    reasons.push(`Ahorro mensual saludable: ${savingsRate.toFixed(1)}% de tus ingresos.`);
+  } else if (savingsRate >= 1) {
+    reasons.push(`Ahorro mensual bajo: solo el ${savingsRate.toFixed(1)}%. Apunta al 10%.`);
+  } else if (savingsRate < 0) {
+    reasons.push(`Este mes gastas mas de lo que ingresas (${savingsRate.toFixed(1)}%).`);
+  } else {
+    reasons.push("No registras ahorro este mes. Intenta separar aunque sea un poco.");
+  }
+
+  if (runwayDays !== null) {
+    if (runwayDays >= 180) {
+      reasons.push(`Tu fondo de emergencia cubre ${runwayDays} dias — muy bien respaldado.`);
+    } else if (runwayDays >= 90) {
+      reasons.push(`Runway de ${runwayDays} dias — estas bien cubierto ante imprevistos.`);
+    } else if (runwayDays >= 30) {
+      reasons.push(`Runway de ${runwayDays} dias. Considera ahorrar mas para mayor seguridad.`);
+    } else {
+      reasons.push(`Runway de solo ${runwayDays} dias — nivel de riesgo alto si dejas de ingresar.`);
+    }
+  } else {
+    reasons.push("Sin burn rate activo: registra gastos para calcular tu runway.");
+  }
+
+  if (budgetOverruns > 0) {
+    reasons.push(`Excediste ${budgetOverruns} presupuesto${budgetOverruns > 1 ? "s" : ""} este mes.`);
+  }
+
+  return reasons.slice(0, 3);
+}
+
+// ─── In-memory cache (per-user, 5-min TTL) ───────────────────────────────────
+const summaryCache = new Map<string, { data: AnalyticsSummary; expiresAt: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export class FinancialAnalyticsService {
+  invalidateSummaryCache(userId: string): void {
+    summaryCache.delete(userId);
+  }
+
   async getSummary(userId: string): Promise<AnalyticsSummary> {
+    const cached = summaryCache.get(userId);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.data;
+    }
     const startedAt = Date.now();
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -311,10 +360,7 @@ export class FinancialAnalyticsService {
       health: {
         score,
         level,
-        reasons: [
-          `Ahorro mensual: ${savingsRate.toFixed(1)}%.`,
-          ...(runwayDays !== null ? [`Runway: ${runwayDays} dias.`] : ["Runway no aplica con burn rate 0."]),
-        ].slice(0, 2),
+        reasons: buildHealthReasons(savingsRate, runwayDays, budgetOverruns),
       },
       today: {
         insight: todayInsight,
@@ -345,6 +391,8 @@ export class FinancialAnalyticsService {
 
     const payloadBytes = Buffer.byteLength(JSON.stringify(summary), "utf8");
     summary.debug.payloadBytes = payloadBytes;
+
+    summaryCache.set(userId, { data: summary, expiresAt: Date.now() + CACHE_TTL_MS });
     return summary;
   }
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api/client";
 import { motion } from "framer-motion";
 import {
   Loader2, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
@@ -140,6 +142,7 @@ export default function DashboardPage() {
   const { user, loading, isAuthenticated } = useAuth();
   const { isPremium } = usePlan();
   const router = useRouter();
+  const queryClient = useQueryClient();
   useInactivityTimeout();
 
   const [selectedTx,     setSelectedTx]    = useState<Transaction | null>(null);
@@ -192,6 +195,20 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading && !isAuthenticated) router.push("/auth");
   }, [loading, isAuthenticated, router]);
+
+  // Prefetch analytics so the analytics page loads instantly
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      void queryClient.prefetchQuery({
+        queryKey: ["analytics", "summary"],
+        queryFn: async () => {
+          const res = await api.analytics.getSummary();
+          return res.data ?? null;
+        },
+        staleTime: 60_000,
+      });
+    }
+  }, [loading, isAuthenticated, queryClient]);
 
   // Forzar onboarding si no está completado
   useEffect(() => {

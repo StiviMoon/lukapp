@@ -24,6 +24,20 @@ router.get("/insight", requirePremium, async (req: Request, res: Response, next:
 });
 
 /**
+ * GET /api/coach/suggestions
+ * Retorna 5 preguntas sugeridas contextuales basadas en el estado financiero del usuario.
+ * Solo Premium.
+ */
+router.get("/suggestions", requirePremium, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const suggestions = await coachService.getSuggestions(req.userId!);
+    res.json({ success: true, data: { suggestions } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * POST /api/coach/chat
  * Chat en streaming con el Coach IA. Solo plan Premium.
  *
@@ -62,6 +76,51 @@ router.post("/chat", requirePremium, coachLimiter, validateBody(coachChatSchema)
       res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
       res.end();
     }
+  }
+});
+
+/**
+ * GET /api/coach/history
+ * Retorna el historial de chat persistido (últimos 40 mensajes).
+ */
+router.get("/history", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const history = await coachService.getChatHistory(req.userId!);
+    res.json({ success: true, data: history });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/coach/history
+ * Guarda un mensaje en el historial.
+ * Body: { role: "user" | "assistant", content: string }
+ */
+router.post("/history", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { role, content } = req.body as { role: "user" | "assistant"; content: string };
+    if (!role || !content || !["user", "assistant"].includes(role)) {
+      res.status(400).json({ success: false, error: { message: "role y content son requeridos" } });
+      return;
+    }
+    const message = await coachService.saveChatMessage(req.userId!, role, content);
+    res.status(201).json({ success: true, data: message });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/coach/history
+ * Elimina todo el historial de chat del usuario.
+ */
+router.delete("/history", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await coachService.clearChatHistory(req.userId!);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
   }
 });
 

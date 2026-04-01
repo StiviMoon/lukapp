@@ -2,6 +2,7 @@ import { transactionRepository } from "@/repositories/transaction.repository";
 import { accountRepository } from "@/repositories/account.repository";
 import { budgetRepository } from "@/repositories/budget.repository";
 import { pushService } from "@/services/push.service";
+import { financialAnalyticsService } from "@/services/financial-analytics.service";
 import {
   CreateTransactionInput,
   UpdateTransactionInput,
@@ -75,6 +76,7 @@ export class TransactionService {
       }
 
       await tx.coachInsight.deleteMany({ where: { userId } });
+      financialAnalyticsService.invalidateSummaryCache(userId);
 
       return created;
     });
@@ -97,11 +99,19 @@ export class TransactionService {
             budgetCategoryId
           );
 
-          if (spent > Number(matchingBudget.amount)) {
-            const categoryName = matchingBudget.category?.name ?? "General";
+          const budgetAmount = Number(matchingBudget.amount);
+          const pct = budgetAmount > 0 ? spent / budgetAmount : 0;
+          const categoryName = matchingBudget.category?.name ?? "General";
+          if (pct >= 1) {
             void pushService.sendToUser(userId, {
               title: "⚠️ Presupuesto excedido",
               body: `Superaste tu presupuesto de ${categoryName}. Gastado: $${Math.round(spent).toLocaleString("es-CO")}`,
+              url: "/analytics",
+            });
+          } else if (pct >= 0.85) {
+            void pushService.sendToUser(userId, {
+              title: "📊 Vas al 85% de tu presupuesto",
+              body: `Llevas $${Math.round(spent).toLocaleString("es-CO")} de $${Math.round(budgetAmount).toLocaleString("es-CO")} en ${categoryName}`,
               url: "/analytics",
             });
           }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 
@@ -11,7 +11,14 @@ export interface ChatMessage {
 
 const STORAGE_KEY = "luka_chat_history";
 
-function loadMessages(): ChatMessage[] {
+// localStorage as immediate optimistic cache (zero-flicker while DB loads)
+function saveLocalMessages(messages: ChatMessage[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  } catch {}
+}
+
+function loadLocalMessages(): ChatMessage[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -39,101 +46,177 @@ export function useCoachInsight() {
   });
 }
 
+// ─── Hook: sugerencias contextuales ──────────────────────────────────────────
+
+export function useCoachSuggestions(enabled = true) {
+  return useQuery({
+    queryKey: ["coach-suggestions"],
+    queryFn: async () => {
+      const res = await api.coach.getSuggestions();
+      if (!res.success || !res.data) throw new Error("No se pudieron obtener sugerencias");
+      return res.data.suggestions;
+    },
+    staleTime: 30 * 60_000, // 30 min
+    enabled,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes("403")) return false;
+      return failureCount < 1;
+    },
+  });
+}
+
 // ─── Hook: chat en streaming ──────────────────────────────────────────────────
 
 export function useCoachChat() {
   const queryClient = useQueryClient();
-  const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
+
+  // Optimistic init from localStorage — replaced by DB data once loaded
+  const [messages, setMessages] = useState<ChatMessage[]>(loadLocalMessages);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
-  // Índice del último mensaje del asistente recibido en esta sesión (para animarlo)
   const [latestAssistantIdx, setLatestAssistantIdx] = useState<number | null>(null);
+  const [dbSyncError, setDbSyncError] = useState(false);
 
-  // Guardar en localStorage cada vez que cambia el historial
+  // Fetch persisted history from DB; overrides localStorage on first load
+  const { data: dbHistory, isSuccess: dbLoaded } = useQuery({
+    queryKey: ["coach-history"],
+    queryFn: async () => {
+      const res = await api.coach.getHistory();
+      if (!res.success || !res.data) return [] as ChatMessage[];
+      return res.data.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+    },
+    staleTime: Infinity, // managed manually
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes("403")) return false;
+      return failureCount < 1;
+    },
+  });
+
+  // Once DB history loads, replace optimistic state and sync localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch {}
-  }, [messages]);
+    if (dbLoaded && dbHistory) {
+      setMessages(dbHistory);
+      saveLocalMessages(dbHistory);
+    }
+  }, [dbLoaded, dbHistory]);
 
-  const sendMessage = useCallback(async (userText: string) => {
-    const newMessages: ChatMessage[] = [
-      ...messages,
-      { role: "user", content: userText },
-    ];
-    setMessages(newMessages);
-    setIsStreaming(true);
-    setStreamingContent("");
+  const sendMessage = useCallback(
+    async (userText: string) => {
+      const newMessages: ChatMessage[] = [
+        ...messages,
+        { role: "user", content: userText },
+      ];
+      setMessages(newMessages);
+      saveLocalMessages(newMessages);
+      setIsStreaming(true);
+      setStreamingContent("");
 
-    try {
-      const reader = await api.coach.streamChat(newMessages);
-      const decoder = new TextDecoder();
-      let accumulated = "";
-      let buffer = "";
-      let done = false;
+      // Save user message to DB (fire-and-forget)
+      api.coach.saveMessage({ role: "user", content: userText }).catch(() => {
+        setDbSyncError(true);
+      });
 
-      while (!done) {
-        const result = await reader.read();
-        done = result.done;
-        if (result.value) {
-          buffer += decoder.decode(result.value, { stream: true });
-        }
+      try {
+        const reader = await api.coach.streamChat(newMessages);
+        const decoder = new TextDecoder();
+        let accumulated = "";
+        let buffer = "";
+        let done = false;
 
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
+        while (!done) {
+          const result = await reader.read();
+          done = result.done;
+          if (result.value) {
+            buffer += decoder.decode(result.value, { stream: true });
+          }
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data: ")) continue;
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
 
-          const payload = trimmed.slice(6);
-          if (payload === "[DONE]") { done = true; break; }
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
 
-          try {
-            const parsed = JSON.parse(payload) as { text?: string; error?: string };
-            if (parsed.error) {
-              console.error("[coach] Error del servidor:", parsed.error);
-              throw new Error(parsed.error);
+            const payload = trimmed.slice(6);
+            if (payload === "[DONE]") {
+              done = true;
+              break;
             }
-            if (parsed.text) {
-              accumulated += parsed.text;
-              setStreamingContent(accumulated);
+
+            try {
+              const parsed = JSON.parse(payload) as { text?: string; error?: string };
+              if (parsed.error) throw new Error(parsed.error);
+              if (parsed.text) {
+                accumulated += parsed.text;
+                setStreamingContent(accumulated);
+              }
+            } catch {
+              // Skip malformed SSE lines
             }
-          } catch {
-            // JSON inválido — ignorar línea
           }
         }
-      }
 
-      // Commitear la respuesta al historial y marcar su índice para animarla
-      setMessages((prev) => {
-        const updated = [...prev, { role: "assistant" as const, content: accumulated || "..." }];
-        setLatestAssistantIdx(updated.length - 1);
-        return updated;
-      });
-      // Invalidar el insight diario para que se recargue con contexto actualizado
-      void queryClient.invalidateQueries({ queryKey: ["coach-insight"] });
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
+        const assistantMsg: ChatMessage = {
+          role: "assistant",
+          content: accumulated || "...",
+        };
+
+        setMessages((prev) => {
+          const updated = [...prev, assistantMsg];
+          setLatestAssistantIdx(updated.length - 1);
+          saveLocalMessages(updated);
+          return updated;
+        });
+
+        // Save assistant reply to DB (fire-and-forget)
+        api.coach.saveMessage({ role: "assistant", content: assistantMsg.content }).catch(() => {
+          setDbSyncError(true);
+        });
+
+        // Invalidate daily insight so it refreshes with updated context
+        void queryClient.invalidateQueries({ queryKey: ["coach-insight"] });
+      } catch {
+        const errMsg: ChatMessage = {
           role: "assistant",
           content: "Uy parcero, se me fue la conexión un momento. ¿Lo intentamos de nuevo?",
-        },
-      ]);
-    } finally {
-      setIsStreaming(false);
-      setStreamingContent("");
-    }
-  }, [messages]);
+        };
+        setMessages((prev) => {
+          const updated = [...prev, errMsg];
+          saveLocalMessages(updated);
+          return updated;
+        });
+      } finally {
+        setIsStreaming(false);
+        setStreamingContent("");
+      }
+    },
+    [messages, queryClient],
+  );
 
-  const clearChat = useCallback(() => {
+  const clearChat = useCallback(async () => {
     setMessages([]);
     setStreamingContent("");
     setIsStreaming(false);
     setLatestAssistantIdx(null);
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-  }, []);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    // Delete from DB
+    try {
+      await api.coach.clearHistory();
+      queryClient.setQueryData(["coach-history"], []);
+    } catch {
+      setDbSyncError(true);
+    }
+  }, [queryClient]);
 
-  return { messages, sendMessage, isStreaming, streamingContent, clearChat, latestAssistantIdx };
+  return {
+    messages,
+    sendMessage,
+    isStreaming,
+    streamingContent,
+    clearChat,
+    latestAssistantIdx,
+    dbSyncError,
+  };
 }

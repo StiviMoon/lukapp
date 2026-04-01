@@ -58,6 +58,7 @@ model Profile {
   sharedTransactions SharedTransaction[]
   pushSubscriptions  PushSubscription[]
   savingGoals        SavingGoal[]
+  coachChatMessages  CoachChatMessage[]
 
   @@map("profiles")
 }
@@ -348,6 +349,20 @@ model SavingGoal {
 
   @@index([userId])
   @@map("saving_goals")
+}
+
+// Historial de chat con el Coach IA (persistido por usuario)
+model CoachChatMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  role      String   // "user" | "assistant"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("coach_chat_messages")
 }
 
 // Push notification subscriptions

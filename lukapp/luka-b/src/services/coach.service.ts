@@ -70,11 +70,35 @@ export const coachService = {
 
     if (cached) return cached.content;
 
-    // Insight deterministico: no consume IA para ahorrar tokens.
     const summary = await financialAnalyticsService.getSummary(userId);
-    const content = `${summary.today.insight} ${summary.today.action}`.trim();
+    const context = buildFinancialContext(summary);
+    const fallback = `${summary.today.insight} ${summary.today.action}`.trim();
 
-    // Cache hasta el final del día
+    let content = fallback;
+    try {
+      const response = await getAI().models.generateContent({
+        model: COACH_MODEL,
+        config: {
+          systemInstruction: LUKA_PERSONA,
+          maxOutputTokens: 120,
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Basandote en el contexto financiero del usuario, genera UN insight financiero personalizado y accionable. Maximo 2 frases cortas. Usa datos reales del contexto. Se directo y util.\n\n${context}`,
+              },
+            ],
+          },
+        ],
+      });
+      content = response.text?.trim() || fallback;
+    } catch {
+      content = fallback;
+    }
+
+    // Cache hasta el final del dia
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
@@ -83,6 +107,82 @@ export const coachService = {
     });
 
     return content;
+  },
+
+  /**
+   * Genera 5 sugerencias de preguntas contextuales basadas en el estado financiero del usuario.
+   * Solo Premium. Sin cache — se generan fresh en cada apertura del chat.
+   */
+  async getSuggestions(userId: string): Promise<string[]> {
+    const fallback = [
+      "Como voy este mes?",
+      "En que me estoy gastando mas plata?",
+      "Puedo ahorrar mas? Como?",
+      "Dame la regla del 50/30/20 con mis datos",
+      "Estoy por encima o abajo del presupuesto?",
+    ];
+
+    try {
+      const summary = await financialAnalyticsService.getSummary(userId);
+      const context = buildFinancialContext(summary);
+
+      const response = await getAI().models.generateContent({
+        model: COACH_MODEL,
+        config: { maxOutputTokens: 220 },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Basandote en el contexto financiero del usuario, genera exactamente 5 preguntas cortas y personalizadas que el usuario podria hacerle a su coach financiero. Las preguntas deben ser relevantes a su situacion actual (alertas, tendencias, estado de salud financiera). Devuelve SOLO un array JSON de strings, sin explicaciones ni texto adicional.\n\nEjemplo de formato: ["Por que bajo mi saldo esta semana?", "Cuanto puedo ahorrar este mes?"]\n\n${context}`,
+              },
+            ],
+          },
+        ],
+      });
+
+      const text = response.text?.trim() ?? "";
+      const match = text.match(/\[[\s\S]*\]/);
+      if (match) {
+        const parsed = JSON.parse(match[0]) as unknown[];
+        if (Array.isArray(parsed) && parsed.length >= 4) {
+          return (parsed as string[]).slice(0, 5);
+        }
+      }
+    } catch {
+      // Silent fallback
+    }
+
+    return fallback;
+  },
+
+  /**
+   * Retorna el historial de chat persistido para el usuario (últimos 40 mensajes).
+   */
+  async getChatHistory(userId: string) {
+    return prisma.coachChatMessage.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      take: 40,
+      select: { id: true, role: true, content: true, createdAt: true },
+    });
+  },
+
+  /**
+   * Guarda un mensaje del chat en la base de datos.
+   */
+  async saveChatMessage(userId: string, role: "user" | "assistant", content: string) {
+    return prisma.coachChatMessage.create({
+      data: { userId, role, content },
+      select: { id: true, role: true, content: true, createdAt: true },
+    });
+  },
+
+  /**
+   * Elimina todo el historial de chat del usuario.
+   */
+  async clearChatHistory(userId: string) {
+    await prisma.coachChatMessage.deleteMany({ where: { userId } });
   },
 
   /**

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
-import { authenticate } from "@/auth/middleware";
+import { authenticate, requirePremium } from "@/auth/middleware";
 import { financialAnalyticsService } from "@/services/financial-analytics.service";
+import { recurringDetectorService } from "@/services/recurring-detector.service";
 import { profileRepository } from "@/repositories/profile.repository";
 import { formatError } from "@/errors/error-handler";
 
@@ -59,6 +60,16 @@ router.get("/summary", async (req: Request, res: Response) => {
       success: false,
       error: formattedError,
     });
+  }
+});
+
+router.get("/recurring", requirePremium, async (req: Request, res: Response) => {
+  try {
+    const data = await recurringDetectorService.detect(req.userId!);
+    res.json({ success: true, data });
+  } catch (error) {
+    const formattedError = formatError(error);
+    res.status(formattedError.statusCode).json({ success: false, error: formattedError });
   }
 });
 

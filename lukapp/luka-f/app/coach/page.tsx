@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Send, Sparkles, Crown, Trash2, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useCoachChat } from "@/lib/hooks/use-coach";
+import { useCoachChat, useCoachSuggestions } from "@/lib/hooks/use-coach";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useProfile } from "@/lib/hooks/use-profile";
@@ -67,14 +67,12 @@ function TypewriterMarkdown({ content, isUser = false }: { content: string; isUs
   );
 }
 
-// ─── Sugerencias de inicio ────────────────────────────────────────────────────
-
-const SUGGESTIONS = [
-  "¿Cómo voy este mes?",
-  "¿En qué me estoy gastando más plata?",
-  "¿Puedo ahorrar más? ¿Cómo?",
+const FALLBACK_SUGGESTIONS = [
+  "Como voy este mes?",
+  "En que me estoy gastando mas plata?",
+  "Puedo ahorrar mas? Como?",
   "Dame la regla del 50/30/20 con mis datos",
-  "¿Estoy por encima o abajo del presupuesto?",
+  "Estoy por encima o abajo del presupuesto?",
 ];
 
 // ─── Bubble de mensaje ────────────────────────────────────────────────────────
@@ -218,6 +216,7 @@ export default function CoachPage() {
   const { data: profile } = useProfile();
   const firstName = profile?.fullName?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "parcero";
   const { messages, sendMessage, isStreaming, streamingContent, clearChat, latestAssistantIdx } = useCoachChat();
+  const { data: suggestions = FALLBACK_SUGGESTIONS } = useCoachSuggestions(isPremium && messages.length === 0);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -311,7 +310,7 @@ export default function CoachPage() {
                   content={`¡Ey ${firstName}! Soy Luka, tu coach financiero.\n\nTengo acceso a tus datos — cuentas, gastos, presupuestos. Pregúntame lo que quieras sobre tu plata y te doy una respuesta honesta y con datos reales.\n\n¿Por dónde arrancamos?`}
                 />
                 <div className="flex flex-col gap-2 ml-11">
-                  {SUGGESTIONS.map((s) => (
+                  {suggestions.map((s) => (
                     <button
                       key={s}
                       onClick={() => sendMessage(s)}

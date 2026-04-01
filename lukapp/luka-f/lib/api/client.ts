@@ -67,6 +67,19 @@ export type AnalyticsSummary = {
   alerts: string[];
 };
 
+export type RecurringFrequency = "weekly" | "biweekly" | "monthly";
+
+export interface RecurringExpense {
+  name: string;
+  categoryId: string | null;
+  categoryName: string | null;
+  averageAmount: number;
+  frequency: RecurringFrequency;
+  occurrences: number;
+  lastDate: string;
+  nextExpectedDate: string;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -331,6 +344,12 @@ export const api = {
 
   coach: {
     getInsight: () => apiClient.get<{ content: string }>("/coach/insight"),
+    getSuggestions: () => apiClient.get<{ suggestions: string[] }>("/coach/suggestions"),
+    getHistory: () =>
+      apiClient.get<{ id: string; role: string; content: string; createdAt: string }[]>("/coach/history"),
+    saveMessage: (data: { role: "user" | "assistant"; content: string }) =>
+      apiClient.post("/coach/history", data),
+    clearHistory: () => apiClient.delete("/coach/history"),
     /** Retorna un ReadableStream de SSE para el chat en streaming */
     streamChat: async (
       messages: { role: "user" | "assistant"; content: string }[]
@@ -358,6 +377,7 @@ export const api = {
 
   analytics: {
     getSummary: () => apiClient.get<AnalyticsSummary>("/analytics/summary"),
+    getRecurring: () => apiClient.get<RecurringExpense[]>("/analytics/recurring"),
   },
 
   savingGoals: {
