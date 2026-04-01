@@ -299,8 +299,10 @@ export function VoiceModal() {
       lastInterimTimeRef.current = 0;
       setIsPaused(false);
       setExampleIdx(0);
-      vibrate(40); // feedback táctil al empezar a escuchar
-      startListening();
+      vibrate(40);
+      // requestAnimationFrame: esperar a que el modal esté completamente montado antes de pedir mic
+      const raf = requestAnimationFrame(() => startListening());
+      return () => cancelAnimationFrame(raf);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, phase]);
@@ -432,49 +434,8 @@ export function VoiceModal() {
   const renderContent = () => {
     switch (phase) {
       case "idle":
-        return (
-          <motion.div
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col gap-5 py-2"
-          >
-            <div className="text-center">
-              <p className="text-base font-semibold text-foreground">Registrar por voz</p>
-              <p className="mt-2 text-xs text-muted-foreground/70 leading-relaxed">
-                Di algo como{" "}
-                <span className="font-semibold text-foreground/80">“gasté 50k en comida”</span>{" "}
-                o{" "}
-                <span className="font-semibold text-foreground/80">“recibí 2 millones de nómina”</span>.
-                <br />
-                También puedes decir varios movimientos seguidos.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => { vibrate(40); setPhase("listening"); }}
-                className={cn(
-                  "h-16 w-16 rounded-full flex items-center justify-center",
-                  "bg-primary text-primary-foreground shadow-sm",
-                  "hover:bg-primary/90 transition-all active:scale-95",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                )}
-                aria-label="Empezar a grabar"
-              >
-                <Mic className="w-7 h-7" strokeWidth={2.2} />
-              </button>
-              <p className="text-[11px] text-muted-foreground/60">
-                Toca para empezar
-              </p>
-            </div>
-
-            <Button variant="ghost" onClick={handleClose} className="w-full text-muted-foreground">
-              Cancelar
-            </Button>
-          </motion.div>
-        );
+        // El modal abre directo en "listening" - fallback, no se muestra
+        return null;
 
       case "listening": {
         const hasVoice = !!(interimTranscript && interimTranscript !== "..." && interimTranscript !== "escuchando...");
