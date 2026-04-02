@@ -307,7 +307,50 @@
   .dark .bg-fig-dark.bg-fig-4 { top: -5%;    right: -8%;  width: 38%; max-width: 480px; opacity: 0.25; }
 }
 
-/* Landing utilities */
+/* Global: todo botón y enlace debe tener cursor pointer */
+button, a, [role="button"] { cursor: pointer; }
+
+/* ── Landing: estilos independientes del app ─────────────────────────────── */
+
+/* Hero background — light: lavanda suave, dark: morado profundo */
+.hero-section-bg {
+  background: linear-gradient(160deg, #f9f7ff 0%, #ede8ff 45%, #fff9e6 100%);
+}
+.dark .hero-section-bg {
+  background: linear-gradient(160deg, #06001C 0%, #0D0030 35%, #080015 65%, #03000D 100%);
+}
+
+/* Hero fade-out al fondo — conecta con la siguiente sección (section-stripe) */
+.hero-bottom-fade {
+  background: linear-gradient(to top, #f8f8f8, transparent);
+}
+.dark .hero-bottom-fade {
+  background: linear-gradient(to top, #111113, transparent);
+}
+
+/* Hero headline gradient — light: lima oscuro → púrpura, dark: lima brillante → púrpura */
+.hero-gradient-text {
+  background: linear-gradient(135deg, #6b7c00 0%, #5913ef 55%, #7a3ff5 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.dark .hero-gradient-text {
+  background: linear-gradient(135deg, #baea0f 0%, #7a3ff5 55%, #a07af8 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* CTA principal de landing — siempre texto oscuro sobre lima */
+.landing-cta-primary {
+  background-color: var(--lime);
+  color: #111111;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.landing-cta-primary:hover { background-color: var(--lime-dark); }
 
 /* Alternating section stripe — light: white/very-light-purple, dark: slightly lighter than bg */
 .section-stripe {

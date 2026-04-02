@@ -46,7 +46,7 @@ export default function WaitlistSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
             <button
               onClick={() => router.push("/auth?action=register")}
-              className="flex items-center gap-2.5 px-8 py-4 bg-lime text-bg font-bold text-[15px] rounded-2xl hover:bg-lime-dark transition-colors duration-150 w-full sm:w-auto justify-center"
+              className="landing-cta-primary flex items-center gap-2.5 px-8 py-4 text-[15px] rounded-2xl w-full sm:w-auto justify-center"
             >
               <Sparkles size={16} strokeWidth={2.5} />
               Crear cuenta gratis

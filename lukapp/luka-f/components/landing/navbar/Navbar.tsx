@@ -71,7 +71,7 @@ export default function Navbar() {
 
         <button
           onClick={() => router.push("/auth?action=register")}
-          className="flex items-center gap-2 px-5 py-2 text-[13px] font-bold text-bg bg-lime rounded-full hover:bg-lime-dark transition-colors duration-200"
+          className="flex items-center gap-2 px-5 py-2 text-[13px] font-bold text-[#111] bg-lime rounded-full hover:bg-lime-dark transition-colors duration-200 cursor-pointer"
         >
           <Sparkles size={14} strokeWidth={2.5} />
           Empezar gratis
@@ -103,7 +103,7 @@ export default function Navbar() {
           </button>
           <button
             onClick={() => router.push("/auth?action=register")}
-            className="px-3 py-1.5 text-[12px] font-bold text-bg bg-lime rounded-full hover:bg-lime-dark transition-colors duration-150"
+            className="px-3 py-1.5 text-[12px] font-bold text-[#111] bg-lime rounded-full hover:bg-lime-dark transition-colors duration-150 cursor-pointer"
           >
             Entrar
           </button>
