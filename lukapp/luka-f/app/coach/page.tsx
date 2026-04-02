@@ -50,7 +50,9 @@ function TypewriterMarkdown({ content, isUser = false }: { content: string; isUs
   const [shown, setShown] = useState(0);
 
   useEffect(() => {
-    setShown(0);
+    setTimeout(() => {
+      setShown(0);
+    }, 0);
     let i = 0;
     const interval = setInterval(() => {
       i += 1;
