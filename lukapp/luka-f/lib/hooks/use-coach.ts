@@ -92,11 +92,15 @@ export function useCoachChat() {
     },
   });
 
-  // Once DB history loads, replace optimistic state and sync localStorage
+  // Si el servidor devuelve historial, es la fuente de verdad.
+  // Si devuelve [] (usuario nuevo, sync pendiente o error silencioso), NO pisar lo que ya
+  // hay en memoria / localStorage — evita perder el chat al entrar desde inicio.
   useEffect(() => {
-    if (dbLoaded && dbHistory) {
-      setMessages(dbHistory);
-      saveLocalMessages(dbHistory);
+    if (!dbLoaded) return;
+    const history = dbHistory ?? [];
+    if (history.length > 0) {
+      setMessages(history);
+      saveLocalMessages(history);
     }
   }, [dbLoaded, dbHistory]);
 
@@ -108,6 +112,7 @@ export function useCoachChat() {
       ];
       setMessages(newMessages);
       saveLocalMessages(newMessages);
+      queryClient.setQueryData<ChatMessage[]>(["coach-history"], newMessages);
       setIsStreaming(true);
       setStreamingContent("");
 
@@ -165,6 +170,7 @@ export function useCoachChat() {
           const updated = [...prev, assistantMsg];
           setLatestAssistantIdx(updated.length - 1);
           saveLocalMessages(updated);
+          queryClient.setQueryData<ChatMessage[]>(["coach-history"], updated);
           return updated;
         });
 
@@ -183,6 +189,7 @@ export function useCoachChat() {
         setMessages((prev) => {
           const updated = [...prev, errMsg];
           saveLocalMessages(updated);
+          queryClient.setQueryData<ChatMessage[]>(["coach-history"], updated);
           return updated;
         });
       } finally {
