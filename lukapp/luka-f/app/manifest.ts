@@ -13,6 +13,14 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait-primary",
     lang: "es",
     categories: ["finance", "productivity"],
+    screenshots: [
+      {
+        src: "/screenshots/screen-mobile.png",
+        sizes: "390x844",
+        type: "image/png",
+        form_factor: "narrow",
+      },
+    ],
     shortcuts: [
       {
         name: "Registrar gasto",

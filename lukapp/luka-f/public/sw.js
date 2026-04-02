@@ -1,9 +1,8 @@
-const SHELL_CACHE   = "lukapp-shell-v2";
-const DYNAMIC_CACHE = "lukapp-dynamic-v2";
+const SHELL_CACHE   = "lukapp-shell-v3";
+const DYNAMIC_CACHE = "lukapp-dynamic-v3";
 
 const PRECACHE = [
   "/",
-  "/dashboard",
   "/offline",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
