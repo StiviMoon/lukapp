@@ -65,6 +65,15 @@ export function useCoachSuggestions(enabled = true) {
   });
 }
 
+/** Preguntas fijas que Luka puede contestar con los datos de la cuenta (sin llamada al servidor). */
+export const COACH_STANDARD_SUGGESTIONS = [
+  "Como voy este mes?",
+  "En que me estoy gastando mas plata?",
+  "Puedo ahorrar mas? Como?",
+  "Dame la regla del 50/30/20 con mis datos",
+  "Estoy por encima o abajo del presupuesto?",
+] as const;
+
 // ─── Hook: chat en streaming ──────────────────────────────────────────────────
 
 export function useCoachChat() {
@@ -213,7 +222,7 @@ export function useCoachChat() {
     try {
       await api.coach.clearHistory();
       queryClient.setQueryData(["coach-history"], []);
-      void queryClient.invalidateQueries({ queryKey: ["coach-suggestions"] });
+      queryClient.removeQueries({ queryKey: ["coach-suggestions"] });
     } catch {
       setDbSyncError(true);
     }

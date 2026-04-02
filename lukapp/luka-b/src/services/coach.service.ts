@@ -25,7 +25,9 @@ const LUKA_PERSONA = `Eres Luka, coach financiero personal de Lukapp.
 
 REGLAS DE ORO:
 - Respuestas cortas: máximo 2-3 párrafos pequeños. Menos es más.
-- Habla como amigo colombiano: "parcero/a", "plata", "billete", "golazo"
+- Habla como amigo colombiano: "plata", "billete", "golazo", tono cercano
+- Si el mensaje del usuario incluye el NOMBRE con el que se registró, dirígete con ese nombre al inicio cuando encaje (ej. "Steven, este mes..."). No uses "parcero" ni "parcera" como si fuera su nombre.
+- Si no hay nombre en el mensaje, puedes usar "parcero/a" o "tu" según suene natural
 - Usa **negrita** solo para datos clave (cifras, categorías importantes)
 - Usa listas con guión solo cuando hay 3+ ítems que comparar
 - 1 emoji máximo por respuesta, solo si aporta
@@ -55,6 +57,29 @@ function buildFinancialContext(summary: Awaited<ReturnType<typeof financialAnaly
   ].join("\n");
 }
 
+async function getProfileFirstName(userId: string): Promise<string | null> {
+  const profile = await prisma.profile.findUnique({
+    where: { userId },
+    select: { fullName: true },
+  });
+  const raw = profile?.fullName?.trim();
+  if (!raw) return null;
+  const first = raw.split(/\s+/)[0]?.trim();
+  return first && first.length > 0 ? first : null;
+}
+
+function buildNameBlockForInsight(firstName: string | null): string {
+  if (!firstName) {
+    return "";
+  }
+  return `El usuario eligió este nombre en Lukapp: ${firstName}. Empieza el insight dirigiéndote con ese nombre (ej. "${firstName}, este mes..."). No lo sustituyas por "parcero" ni "parcera".\n\n`;
+}
+
+function buildNameBlockForStream(firstName: string | null): string {
+  if (!firstName) return "";
+  return `\n\nCOMUNICACION:\nEl usuario se registró como "${firstName}". Usa ese nombre a veces cuando suene natural. No uses "parcero" ni "parcera" como sustituto de su nombre.`;
+}
+
 // ─── Servicio público ─────────────────────────────────────────────────────────
 
 export const coachService = {
@@ -70,9 +95,13 @@ export const coachService = {
 
     if (cached) return cached.content;
 
+    const firstName = await getProfileFirstName(userId);
     const summary = await financialAnalyticsService.getSummary(userId);
     const context = buildFinancialContext(summary);
-    const fallback = `${summary.today.insight} ${summary.today.action}`.trim();
+    const nameBlock = buildNameBlockForInsight(firstName);
+    const fallback = firstName
+      ? `${firstName}, ${summary.today.insight} ${summary.today.action}`.trim()
+      : `${summary.today.insight} ${summary.today.action}`.trim();
 
     let content = fallback;
     try {
@@ -87,7 +116,7 @@ export const coachService = {
             role: "user",
             parts: [
               {
-                text: `Basandote en el contexto financiero del usuario, genera UN insight financiero personalizado y accionable. Maximo 2 frases cortas. Usa datos reales del contexto. Se directo y util.\n\n${context}`,
+                text: `${nameBlock}Basandote en el contexto financiero del usuario, genera UN insight financiero personalizado y accionable. Maximo 2 frases cortas. Usa datos reales del contexto. Se directo y util.\n\n${context}`,
               },
             ],
           },
@@ -110,8 +139,8 @@ export const coachService = {
   },
 
   /**
-   * Genera 5 sugerencias de preguntas contextuales basadas en el estado financiero del usuario.
-   * Solo Premium. Sin cache — se generan fresh en cada apertura del chat.
+   * Sugerencias contextualizadas para la tira del chat cuando ya hay mensajes.
+   * La bienvenida del cliente usa preguntas fijas; esto evita duplicar llamadas al abrir el chat vacío.
    */
   async getSuggestions(userId: string): Promise<string[]> {
     const fallback = [
@@ -128,13 +157,13 @@ export const coachService = {
 
       const response = await getAI().models.generateContent({
         model: COACH_MODEL,
-        config: { maxOutputTokens: 220 },
+        config: { maxOutputTokens: 160 },
         contents: [
           {
             role: "user",
             parts: [
               {
-                text: `Basandote en el contexto financiero del usuario, genera exactamente 5 preguntas cortas y personalizadas que el usuario podria hacerle a su coach financiero. Las preguntas deben ser relevantes a su situacion actual (alertas, tendencias, estado de salud financiera). Devuelve SOLO un array JSON de strings, sin explicaciones ni texto adicional.\n\nEjemplo de formato: ["Por que bajo mi saldo esta semana?", "Cuanto puedo ahorrar este mes?"]\n\n${context}`,
+                text: `Con este contexto financiero, genera exactamente 5 preguntas MUY cortas (max 8 palabras cada una) que el usuario pueda hacer al coach y que se respondan con sus datos en Lukapp (gastos, presupuesto, runway, alertas). Sin saludos. Devuelve SOLO un JSON array de strings.\n\nEjemplo: ["Que categoria me pesa mas?", "Cuanto me queda este mes?"]\n\n${context}`,
               },
             ],
           },
@@ -210,8 +239,10 @@ export const coachService = {
       return { role: message.role, content };
     });
 
+    const firstName = await getProfileFirstName(userId);
     const summary = await financialAnalyticsService.getSummary(userId);
     const context = buildFinancialContext(summary);
+    const nameBlock = buildNameBlockForStream(firstName);
 
     // Gemini usa "model" para el rol del asistente (no "assistant")
     const geminiMessages = sanitizedMessages.map((m) => ({
@@ -222,7 +253,7 @@ export const coachService = {
     const stream = await getAI().models.generateContentStream({
       model: COACH_MODEL,
       config: {
-        systemInstruction: `${LUKA_PERSONA}\n\n${context}`,
+        systemInstruction: `${LUKA_PERSONA}${nameBlock}\n\n${context}`,
         maxOutputTokens: 1024,
       },
       contents: geminiMessages,

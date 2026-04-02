@@ -6,7 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Send, Sparkles, Crown, Trash2, Check, Lightbulb } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useCoachChat, useCoachSuggestions } from "@/lib/hooks/use-coach";
+import {
+  useCoachChat,
+  useCoachSuggestions,
+  COACH_STANDARD_SUGGESTIONS,
+} from "@/lib/hooks/use-coach";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useProfile } from "@/lib/hooks/use-profile";
@@ -67,14 +71,6 @@ function TypewriterMarkdown({ content, isUser = false }: { content: string; isUs
   );
 }
 
-const FALLBACK_SUGGESTIONS = [
-  "Como voy este mes?",
-  "En que me estoy gastando mas plata?",
-  "Puedo ahorrar mas? Como?",
-  "Dame la regla del 50/30/20 con mis datos",
-  "Estoy por encima o abajo del presupuesto?",
-];
-
 /** Chips reutilizables: columna (bienvenida) o fila con scroll (con historial). */
 function SuggestionChip({
   text,
@@ -108,6 +104,25 @@ function SuggestionChip({
     >
       <span className="line-clamp-2">{text}</span>
     </button>
+  );
+}
+
+/** Placeholders en la tira horizontal mientras llegan sugerencias contextualizadas (sin parpadeo de texto distinto). */
+function SuggestionStripSkeleton({ count = 5 }: { count?: number }) {
+  const widths = ["min-w-[200px]", "min-w-[220px]", "min-w-[180px]", "min-w-[240px]", "min-w-[190px]"];
+  return (
+    <>
+      {Array.from({ length: count }, (_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "shrink-0 h-[42px] rounded-2xl snap-start border border-border/40 bg-muted/50 animate-pulse",
+            widths[i % widths.length]
+          )}
+          style={{ animationDelay: `${i * 90}ms` }}
+        />
+      ))}
+    </>
   );
 }
 
@@ -252,7 +267,11 @@ export default function CoachPage() {
   const { data: profile } = useProfile();
   const firstName = profile?.fullName?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "parcero";
   const { messages, sendMessage, isStreaming, streamingContent, clearChat, latestAssistantIdx } = useCoachChat();
-  const { data: suggestions = FALLBACK_SUGGESTIONS } = useCoachSuggestions(isPremium);
+  const hasConversation = messages.length > 0;
+  const contextualSuggestions = useCoachSuggestions(isPremium && hasConversation);
+  const stripSuggestions = contextualSuggestions.data ?? [...COACH_STANDARD_SUGGESTIONS];
+  const showStripLoading =
+    hasConversation && isPremium && contextualSuggestions.isLoading && !contextualSuggestions.data;
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -346,9 +365,9 @@ export default function CoachPage() {
                   content={`¡Ey ${firstName}! Soy Luka, tu coach financiero.\n\nTengo acceso a tus datos — cuentas, gastos, presupuestos. Pregúntame lo que quieras sobre tu plata y te doy una respuesta honesta y con datos reales.\n\n¿Por dónde arrancamos?`}
                 />
                 <div className="flex flex-col gap-2 ml-11">
-                  {suggestions.map((s, i) => (
+                  {COACH_STANDARD_SUGGESTIONS.map((s, i) => (
                     <SuggestionChip
-                      key={`${i}-${s.slice(0, 24)}`}
+                      key={`welcome-${i}`}
                       text={s}
                       layout="stack"
                       disabled={isStreaming}
@@ -418,7 +437,9 @@ export default function CoachPage() {
                       Ideas para preguntar
                     </p>
                     <p className="text-[11px] text-muted-foreground/35 leading-tight">
-                      Según tus finanzas ahora
+                      {showStripLoading
+                        ? "Con tus datos de Lukapp…"
+                        : "Según tus finanzas ahora"}
                     </p>
                   </div>
                 </div>
@@ -426,15 +447,27 @@ export default function CoachPage() {
                   className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 pl-1 pr-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                   style={{ WebkitOverflowScrolling: "touch" }}
                 >
-                  {suggestions.map((s, i) => (
-                    <SuggestionChip
-                      key={`strip-${i}-${s.slice(0, 20)}`}
-                      text={s}
-                      layout="scroll"
-                      disabled={isStreaming}
-                      onPick={() => sendMessage(s)}
-                    />
-                  ))}
+                  <motion.div
+                    key={showStripLoading ? "loading" : "ready"}
+                    initial={{ opacity: 0.72 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.18 }}
+                    className="flex gap-2"
+                  >
+                    {showStripLoading ? (
+                      <SuggestionStripSkeleton />
+                    ) : (
+                      stripSuggestions.map((s, i) => (
+                        <SuggestionChip
+                          key={`strip-${i}-${s.slice(0, 20)}`}
+                          text={s}
+                          layout="scroll"
+                          disabled={isStreaming}
+                          onPick={() => sendMessage(s)}
+                        />
+                      ))
+                    )}
+                  </motion.div>
                 </div>
               </motion.div>
             )}
