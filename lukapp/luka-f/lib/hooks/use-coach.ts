@@ -179,8 +179,9 @@ export function useCoachChat() {
           setDbSyncError(true);
         });
 
-        // Invalidate daily insight so it refreshes with updated context
+        // Insight del día + chips de sugerencias alineados al nuevo contexto del chat
         void queryClient.invalidateQueries({ queryKey: ["coach-insight"] });
+        void queryClient.invalidateQueries({ queryKey: ["coach-suggestions"] });
       } catch {
         const errMsg: ChatMessage = {
           role: "assistant",
@@ -212,6 +213,7 @@ export function useCoachChat() {
     try {
       await api.coach.clearHistory();
       queryClient.setQueryData(["coach-history"], []);
+      void queryClient.invalidateQueries({ queryKey: ["coach-suggestions"] });
     } catch {
       setDbSyncError(true);
     }

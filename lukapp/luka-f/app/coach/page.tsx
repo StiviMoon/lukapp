@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Send, Sparkles, Crown, Trash2, Check } from "lucide-react";
+import { ChevronLeft, Send, Sparkles, Crown, Trash2, Check, Lightbulb } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useCoachChat, useCoachSuggestions } from "@/lib/hooks/use-coach";
@@ -74,6 +74,42 @@ const FALLBACK_SUGGESTIONS = [
   "Dame la regla del 50/30/20 con mis datos",
   "Estoy por encima o abajo del presupuesto?",
 ];
+
+/** Chips reutilizables: columna (bienvenida) o fila con scroll (con historial). */
+function SuggestionChip({
+  text,
+  onPick,
+  disabled,
+  layout,
+}: {
+  text: string;
+  onPick: () => void;
+  disabled?: boolean;
+  layout: "stack" | "scroll";
+}) {
+  const base =
+    "text-left font-medium transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none border border-border/60 bg-card text-muted-foreground hover:text-foreground hover:border-primary/35 hover:bg-muted/30";
+  if (layout === "stack") {
+    return (
+      <button type="button" disabled={disabled} onClick={onPick} className={cn(base, "w-full px-3.5 py-2.5 rounded-xl text-[13px]")}>
+        {text}
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onPick}
+      className={cn(
+        base,
+        "shrink-0 max-w-[min(280px,85vw)] px-3.5 py-2.5 rounded-2xl text-[12px] leading-snug shadow-sm snap-start"
+      )}
+    >
+      <span className="line-clamp-2">{text}</span>
+    </button>
+  );
+}
 
 // ─── Bubble de mensaje ────────────────────────────────────────────────────────
 
@@ -216,7 +252,7 @@ export default function CoachPage() {
   const { data: profile } = useProfile();
   const firstName = profile?.fullName?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "parcero";
   const { messages, sendMessage, isStreaming, streamingContent, clearChat, latestAssistantIdx } = useCoachChat();
-  const { data: suggestions = FALLBACK_SUGGESTIONS } = useCoachSuggestions(isPremium && messages.length === 0);
+  const { data: suggestions = FALLBACK_SUGGESTIONS } = useCoachSuggestions(isPremium);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -310,14 +346,14 @@ export default function CoachPage() {
                   content={`¡Ey ${firstName}! Soy Luka, tu coach financiero.\n\nTengo acceso a tus datos — cuentas, gastos, presupuestos. Pregúntame lo que quieras sobre tu plata y te doy una respuesta honesta y con datos reales.\n\n¿Por dónde arrancamos?`}
                 />
                 <div className="flex flex-col gap-2 ml-11">
-                  {suggestions.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => sendMessage(s)}
-                      className="text-left px-3.5 py-2.5 rounded-xl bg-card border border-border/60 text-[13px] text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all active:scale-[0.98]"
-                    >
-                      {s}
-                    </button>
+                  {suggestions.map((s, i) => (
+                    <SuggestionChip
+                      key={`${i}-${s.slice(0, 24)}`}
+                      text={s}
+                      layout="stack"
+                      disabled={isStreaming}
+                      onPick={() => sendMessage(s)}
+                    />
                   ))}
                 </div>
               </motion.div>
@@ -363,6 +399,44 @@ export default function CoachPage() {
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Sugerencias contextuales con historial: scroll horizontal tipo carrusel iOS */}
+            {messages.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="pt-1 pb-2 -mx-1"
+              >
+                <div className="flex items-center gap-1.5 px-1 mb-2">
+                  <div className="w-6 h-6 rounded-lg bg-amber-500/12 flex items-center justify-center shrink-0">
+                    <Lightbulb className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" strokeWidth={2} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/50">
+                      Ideas para preguntar
+                    </p>
+                    <p className="text-[11px] text-muted-foreground/35 leading-tight">
+                      Según tus finanzas ahora
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 pl-1 pr-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
+                  {suggestions.map((s, i) => (
+                    <SuggestionChip
+                      key={`strip-${i}-${s.slice(0, 20)}`}
+                      text={s}
+                      layout="scroll"
+                      disabled={isStreaming}
+                      onPick={() => sendMessage(s)}
+                    />
+                  ))}
+                </div>
+              </motion.div>
             )}
 
             <div ref={messagesEndRef} />
