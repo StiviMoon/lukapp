@@ -10,6 +10,7 @@ import { useVoiceStore } from "@/lib/store/voice-store";
 import { useVoiceRecognition } from "@/lib/hooks/use-voice-recognition";
 import { useInvalidateTransactions } from "@/lib/hooks/use-invalidate-transactions";
 import { VoiceWaveform } from "./VoiceWaveform";
+import { IosLoadingInline } from "@/components/ui/ios-loading";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -794,10 +795,11 @@ export function VoiceModal() {
 
       case "saving":
         return (
-          <div className="flex flex-col items-center gap-4 py-6">
-            <VoiceWaveform isListening={false} isProcessing={true} />
-            <p className="text-sm text-muted-foreground">Guardando transacción...</p>
-          </div>
+          <IosLoadingInline
+            title="Guardando transacción…"
+            subtitle="Registrando en tu cuenta."
+            className="py-6"
+          />
         );
 
       case "done":

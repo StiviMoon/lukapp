@@ -159,7 +159,14 @@ export default function CategoriesPage() {
           <h1 className="text-base font-bold text-foreground font-display">
             Categorías
           </h1>
-          <div className="w-9" />
+          <button
+            type="button"
+            onClick={openCreate}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-primary active:scale-95 transition-transform shrink-0"
+            aria-label="Nueva categoría"
+          >
+            <Plus className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
+          </button>
         </header>
 
         {/* Tab bar */}
@@ -212,19 +219,6 @@ export default function CategoriesPage() {
           </AnimatePresence>
         </div>
       </div>
-
-      {/* FAB */}
-      <button
-        type="button"
-        onClick={openCreate}
-        className="fixed bottom-24 right-5 w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg active:scale-95 transition-transform z-40"
-        style={{
-          boxShadow: "0 4px 20px color-mix(in srgb, var(--primary) 40%, transparent)",
-        }}
-        aria-label="Nueva categoría"
-      >
-        <Plus className="w-6 h-6 text-white" strokeWidth={2.4} />
-      </button>
 
       {/* Sheet */}
       <CategorySheet

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { SignupForm } from "@/components/auth/signup-form";
 import { toast } from "@/lib/toast";
 import { LukappLogo } from "@/components/ui/lukapp-logo";
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -109,5 +109,22 @@ export default function AuthPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="min-h-dvh bg-transparent flex flex-col items-center justify-center px-6 max-w-sm mx-auto"
+          style={{ paddingTop: "max(64px, env(safe-area-inset-top, 64px))" }}
+        >
+          <LukappLogo variant="logotipo" height={52} color="degradado" priority className="mb-3 opacity-60" />
+        </div>
+      }
+    >
+      <AuthPageContent />
+    </Suspense>
   );
 }

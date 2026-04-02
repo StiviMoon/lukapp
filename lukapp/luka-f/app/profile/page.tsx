@@ -85,7 +85,7 @@ export default function ProfilePage() {
   const avatarLetter = firstName.charAt(0);
 
   const handleSignOut = async () => {
-    showOverlay("Cerrando sesión...");
+    showOverlay("Cerrando sesión…", "Hasta pronto.");
     await signOut();
     router.push("/auth");
     setTimeout(() => hideOverlay(), 400);

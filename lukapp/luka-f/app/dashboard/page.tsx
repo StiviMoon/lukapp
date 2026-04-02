@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { motion } from "framer-motion";
 import {
-  Loader2, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
+  ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Eye, EyeOff,
   Settings2, Crown, Tag, Sun, Sunset, Moon, Sunrise, Target,
 } from "lucide-react";
 import { usePlan } from "@/lib/hooks/use-plan";
@@ -23,6 +23,7 @@ import { formatCompact } from "@/lib/utils";
 import { BudgetBar } from "@/components/categories/BudgetBar";
 import { Users } from "lucide-react";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
+import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
 import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 import type { Transaction } from "@/lib/types/transaction";
@@ -143,6 +144,7 @@ export default function DashboardPage() {
   const { isPremium } = usePlan();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { hide: hideGlobalLoading } = useLoadingOverlay();
   useInactivityTimeout();
 
   const [selectedTx,     setSelectedTx]    = useState<Transaction | null>(null);
@@ -151,22 +153,21 @@ export default function DashboardPage() {
 
   const { open: openAddSheet } = useAddTransactionStore();
 
-  const { data: profile, isLoading: profileLoading } = useProfile();
-  const { data: balance, isLoading: balanceLoading } = useTotalBalance();
-  const { data: stats,   isLoading: statsLoading   } = useMonthStats();
-  const { data: transactions, isLoading: txLoading  } = useRecentTransactions(20);
+  const { data: profile, isPending: profilePending } = useProfile();
+  const { data: balance, isPending: balancePending } = useTotalBalance();
+  const { data: stats, isPending: statsPending } = useMonthStats();
+  const { data: transactions, isPending: txPending } = useRecentTransactions(20);
   const { data: budgetStatuses } = useBudgetStatus();
-  const { data: sharedOverview, isLoading: overviewLoading } = useSharedOverview();
+  const { data: sharedOverview, isPending: overviewPending } = useSharedOverview();
   // Solo mostrar presupuestos que tienen una categoría vinculada
   const activeBudgets = (budgetStatuses ?? []).filter(b => b.category !== null);
   const hasBudgets = activeBudgets.length > 0;
   const hasSharedSpaces = (sharedOverview?.spaces.length ?? 0) > 0;
 
-  // Un solo estado de carga unificado — todo el contenido aparece junto
-  const isDataLoading = useMinDelay(
-    balanceLoading || statsLoading || txLoading || profileLoading || overviewLoading,
-    350,
-  );
+  // Solo “sin datos aún” (isPending). Con caché de React Query al volver al home: sin skeleton ni delay.
+  const dashboardDataPending =
+    balancePending || statsPending || txPending || overviewPending;
+  const isDataLoading = useMinDelay(dashboardDataPending, 320);
 
   // Resetear paginación cuando llegan nuevas transacciones (ej. después de registrar una)
   useEffect(() => {
@@ -196,6 +197,13 @@ export default function DashboardPage() {
     if (!loading && !isAuthenticated) router.push("/auth");
   }, [loading, isAuthenticated, router]);
 
+  // Por si otra pantalla dejó el overlay global visible (metas, salas, cierre de sesión…).
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      hideGlobalLoading();
+    }
+  }, [loading, isAuthenticated, user, hideGlobalLoading]);
+
   // Prefetch analytics so the analytics page loads instantly
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -212,18 +220,24 @@ export default function DashboardPage() {
 
   // Forzar onboarding si no está completado
   useEffect(() => {
-    if (!profileLoading && profile && !profile.onboardingCompleted) {
+    if (!profilePending && profile && !profile.onboardingCompleted) {
       router.push("/onboarding");
     }
-  }, [profileLoading, profile, router]);
+  }, [profilePending, profile, router]);
 
-  // Mostrar loader mientras: (a) auth cargando, (b) perfil sin datos aún
-  // Esto evita el flash del dashboard antes de saber si hay que ir al onboarding
-  if (loading || (profileLoading && !profile)) {
+  // Mientras auth resuelve y no tenemos user en caché: mostrar skeleton completo (header + body).
+  // Con el nuevo useAuth optimista, esto solo ocurre la primera vez (sin sesión previa en storage).
+  if (loading && !user) {
     return (
-      <div className="flex h-dvh flex-col items-center justify-center gap-3">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
-        <p className="text-xs text-muted-foreground/40 font-medium">Cargando tus datos...</p>
+      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
+        <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
+          <div className="h-[42px] w-[120px] rounded-xl bg-muted/40 animate-pulse" />
+          <div className="flex items-center gap-1.5">
+            <div className="w-9 h-9 rounded-xl bg-muted/40 animate-pulse" />
+            <div className="w-9 h-9 rounded-full bg-muted/40 animate-pulse" />
+          </div>
+        </header>
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -233,6 +247,45 @@ export default function DashboardPage() {
     user?.user_metadata?.full_name?.split(" ")[0] ||
     user?.email?.split("@")[0] || "tú";
 
+  // Skeleton solo cuando no hay datos en caché (isPending = sin resultado previo).
+  // Si el perfil ya está en caché, profile !== undefined aunque profilePending sea true.
+  const showDashboardSkeleton = (profilePending && !profile) || isDataLoading;
+
+  const dashboardHeader = (
+    <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
+      <LukappLogo variant="logotipo" height={65} color="auto" priority />
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => router.push("/settings")}
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors active:scale-95"
+          aria-label="Ajustes"
+        >
+          <Settings2 className="w-4 h-4 text-muted-foreground/60" />
+        </button>
+        {isPremium && (
+          <button
+            type="button"
+            onClick={() => router.push("/upgrade")}
+            className="flex items-center gap-1 px-2.5 h-9 rounded-xl bg-purple-brand/15 border border-purple-brand/25 text-purple-muted active:scale-95 transition-transform backdrop-blur-[4px]"
+            aria-label="Plan Premium"
+          >
+            <Crown className="w-3 h-3" />
+            <span className="text-[10px] font-bold">PRO</span>
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => router.push("/profile")}
+          className="active:scale-95 transition-transform"
+          aria-label="Ver perfil"
+        >
+          <UserAvatar letter={firstName.charAt(0)} size="sm" />
+        </button>
+      </div>
+    </header>
+  );
+
   const { greeting, Icon: TimeIcon, iconClass } = TIME_CONFIG[getTimeOfDay()];
 
   const balanceValue = balance ?? 0;
@@ -240,44 +293,17 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
+      <div
+        className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto"
+        aria-busy={showDashboardSkeleton}
+        aria-label={showDashboardSkeleton ? "Cargando tu resumen" : undefined}
+      >
+        {dashboardHeader}
 
-        {/* ── Header: LOGO | AJUSTES PERFIL ── */}
-        <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
-          {/* Logo */}
-          <LukappLogo variant="logotipo" height={65} color="auto" priority />
-
-          {/* Acciones */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => router.push("/settings")}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-card hover:bg-muted/60 transition-colors active:scale-95"
-              aria-label="Ajustes"
-            >
-              <Settings2 className="w-4 h-4 text-muted-foreground/60" />
-            </button>
-            {isPremium && (
-              <button
-                onClick={() => router.push("/upgrade")}
-                className="flex items-center gap-1 px-2.5 h-9 rounded-xl bg-purple-brand/15 border border-purple-brand/25 text-purple-muted active:scale-95 transition-transform backdrop-blur-[4px]"
-                aria-label="Plan Premium"
-              >
-                <Crown className="w-3 h-3" />
-                <span className="text-[10px] font-bold">PRO</span>
-              </button>
-            )}
-            <button
-              onClick={() => router.push("/profile")}
-              className="active:scale-95 transition-transform"
-              aria-label="Ver perfil"
-            >
-              <UserAvatar letter={firstName.charAt(0)} size="sm" />
-            </button>
-          </div>
-        </header>
-
-        {/* ── Área scrolleable — skeleton unificado o contenido completo ── */}
-        {isDataLoading ? <DashboardSkeleton /> : (
+        {/* ── Un solo skeleton: perfil en vuelo o datos del mes aún cargando ── */}
+        {showDashboardSkeleton ? (
+          <DashboardSkeleton />
+        ) : (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

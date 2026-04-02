@@ -10,6 +10,7 @@ import { useMySpaces, useCreateSpace } from "@/lib/hooks/use-spaces";
 import { InviteSheet } from "@/components/shared/InviteSheet";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
 import type { Contact } from "@/lib/types/shared";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -316,6 +317,7 @@ export default function FriendsPage() {
   const isLoading = useMinDelay(contactsRaw);
   const { data: spaces = [] } = useMySpaces();
   const { mutateAsync: createSpace, isPending: creatingSpace } = useCreateSpace();
+  const { show: showLoading, hide: hideLoading } = useLoadingOverlay();
 
   const pending = contacts.filter((c) => c.status === "PENDING");
   const accepted = contacts.filter((c) => c.status === "ACCEPTED");
@@ -331,15 +333,20 @@ export default function FriendsPage() {
   });
 
   const handleCreateSpace = async (contactIds: string[], type: "PAREJA" | "FAMILIAR") => {
-    const res = await createSpace({ contactIds, type });
-    setTypeSheetFor(null);
-    if (!res.success) {
-      toast.error(res.error?.message ?? "Error al crear sala");
-      return;
+    showLoading("Creando sala…", "Organizando tu espacio compartido.");
+    try {
+      const res = await createSpace({ contactIds, type });
+      setTypeSheetFor(null);
+      if (!res.success) {
+        toast.error(res.error?.message ?? "Error al crear sala");
+        return;
+      }
+      toast.success("Sala compartida creada");
+      const space = res.data as { id: string } | undefined;
+      if (space?.id) router.push(`/shared/${space.id}`);
+    } finally {
+      hideLoading();
     }
-    toast.success("Sala compartida creada");
-    const space = res.data as { id: string } | undefined;
-    if (space?.id) router.push(`/shared/${space.id}`);
   };
 
   return (

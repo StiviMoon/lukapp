@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AppChrome } from "../components/app-chrome";
 import { PwaRegister } from "@/components/PwaRegister";
+import { PageTransition } from "@/components/PageTransition";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -108,7 +109,9 @@ export default function RootLayout({
             storageKey="lukapp-theme"
           >
             <QueryProvider>
-              {children}
+              <PageTransition>
+                {children}
+              </PageTransition>
               <AppChrome />
               <PwaRegister />
             </QueryProvider>

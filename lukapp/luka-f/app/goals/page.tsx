@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Target, Plus, CheckCircle2, Trash2, X, Loader2, PiggyBank } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import { useSavingGoals, useCreateSavingGoal, useUpdateSavingGoal, useDeleteSavi
 import { formatCOP, cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { haptics } from "@/lib/haptics";
+import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
 
 const GOAL_EMOJIS = ["🎯", "🏠", "✈️", "🚗", "💻", "📱", "🎓", "💍", "🏋️", "🌴", "🛍️", "💊"] as const;
 
@@ -42,37 +43,6 @@ function deadlineFromParts(day: string, month: string, year: string): string | u
   const mm = String(m).padStart(2, "0");
   const dd = String(d).padStart(2, "0");
   return `${y}-${mm}-${dd}`;
-}
-
-function CreatingGoalModal() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-6"
-      role="alertdialog"
-      aria-modal="true"
-      aria-labelledby="creating-goal-title"
-      aria-busy="true"
-    >
-      <motion.div
-        initial={{ scale: 0.96, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.96, opacity: 0 }}
-        transition={{ type: "spring", damping: 26, stiffness: 320 }}
-        className="w-full max-w-[280px] rounded-2xl bg-card border border-border px-6 py-8 flex flex-col items-center gap-3 shadow-xl"
-      >
-        <Loader2 className="w-10 h-10 text-purple-brand animate-spin shrink-0" aria-hidden />
-        <p id="creating-goal-title" className="text-[17px] font-bold text-foreground text-center">
-          Creando meta…
-        </p>
-        <p className="text-[13px] text-muted-foreground text-center leading-snug">
-          Guardando tu meta, espera un momento.
-        </p>
-      </motion.div>
-    </motion.div>
-  );
 }
 
 function GoalCard({
@@ -479,6 +449,16 @@ export default function GoalsPage() {
   const updateGoal = useUpdateSavingGoal();
   const deleteGoal = useDeleteSavingGoal();
   const [showNew, setShowNew] = useState(false);
+  const { show: showLoading, hide: hideLoading } = useLoadingOverlay();
+
+  useEffect(() => {
+    if (createGoal.isPending) {
+      showLoading("Creando meta…", "Guardando tu meta, espera un momento.");
+    } else {
+      hideLoading();
+    }
+    return () => hideLoading();
+  }, [createGoal.isPending, showLoading, hideLoading]);
 
   const handleAddSaved = async (id: string, newSavedTotal: number, delta: number) => {
     try {
@@ -605,9 +585,6 @@ export default function GoalsPage() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {createGoal.isPending && <CreatingGoalModal key="creating-goal" />}
-      </AnimatePresence>
     </>
   );
 }

@@ -9,10 +9,14 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000,
-            gcTime: 10 * 60 * 1000,
+            // Datos frescos durante 2 minutos → al navegar de vuelta no se refetcha
+            staleTime: 2 * 60_000,
+            // Mantener caché 15 minutos en memoria → sin skeleton al volver a una pantalla
+            gcTime: 15 * 60_000,
             retry: 1,
             refetchOnWindowFocus: false,
+            // No refetch al reconectar (el usuario navega, no recarga)
+            refetchOnReconnect: false,
           },
         },
       })
@@ -22,4 +26,3 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 };
-

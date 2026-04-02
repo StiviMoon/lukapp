@@ -29,6 +29,7 @@ import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { PwaInstallSection } from "@/components/settings/PwaInstallSection";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -263,7 +264,7 @@ export default function SettingsPage() {
   });
 
   const handleSignOut = async () => {
-    showOverlay("Cerrando sesión...");
+    showOverlay("Cerrando sesión…", "Hasta pronto.");
     await signOut();
     router.push("/auth");
     setTimeout(() => hideOverlay(), 400);
@@ -363,6 +364,11 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
+          </SettingsSection>
+
+          {/* Instalar app (PWA) — Android, iOS y escritorio */}
+          <SettingsSection title="Instalar app">
+            <PwaInstallSection />
           </SettingsSection>
 
           {/* Finanzas */}

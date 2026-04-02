@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -26,6 +26,7 @@ import { usePlan } from "@/lib/hooks/use-plan";
 import { toast } from "@/lib/toast";
 import { api, type SubscriptionPricingPayload } from "@/lib/api/client";
 import { useQuery } from "@tanstack/react-query";
+import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
 
 // ─── Datos de planes ──────────────────────────────────────────────────────────
 
@@ -80,10 +81,11 @@ type SubscriptionStatus = {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function UpgradePage() {
+function UpgradePageContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { isPremium, isLoading, cancelSubscription, isCancelling } = usePlan();
+  const { hide: hideGlobalLoading } = useLoadingOverlay();
 
   const [billingUi, setBillingUi]           = useState<"monthly" | "yearly">("monthly");
   const [pricing, setPricing]               = useState<SubscriptionPricingPayload | null>(null);
@@ -100,6 +102,11 @@ export default function UpgradePage() {
     enabled: isPremium,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
+
+  // Tras login con ?plan=premium el overlay global sigue visible hasta aquí.
+  useEffect(() => {
+    hideGlobalLoading();
+  }, [hideGlobalLoading]);
 
   // Leer billing desde URL (viene de landing → /upgrade?billing=yearly)
   useEffect(() => {
@@ -440,5 +447,20 @@ export default function UpgradePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function UpgradePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-dvh flex flex-col items-center justify-center bg-transparent px-6 max-w-sm mx-auto gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/40" aria-hidden />
+          <p className="text-sm text-muted-foreground/50">Cargando planes…</p>
+        </div>
+      }
+    >
+      <UpgradePageContent />
+    </Suspense>
   );
 }

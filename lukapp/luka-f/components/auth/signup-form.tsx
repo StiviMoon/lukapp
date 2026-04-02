@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { Loader2 } from "lucide-react";
-import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
 
 const signupSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -27,7 +26,6 @@ interface SignupFormProps {
 export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
-  const { show: showOverlay, hide: hideOverlay } = useLoadingOverlay();
 
   const {
     register,
@@ -53,12 +51,10 @@ export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
       if (authData.user && !authData.session) {
         toast.success("¡Registro exitoso! Revisa tu email para confirmar tu cuenta.");
       } else {
-        showOverlay("Creando tu cuenta...");
         onSuccess?.();
       }
     } catch {
       toast.error("Error al registrarse");
-      hideOverlay();
     } finally {
       setIsLoading(false);
     }
