@@ -69,7 +69,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {/* ── Capa 0: color base ── */}
-        <div className="fixed inset-0 " style={{ zIndex: 0 }} />
+        <div className="fixed inset-0 bg-background dark:bg-bg" style={{ zIndex: 0 }} />
 
         {/* ── Capa 1: figuras SVG decorativas (dark mode) ── */}
         <div
