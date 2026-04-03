@@ -17,7 +17,7 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="hero-section-bg relative min-h-screen flex items-center pt-24 pb-20 overflow-hidden"
+      className="relative min-h-screen flex items-center pt-24 pb-20 overflow-hidden"
     >
       {/* ── Orbs de color — funcionan en light y dark ── */}
       <div className="pointer-events-none select-none" aria-hidden>
