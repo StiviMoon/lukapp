@@ -1,5 +1,5 @@
-const SHELL_CACHE   = "lukapp-shell-v3";
-const DYNAMIC_CACHE = "lukapp-dynamic-v3";
+const SHELL_CACHE   = "lukapp-shell-v4";
+const DYNAMIC_CACHE = "lukapp-dynamic-v4";
 
 const PRECACHE = [
   "/",

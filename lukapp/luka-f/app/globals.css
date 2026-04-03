@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* ── FOUC prevention: background antes que JS/next-themes carguen ──────────
+   CSS puro con prefers-color-scheme — aplica en el primer paint, sin JS.
+   next-themes ajustará el tema después si el usuario tiene preferencia guardada. */
+html, body { background-color: #f4f4f4; }
+@media (prefers-color-scheme: dark) {
+  html, body { background-color: #10062e; }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
