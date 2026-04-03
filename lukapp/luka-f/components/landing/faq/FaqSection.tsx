@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 import SectionHeader from "@/components/landing/ui/SectionHeader";
+import { useReduceLandingMotion } from "@/hooks/use-reduce-landing-motion";
 
 const faqs = [
   {
@@ -34,11 +35,12 @@ const faqs = [
 
 export default function FaqSection() {
   const [open, setOpen] = useState<number | null>(null);
+  const reduce = useReduceLandingMotion();
 
   const toggle = (i: number) => setOpen(open === i ? null : i);
 
   return (
-    <section id="faq" className="section-stripe py-24 relative">
+    <section id="faq" className="section-stripe landing-section-divider py-24 relative">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader badge="FAQ" title="Preguntas frecuentes" />
 
@@ -46,44 +48,56 @@ export default function FaqSection() {
           {faqs.map((f, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 12 }}
+              initial={reduce ? false : { opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.28, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
-              className="bg-bg-card card-elevated rounded-2xl overflow-hidden transition-all duration-200"
+              viewport={{ once: true, margin: "-32px" }}
+              transition={{ duration: reduce ? 0 : 0.22, delay: reduce ? 0 : i * 0.03, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-card/95 dark:bg-card/90 backdrop-blur-sm border border-border rounded-2xl overflow-hidden transition-all duration-200 shadow-sm"
               style={{
                 borderWidth: "1px",
                 borderStyle: "solid",
-                borderColor: open === i ? "rgba(200,212,0,0.3)" : "var(--section-divider)",
+                borderColor: open === i ? "rgba(186,234,15,0.28)" : undefined,
               }}
             >
               <button
+                type="button"
                 onClick={() => toggle(i)}
                 className="w-full flex items-center justify-between px-6 py-5 text-left gap-4"
               >
-                <span className="text-[15px] font-medium text-fg">{f.q}</span>
-                <div className="shrink-0 w-7 h-7 rounded-full border border-[#D8D8E4] dark:border-white/10 flex items-center justify-center transition-colors duration-200"
-                  style={{ borderColor: open === i ? "rgba(200,212,0,0.4)" : undefined }}>
-                  {open === i
-                    ? <Minus size={13} className="text-lime" strokeWidth={2.5} />
-                    : <Plus size={13} className="text-fg/40" strokeWidth={2.5} />
-                  }
+                <span className="text-[15px] font-semibold text-foreground pr-2">{f.q}</span>
+                <div
+                  className="shrink-0 w-7 h-7 rounded-full border border-border flex items-center justify-center transition-colors duration-200"
+                  style={{ borderColor: open === i ? "rgba(186,234,15,0.45)" : undefined }}
+                >
+                  {open === i ? (
+                    <Minus size={13} className="text-lime" strokeWidth={2.5} />
+                  ) : (
+                    <Plus size={13} className="text-foreground/45" strokeWidth={2.5} />
+                  )}
                 </div>
               </button>
 
               <AnimatePresence initial={false}>
-                {open === i && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <p className="px-6 pb-5 text-[14px] text-fg/40 leading-[1.75]">
-                      {f.a}
-                    </p>
-                  </motion.div>
-                )}
+                {open === i &&
+                  (reduce ? (
+                    <div key="a">
+                      <p className="px-6 pb-5 text-[14px] text-foreground/72 dark:text-foreground/68 leading-[1.75]">
+                        {f.a}
+                      </p>
+                    </div>
+                  ) : (
+                    <motion.div
+                      key="m"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <p className="px-6 pb-5 text-[14px] text-foreground/72 dark:text-foreground/68 leading-[1.75]">
+                        {f.a}
+                      </p>
+                    </motion.div>
+                  ))}
               </AnimatePresence>
             </motion.div>
           ))}

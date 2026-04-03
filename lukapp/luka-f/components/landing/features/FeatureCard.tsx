@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useReduceLandingMotion } from "@/hooks/use-reduce-landing-motion";
 
 interface FeatureCardProps {
   icon: LucideIcon;
@@ -24,18 +25,23 @@ export default function FeatureCard({
   index,
 }: FeatureCardProps) {
   const isLime = accent === "lime";
+  const reduce = useReduceLandingMotion();
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 12 }}
+      initial={reduce ? false : { opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-30px" }}
-      transition={{ duration: 0.28, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, margin: "-24px" }}
+      transition={{
+        duration: reduce ? 0 : 0.22,
+        delay: reduce ? 0 : index * 0.03,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       className={cn(
-        "group h-full flex flex-col rounded-2xl border bg-bg-card",
-        "border-fg/[0.07] dark:border-white/[0.07]",
+        "group h-full flex flex-col rounded-2xl border bg-card/95 dark:bg-card/90 backdrop-blur-sm",
+        "border-border",
         "p-5 sm:p-6 transition-all duration-300 relative overflow-hidden",
-        "hover:-translate-y-1",
+        "md:hover:-translate-y-1 max-md:hover:translate-y-0",
         isLime
           ? "hover:border-[#baea0f]/30 dark:hover:border-[#baea0f]/20"
           : "hover:border-[#5913ef]/30 dark:hover:border-[#7a3ff5]/25",
@@ -80,7 +86,7 @@ export default function FeatureCard({
         <h3 className="font-display font-bold text-base sm:text-[17px] text-fg leading-snug mb-2">
           {title}
         </h3>
-        <p className="text-[13px] sm:text-[14px] text-fg/45 leading-[1.65] flex-1">
+        <p className="text-[13px] sm:text-[14px] text-foreground/68 dark:text-foreground/62 leading-[1.65] flex-1">
           {description}
         </p>
       </div>

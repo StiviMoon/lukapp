@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import SectionHeader from "@/components/landing/ui/SectionHeader";
+import { useReduceLandingMotion } from "@/hooks/use-reduce-landing-motion";
 
 const testimonials = [
   {
@@ -42,8 +43,10 @@ const colorMap = {
 };
 
 export default function TestimonialsSection() {
+  const reduce = useReduceLandingMotion();
+
   return (
-    <section className="section-stripe py-24 relative">
+    <section className="section-stripe landing-section-divider py-24 relative">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader
           badge="Testimonios"
@@ -55,11 +58,11 @@ export default function TestimonialsSection() {
             return (
               <motion.div
                 key={t.name}
-                initial={{ opacity: 0, y: 16 }}
+                initial={reduce ? false : { opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.3, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                className="p-7 bg-white dark:bg-[#161618] border border-[#e8e4f0] dark:border-white/[0.08] rounded-3xl transition-all duration-200 hover:-translate-y-0.5 hover:border-[#5913ef]/20 dark:hover:border-[#baea0f]/15 hover:shadow-[0_8px_24px_rgba(89,19,239,0.08)] dark:hover:shadow-none"
+                viewport={{ once: true, margin: "-36px" }}
+                transition={{ duration: reduce ? 0 : 0.24, delay: reduce ? 0 : i * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                className="p-7 bg-card/95 dark:bg-card/90 backdrop-blur-sm border border-border rounded-3xl transition-all duration-200 md:hover:-translate-y-0.5 hover:border-primary/25 dark:hover:border-lime/25 hover:shadow-md dark:hover:shadow-[0_8px_28px_rgba(0,0,0,0.35)]"
               >
                 {/* Estrellas */}
                 <div className={`flex gap-0.5 mb-5 ${c.stars}`}>
@@ -69,7 +72,7 @@ export default function TestimonialsSection() {
                 </div>
 
                 {/* Quote */}
-                <p className="text-[15px] leading-[1.75] text-[#444] dark:text-white/55 italic mb-6">
+                <p className="text-[15px] leading-[1.75] text-muted-foreground italic mb-6">
                   &ldquo;{t.quote}&rdquo;
                 </p>
 
@@ -79,8 +82,8 @@ export default function TestimonialsSection() {
                     {t.initials}
                   </div>
                   <div>
-                    <p className="text-[14px] font-semibold text-[#111] dark:text-white">{t.name}</p>
-                    <p className="text-[12px] text-[#777] dark:text-white/35">{t.role}</p>
+                    <p className="text-[14px] font-semibold text-foreground">{t.name}</p>
+                    <p className="text-[12px] text-muted-foreground">{t.role}</p>
                   </div>
                 </div>
               </motion.div>

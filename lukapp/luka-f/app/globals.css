@@ -181,8 +181,8 @@ html, body { background-color: #f4f4f4; }
   --auth-input-underline: #DDDDE3;
   --auth-input-underline-focus: #5913ef;
 
-  /* Landing (light) */
-  --bg: #b9b9b9;
+  /* Landing (light) — alineado con --background de la app para mismo “canvas” */
+  --bg: #f4f4f4;
   --text: #1c1c1c;
   --text-muted: #5c5c5c;
   --lime: #baea0f;
@@ -192,8 +192,8 @@ html, body { background-color: #f4f4f4; }
   --purple-muted: #a07af8;
   --bg-card: #ffffff;
   --bg-elevated: #f4f4f4;
-  --bg-stripe: #f8f8f8;
-  --bg-stripe-strong: #f0f0f0;
+  --bg-stripe: transparent;
+  --bg-stripe-strong: transparent;
   --accent-text: #6b7c00;
   --accent-soft: rgba(107, 124, 0, 0.10);
   --accent-border: rgba(107, 124, 0, 0.22);
@@ -263,14 +263,14 @@ html, body { background-color: #f4f4f4; }
   --auth-input-underline: #DDDDE3;
   --auth-input-underline-focus: #5913ef;
 
-  /* Landing (dark) */
+  /* Landing (dark) — mismo tono base que capa fija dark:bg-bg */
   --bg: #10062e;
   --text: #f4f4f4;
   --text-muted: #8a8a8a;
   --bg-card: #161618;
   --bg-elevated: #1c1c1e;
-  --bg-stripe: #111113;
-  --bg-stripe-strong: #181820;
+  --bg-stripe: transparent;
+  --bg-stripe-strong: transparent;
   --accent-text: #baea0f;
   --accent-soft: rgba(186, 234, 15, 0.09);
   --accent-border: rgba(186, 234, 15, 0.22);
@@ -320,34 +320,34 @@ button, a, [role="button"] { cursor: pointer; }
 
 /* ── Landing: estilos independientes del app ─────────────────────────────── */
 
-/* Hero background — light: lavanda suave, dark: morado profundo */
+/* Hero: sin capa propia — se ve el fondo global de la app + figuras SVG */
 .hero-section-bg {
-  background: linear-gradient(160deg, #f9f7ff 0%, #ede8ff 45%, #fff9e6 100%);
+  background: transparent;
 }
 .dark .hero-section-bg {
-  background: linear-gradient(160deg, #06001C 0%, #0D0030 35%, #080015 65%, #03000D 100%);
+  background: transparent;
 }
 
-/* Hero fade-out al fondo — conecta con la siguiente sección (section-stripe) */
-.hero-bottom-fade {
-  background: linear-gradient(to top, #f8f8f8, transparent);
-}
-.dark .hero-bottom-fade {
-  background: linear-gradient(to top, #111113, transparent);
-}
-
-/* Hero headline gradient — light: lima oscuro → púrpura, dark: lima brillante → púrpura */
+/* Hero headline gradient — más contraste sobre figuras / fondo variable */
 .hero-gradient-text {
-  background: linear-gradient(135deg, #6b7c00 0%, #5913ef 55%, #7a3ff5 100%);
+  background: linear-gradient(135deg, #4a5a00 0%, #3d0ab5 40%, #5913ef 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .dark .hero-gradient-text {
-  background: linear-gradient(135deg, #baea0f 0%, #7a3ff5 55%, #a07af8 100%);
+  background: linear-gradient(135deg, #cef540 0%, #baea0f 35%, #c4b5fd 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Subtítulo hero: legible al recargar (muted a veces se pierde con el SVG) */
+.landing-hero-lead {
+  color: color-mix(in srgb, var(--foreground) 78%, var(--muted-foreground));
+}
+.dark .landing-hero-lead {
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
 }
 
 /* CTA principal de landing — siempre texto oscuro sobre lima */
@@ -360,12 +360,39 @@ button, a, [role="button"] { cursor: pointer; }
 }
 .landing-cta-primary:hover { background-color: var(--lime-dark); }
 
-/* Alternating section stripe — light: white/very-light-purple, dark: slightly lighter than bg */
+/* Secciones landing: mismo canvas que el layout; solo ritmo con borde (ver clases en componentes) */
 .section-stripe {
-  background-color: var(--bg-stripe);
+  background-color: transparent;
 }
 .section-stripe-strong {
-  background-color: var(--bg-stripe-strong);
+  background-color: transparent;
+}
+
+/* Separador muy suave — sin “corte” duro respecto al hero */
+.landing-section-divider {
+  border-top: 1px solid color-mix(in srgb, var(--border) 42%, transparent);
+}
+
+/* Footer landing: bloque sólido, lectura rápida */
+.landing-footer-solid {
+  background-color: var(--secondary);
+}
+.dark .landing-footer-solid {
+  background-color: #0a0a0f;
+}
+
+@media (max-width: 767px) {
+  .shimmer-text {
+    animation: none;
+    background-position: 0% center;
+  }
+  .animate-float,
+  .animate-float-delayed {
+    animation: none;
+  }
+  .animate-pulse-dot {
+    animation: none;
+  }
 }
 .section-on-bg {
   background-color: var(--bg);

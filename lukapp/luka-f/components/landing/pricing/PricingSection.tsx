@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import SectionHeader from "@/components/landing/ui/SectionHeader";
 import { api, type SubscriptionPricingPayload } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/client";
+import { useReduceLandingMotion } from "@/hooks/use-reduce-landing-motion";
 
 const freePlan = {
   name: "Gratuito",
@@ -61,6 +62,7 @@ function formatCopFromCents(cents: number): string {
 
 export default function PricingSection() {
   const router = useRouter();
+  const reduce = useReduceLandingMotion();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const [pricing, setPricing] = useState<SubscriptionPricingPayload | null>(null);
 
@@ -95,11 +97,7 @@ export default function PricingSection() {
   };
 
   return (
-    <section id="pricing" className="section-stripe-strong py-24 relative overflow-hidden">
-      {/* Orbs de fondo */}
-      <div className="pointer-events-none absolute -top-32 right-1/4 w-[400px] h-[400px] bg-purple-brand/8 dark:bg-purple-brand/12 rounded-full blur-[100px]" />
-      <div className="pointer-events-none absolute -bottom-16 left-1/4 w-[300px] h-[300px] bg-[#baea0f]/6 rounded-full blur-[80px]" />
-
+    <section id="pricing" className="section-stripe-strong landing-section-divider py-24 relative">
       <div className="max-w-[1100px] mx-auto px-6 relative">
         <SectionHeader
           badge="Precios"
@@ -134,14 +132,14 @@ export default function PricingSection() {
 
           {/* ── PLAN FREE ── */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={reduce ? false : { opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.35, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
-            className="relative pt-10 pb-8 px-8 bg-bg-card border border-fg/[0.08] dark:border-white/[0.07] rounded-3xl flex flex-col shadow-sm overflow-visible"
+            viewport={{ once: true, margin: "-32px" }}
+            transition={{ duration: reduce ? 0 : 0.28, delay: reduce ? 0 : 0.03, ease: [0.22, 1, 0.36, 1] }}
+            className="relative pt-10 pb-8 px-8 bg-card border border-border rounded-3xl flex flex-col shadow-sm overflow-visible"
           >
             {/* Badge top — z-10 para que quede sobre cualquier otro elemento */}
-            <div className="absolute -top-3.5 left-8 z-10 px-4 py-1.5 bg-white dark:bg-[#1c1c1e] border border-[#ddd] dark:border-white/10 rounded-full shadow-md">
+            <div className="absolute -top-3.5 left-8 z-10 px-4 py-1.5 bg-card border border-border rounded-full shadow-md">
               <span className="text-[11px] font-bold text-[#444] dark:text-white/60 uppercase tracking-wider">{freePlan.name}</span>
             </div>
 
@@ -188,15 +186,15 @@ export default function PricingSection() {
           {/* El wrapper tiene padding 1.5px + gradiente = borde degradado */}
           {/* overflow-visible permite que el badge -top-3.5 sea visible */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={reduce ? false : { opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.35, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: true, margin: "-32px" }}
+            transition={{ duration: reduce ? 0 : 0.28, delay: reduce ? 0 : 0.06, ease: [0.22, 1, 0.36, 1] }}
             className="relative rounded-3xl overflow-visible flex flex-col"
             style={{ background: "linear-gradient(135deg, #5913ef 0%, #baea0f 100%)", padding: "1.5px" }}
           >
             {/* Badge top — fuera del inner overflow-hidden */}
-            <div className="absolute -top-3.5 left-8 z-20 flex items-center gap-1.5 px-4 py-1.5 bg-[#baea0f] text-[#111] text-[11px] font-bold rounded-full whitespace-nowrap shadow-[0_4px_14px_rgba(186,234,15,0.4)]">
+            <div className="absolute -top-3.5 left-8 z-20 flex items-center gap-1.5 px-4 py-1.5 bg-[#baea0f] text-[#111] text-[11px] font-bold rounded-full whitespace-nowrap shadow-none max-md:shadow-none md:shadow-[0_4px_14px_rgba(186,234,15,0.35)]">
               <Zap size={11} strokeWidth={3} />
               Más popular
             </div>

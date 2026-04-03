@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Menu, X, Sparkles, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { LukappLogo } from "@/components/ui/lukapp-logo";
+import { useReduceLandingMotion } from "@/hooks/use-reduce-landing-motion";
 
 const links = [
   { label: "Features", href: "#features" },
@@ -19,7 +20,10 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const router = useRouter();
-  useEffect(() => { setTimeout(() => setMounted(true), 100); }, []);
+  const reduce = useReduceLandingMotion();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Un solo tema en todo el app: al hacer clic cambiamos entre claro y oscuro (resolvedTheme = lo que se ve, incl. system)
   const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
@@ -34,10 +38,10 @@ export default function Navbar() {
       {/* ─── DESKTOP: floating pill (centrada), animación rápida ─── */}
       <div className="fixed top-4 left-0 right-0 z-50 hidden md:flex justify-center pointer-events-none">
         <motion.nav
-          initial={{ y: -12, opacity: 0 }}
+          initial={reduce ? false : { y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.28, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
-          className="pointer-events-auto flex items-center justify-center gap-1 px-2 py-2 rounded-full bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl shadow-nav border border-fg/10 dark:border-white/10"
+          transition={{ duration: reduce ? 0 : 0.24, delay: reduce ? 0 : 0.03, ease: [0.22, 1, 0.36, 1] }}
+          className="pointer-events-auto flex items-center justify-center gap-1 px-2 py-2 rounded-full bg-background/85 dark:bg-card/80 backdrop-blur-xl shadow-nav border border-border"
         >
         {/* Logo */}
         <button
@@ -81,12 +85,7 @@ export default function Navbar() {
 
       {/* ─── MOBILE: pill sólida, hamburguesa con fondo visible, animación rápida ─── */}
       <div className="fixed top-3 left-0 right-0 z-50 flex justify-center px-3 md:hidden pointer-events-none">
-        <motion.div
-          initial={{ y: -8, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.25, delay: 0.03, ease: [0.22, 1, 0.36, 1] }}
-          className="pointer-events-auto flex items-center justify-between gap-2 w-full max-w-[420px] px-3 py-2.5 rounded-full bg-white dark:bg-[#0a0a0a] shadow-nav border border-fg/10 dark:border-white/10"
-        >
+        <div className="pointer-events-auto flex items-center justify-between gap-2 w-full max-w-[420px] px-3 py-2.5 rounded-full bg-background/90 dark:bg-card/85 backdrop-blur-xl shadow-nav border border-border">
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="flex items-center py-0.5 shrink-0"
@@ -112,7 +111,7 @@ export default function Navbar() {
             className={cn(
               "w-9 h-9 flex items-center justify-center rounded-full transition-colors duration-150",
               open
-                ? "bg-lime text-bg"
+                ? "bg-lime text-[#111]"
                 : "bg-fg/12 dark:bg-white/12 hover:bg-fg/18 dark:hover:bg-white/18 text-fg"
             )}
             aria-label="Menú"
@@ -120,29 +119,20 @@ export default function Navbar() {
             {open ? <X size={16} strokeWidth={2.5} /> : <Menu size={16} strokeWidth={2.5} />}
           </button>
         </div>
-      </motion.div>
+      </div>
       </div>
 
-      {/* ─── MOBILE: dropdown con fondo sólido (nunca transparente), animaciones rápidas ─── */}
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.1 }}
-              className="fixed inset-0 z-40 bg-black/35 md:hidden"
-              onClick={() => setOpen(false)}
-            />
+      {/* ─── MOBILE: menú sin motion (más liviano) ─── */}
+      {open && (
+        <>
+          <button
+            type="button"
+            aria-label="Cerrar menú"
+            className="fixed inset-0 z-40 bg-black/35 md:hidden border-0 p-0 cursor-pointer"
+            onClick={() => setOpen(false)}
+          />
             <div className="fixed inset-0 z-50 pt-[68px] px-4 pb-4 md:hidden flex justify-center items-start pointer-events-none">
-              <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                className="pointer-events-auto w-full max-w-[280px] rounded-2xl overflow-hidden bg-white dark:bg-[#0f0f0f] border border-border dark:border-white/10 shadow-xl dark:shadow-[0_20px_40px_rgba(0,0,0,0.6)] py-2"
-              >
+              <div className="pointer-events-auto w-full max-w-[280px] rounded-2xl overflow-hidden bg-card border border-border shadow-xl dark:shadow-[0_20px_40px_rgba(0,0,0,0.6)] py-2">
                 {links.map((l) => (
                   <button
                     key={l.href}
@@ -156,16 +146,15 @@ export default function Navbar() {
                 <div className="px-3 pb-2">
                   <button
                     onClick={() => router.push("/auth?action=register")}
-                    className="w-full py-3.5 rounded-xl bg-lime text-bg font-bold text-[14px] text-center hover:bg-lime-dark transition-colors duration-150"
+                    className="w-full py-3.5 rounded-xl bg-lime text-[#111] font-bold text-[14px] text-center hover:bg-lime-dark transition-colors duration-150"
                   >
                     Empezar gratis →
                   </button>
                 </div>
-              </motion.div>
+              </div>
             </div>
-          </>
-        )}
-      </AnimatePresence>
+        </>
+      )}
     </>
   );
 }

@@ -5,11 +5,15 @@ import { usePathname } from "next/navigation";
 
 /**
  * Envuelve el contenido de cada ruta con un fade-in suave.
- * No usa AnimatePresence de salida (no hay exit animation en Next App Router),
- * solo entrada: opacity 0 → 1 en 180ms con ease iOS.
+ * La landing (/) no usa fade: primer paint más rápido y menos trabajo en móvil.
  */
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isLanding = pathname === "/";
+
+  if (isLanding) {
+    return <div style={{ minHeight: "100dvh" }}>{children}</div>;
+  }
 
   return (
     <AnimatePresence mode="wait" initial={false}>

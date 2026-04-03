@@ -15,12 +15,14 @@ export default function SectionHeader({ badge, title, subtitle, titleId }: Secti
       </span>
       <h2
         id={titleId}
-        className="font-display font-extrabold tracking-tight text-fg leading-[1.1] mb-4"
+        className="font-display font-extrabold tracking-tight text-foreground leading-[1.1] mb-4"
         style={{ fontSize: "clamp(28px, 4vw, 48px)" }}>
         {title}
       </h2>
       {subtitle && (
-        <p className="text-fg/50 dark:text-fg/40 text-[16px] max-w-[400px] mx-auto">{subtitle}</p>
+        <p className="text-[16px] max-w-[420px] mx-auto text-foreground/70 dark:text-foreground/65 leading-relaxed">
+          {subtitle}
+        </p>
       )}
     </div>
   );

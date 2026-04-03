@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <main className="overflow-x-hidden">
+    <main className="overflow-x-hidden relative">
       <LandingNavbar />
       <HeroSection />
       <FeaturesSection />
