@@ -21,6 +21,8 @@ import {
   type PendingTransaction,
 } from "@/lib/idb/offline-transactions";
 
+export type { OfflineTransactionPayload, PendingTransaction };
+
 export interface UseOfflineQueueReturn {
   isOnline: boolean;
   pendingCount: number;
