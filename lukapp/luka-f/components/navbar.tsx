@@ -8,14 +8,16 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useVoiceStore } from "@/lib/store/voice-store";
 import { haptics } from "@/lib/haptics";
+import { useOfflineQueue } from "@/lib/hooks/use-offline-queue";
 
 const SHOW_ON = ["/dashboard", "/history", "/analytics", "/settings", "/profile", "/categories", "/friends"];
 const PREFETCH_ROUTES = ["/dashboard", "/history", "/analytics", "/settings"];
 
 export function Navbar() {
-  const pathname      = usePathname();
-  const router        = useRouter();
-  const { openVoice } = useVoiceStore();
+  const pathname       = usePathname();
+  const router         = useRouter();
+  const { openVoice }  = useVoiceStore();
+  const { pendingCount } = useOfflineQueue();
 
   useEffect(() => {
     for (const href of PREFETCH_ROUTES) router.prefetch(href);
@@ -43,7 +45,7 @@ export function Navbar() {
           <NavLink href="/history"    icon={History}   label="Historial" pathname={pathname} prefetch={() => router.prefetch("/history")} />
 
           {/* ── FAB central — sobresale hacia arriba ─────────────── */}
-          <div className="mx-2.5 -translate-y-[14px] flex flex-col items-center">
+          <div className="mx-2.5 -translate-y-[14px] flex flex-col items-center relative">
             <button
               onClick={openVoice}
               type="button"
@@ -60,6 +62,11 @@ export function Navbar() {
             >
               <Mic className="h-6 w-6 text-white" strokeWidth={2.1} />
             </button>
+            {pendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-amber-500 text-amber-950 text-[10px] font-bold flex items-center justify-center z-10">
+                {pendingCount > 9 ? "9+" : pendingCount}
+              </span>
+            )}
           </div>
 
           <NavLink href="/friends"    icon={Users}     label="Panas"     pathname={pathname} prefetch={() => router.prefetch("/friends")} />

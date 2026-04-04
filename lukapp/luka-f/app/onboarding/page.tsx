@@ -370,6 +370,11 @@ function StepAccount({
             maxLength={40}
             className="w-full px-4 py-4 rounded-2xl bg-card border border-border text-foreground text-[15px] placeholder:text-muted-foreground/35 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
           />
+          {!name.trim() && (
+            <p className="text-[11px] text-muted-foreground/55 px-1">
+              Dale un nombre a tu cuenta para continuar
+            </p>
+          )}
         </div>
 
         {/* Balance inicial */}
@@ -395,7 +400,12 @@ function StepAccount({
 
       <button
         onClick={onNext}
-        className="w-full py-4 rounded-2xl bg-primary text-background font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
+        disabled={!name.trim()}
+        className={`w-full py-4 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all ${
+          name.trim()
+            ? "bg-primary text-[#111] active:scale-[0.97]"
+            : "bg-muted/60 text-foreground/30 cursor-not-allowed"
+        }`}
       >
         Continuar <ArrowRight className="w-4 h-4" />
       </button>

@@ -126,10 +126,7 @@ export function CategorySheet({
   };
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      toast.error("El nombre es obligatorio");
-      return;
-    }
+    if (!name.trim()) return; // guard — el botón ya está disabled, hint visual lo indica
 
     if (isEditing && category) {
       const res = await updateCategory.mutateAsync({
@@ -299,14 +296,21 @@ export function CategorySheet({
 
                 {/* Name input */}
                 {!justCreated && (
-                  <Input
-                    type="text"
-                    placeholder="Nombre de la categoría"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
-                    autoFocus={!isEditing}
-                  />
+                  <div className="flex flex-col gap-1">
+                    <Input
+                      type="text"
+                      placeholder="Nombre de la categoría"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
+                      autoFocus={!isEditing}
+                    />
+                    {!name.trim() && (
+                      <p className="text-[11px] text-muted-foreground/55 px-1">
+                        Requerido — escribe un nombre para la categoría
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {justCreated && (

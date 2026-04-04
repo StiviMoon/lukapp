@@ -1,5 +1,5 @@
-const SHELL_CACHE   = "lukapp-shell-v4";
-const DYNAMIC_CACHE = "lukapp-dynamic-v4";
+const SHELL_CACHE   = "lukapp-shell-v5";
+const DYNAMIC_CACHE = "lukapp-dynamic-v5";
 
 const PRECACHE = [
   "/",
@@ -124,4 +124,19 @@ self.addEventListener("notificationclick", (event) => {
       clients.openWindow(url);
     })
   );
+});
+
+// ── Background Sync: transacciones offline ──────────────────────────────────
+// El SW solo actúa como despertador — envía mensaje a clients que escuchan
+// La sincronización real ocurre en el cliente con token fresco
+self.addEventListener("sync", (event) => {
+  if (event.tag === "sync-transactions") {
+    event.waitUntil(
+      self.clients.matchAll({ type: "window" }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: "SYNC_PENDING" });
+        });
+      })
+    );
+  }
 });

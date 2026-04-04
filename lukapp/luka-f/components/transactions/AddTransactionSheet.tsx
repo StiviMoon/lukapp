@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Transaction, TransactionCategory, Account } from "@/lib/types/transaction";
 import { useInvalidateTransactions } from "@/lib/hooks/use-invalidate-transactions";
+import { useOfflineQueue, type OfflineTransactionPayload } from "@/lib/hooks/use-offline-queue";
 
 // ─── Account helpers ─────────────────────────────────────────────────────────
 
@@ -33,6 +34,15 @@ function formatCOP(amount: number): string {
     currency: "COP",
     minimumFractionDigits: 0,
   }).format(amount);
+}
+
+function extractErrorMessage(error: { message?: string; errors?: Record<string, string[]> } | undefined): string {
+  if (!error) return "Error al registrar";
+  if (error.errors) {
+    const firstField = Object.values(error.errors)[0];
+    if (firstField?.[0]) return firstField[0];
+  }
+  return error.message ?? "Error al registrar";
 }
 
 // ─── Animation variants ─────────────────────────────────────────────────────
@@ -86,6 +96,7 @@ export function AddTransactionSheet({
 }: AddTransactionSheetProps) {
   const queryClient = useQueryClient();
   const invalidateTransactions = useInvalidateTransactions();
+  const { isOnline, enqueue: enqueueOffline } = useOfflineQueue();
 
   const [type, setType] = useState<"INCOME" | "EXPENSE">(defaultType);
   const [rawAmount, setRawAmount] = useState("");
@@ -94,6 +105,7 @@ export function AddTransactionSheet({
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
 
@@ -102,6 +114,7 @@ export function AddTransactionSheet({
   // Reset / prefill state when sheet opens
   useEffect(() => {
     if (isOpen) {
+      setSubmitAttempted(false);
       if (editingTransaction) {
         setType(editingTransaction.type);
         setRawAmount(String(Math.trunc(Number(editingTransaction.amount) || 0)));
@@ -223,7 +236,7 @@ export function AddTransactionSheet({
         if (context?.prevTransactions !== undefined) {
           queryClient.setQueryData(["transactions", "recent"], context.prevTransactions);
         }
-        toast.error(res.error?.message ?? "Error al registrar");
+        toast.error(extractErrorMessage(res.error));
         return;
       }
       await invalidateTransactions();
@@ -245,7 +258,7 @@ export function AddTransactionSheet({
       }),
     onSuccess: async (res) => {
       if (!res.success) {
-        toast.error(res.error?.message ?? "Error al actualizar");
+        toast.error(extractErrorMessage(res.error));
         return;
       }
       await invalidateTransactions();
@@ -278,8 +291,12 @@ export function AddTransactionSheet({
   };
 
   const parsedAmount = parseFloat(rawAmount) || 0;
+  const effectiveCategoryName = newCategoryInput.trim() || selectedCategoryName;
   const canSubmit =
-    parsedAmount > 0 && !createMutation.isPending && !updateMutation.isPending;
+    parsedAmount > 0 &&
+    effectiveCategoryName.length > 0 &&
+    !createMutation.isPending &&
+    !updateMutation.isPending;
 
   // Handle numeric-only input
   const handleAmountChange = (val: string) => {
@@ -287,8 +304,11 @@ export function AddTransactionSheet({
     setRawAmount(cleaned === "" ? "" : String(parseInt(cleaned, 10)));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setSubmitAttempted(true);
     const categoryName = newCategoryInput.trim() || selectedCategoryName;
+    if (!categoryName) return;
+
     const vars: SaveVars = {
       type,
       amount: parseFloat(rawAmount),
@@ -299,6 +319,46 @@ export function AddTransactionSheet({
       date: editingTransaction?.date ?? new Date().toISOString(),
     };
 
+    // Modo offline: guardar en IDB
+    if (!isOnline && !editingTransaction) {
+      try {
+        const payload: OfflineTransactionPayload = {
+          type: vars.type,
+          amount: vars.amount,
+          description: vars.description,
+          suggestedCategoryName: vars.suggestedCategoryName,
+          categoryId: vars.categoryId,
+          accountId: vars.accountId,
+          date: vars.date,
+        };
+        await enqueueOffline(payload);
+        toast.info("Sin conexión — se enviará automáticamente");
+        handleClose();
+
+        // Registrar Background Sync si está disponible
+        if ("serviceWorker" in navigator && "SyncManager" in window) {
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            await reg.sync.register("sync-transactions");
+          } catch (err) {
+            console.log("[AddTransactionSheet] Background Sync no disponible:", err);
+          }
+        }
+        return;
+      } catch (err) {
+        console.error("[AddTransactionSheet] Enqueue error:", err);
+        toast.error("Error al guardar sin conexión");
+        return;
+      }
+    }
+
+    // Modo edición offline
+    if (!isOnline && editingTransaction) {
+      toast.warning("Necesitas conexión para editar");
+      return;
+    }
+
+    // Modo online: llamada directa a la API
     if (editingTransaction) {
       updateMutation.mutate({ ...vars, id: editingTransaction.id, date: vars.date });
     } else {
@@ -455,13 +515,24 @@ export function AddTransactionSheet({
               )}
 
               {/* New category input */}
-              <Input
-                type="text"
-                placeholder="Nueva categoría..."
-                value={newCategoryInput}
-                onChange={(e) => handleNewCategoryType(e.target.value)}
-                className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
-              />
+              <div className="flex flex-col gap-1">
+                <Input
+                  type="text"
+                  placeholder={categories.length === 0 ? "Categoría (requerido)" : "Nueva categoría..."}
+                  value={newCategoryInput}
+                  onChange={(e) => handleNewCategoryType(e.target.value)}
+                  className={cn(
+                    "bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40",
+                    submitAttempted && effectiveCategoryName.length === 0 &&
+                      "ring-1 ring-destructive/60 bg-destructive/5"
+                  )}
+                />
+                {submitAttempted && effectiveCategoryName.length === 0 && (
+                  <p className="text-[11px] text-destructive/80 px-1">
+                    Elige o escribe una categoría
+                  </p>
+                )}
+              </div>
 
               {/* Description */}
               <Input

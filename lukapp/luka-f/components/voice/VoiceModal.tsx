@@ -662,9 +662,14 @@ export function VoiceModal() {
                   className="text-2xl font-bold h-auto py-1 px-0 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-primary"
                   style={{ fontFamily: "var(--font-space-mono)" }}
                 />
-                {editAmount && (
+                {editAmount && parseFloat(editAmount) > 0 && (
                   <p className="text-xs text-muted-foreground">
                     {formatCOP(parseFloat(editAmount) || 0)}
+                  </p>
+                )}
+                {editAmount !== "" && !(parseFloat(editAmount) > 0) && (
+                  <p className="text-[11px] text-destructive/80">
+                    El monto debe ser mayor a 0
                   </p>
                 )}
               </div>
@@ -783,7 +788,11 @@ export function VoiceModal() {
               </div>
             </div>
 
-            <Button onClick={handleConfirm} className="w-full gap-2">
+            <Button
+              onClick={handleConfirm}
+              disabled={!(parseFloat(editAmount) > 0)}
+              className="w-full gap-2"
+            >
               {drafts.length > 1 ? `Confirmar ${drafts.length}` : "Confirmar"}{" "}
               <ArrowRight className="w-4 h-4" />
             </Button>
