@@ -339,7 +339,7 @@ export function AddTransactionSheet({
         if ("serviceWorker" in navigator && "SyncManager" in window) {
           try {
             const reg = await navigator.serviceWorker.ready;
-            await reg.sync.register("sync-transactions");
+            await (reg as ServiceWorkerRegistration & { sync: { register: (tag: string) => Promise<void> } }).sync.register("sync-transactions");
           } catch (err) {
             console.log("[AddTransactionSheet] Background Sync no disponible:", err);
           }
