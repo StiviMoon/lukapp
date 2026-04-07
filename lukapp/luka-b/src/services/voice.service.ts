@@ -27,6 +27,15 @@ function extractJSON(text: string): ParsedTransaction[] | null {
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+export type PeriodicityValue =
+  | "ONCE"
+  | "DAILY"
+  | "WEEKLY"
+  | "BI_WEEKLY"
+  | "MONTHLY"
+  | "QUARTERLY"
+  | "YEARLY";
+
 export interface ParsedTransaction {
   type: "INCOME" | "EXPENSE";
   amount: number;
@@ -35,6 +44,7 @@ export interface ParsedTransaction {
   accountId: string | null;
   description: string;
   confidence: "high" | "medium" | "low";
+  periodicity: PeriodicityValue;
 }
 
 // Categorías base para el contexto de la IA (Colombia / LatAm)
@@ -107,7 +117,8 @@ Formato:
     "categoryId": "<UUID exacto de la categoría del usuario si coincide perfectamente, o null>",
     "accountId": "<UUID exacto de la cuenta del usuario si la menciona, o null>",
     "description": "<descripción corta y natural en español, máximo 5 palabras>",
-    "confidence": "high" | "medium" | "low"
+    "confidence": "high" | "medium" | "low",
+    "periodicity": "ONCE" | "DAILY" | "WEEKLY" | "BI_WEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY"
   }
 ]
 
@@ -144,7 +155,17 @@ REGLAS DE CUENTA:
 CONFIANZA:
 - "high": monto y tipo completamente claros
 - "medium": monto aproximado o tipo inferido por contexto
-- "low": monto o tipo ambiguos o no mencionados explícitamente`;
+- "low": monto o tipo ambiguos o no mencionados explícitamente
+
+PERIODICIDAD (crítico):
+Detecta si el usuario menciona que es recurrente. Por defecto: "ONCE" (pago único).
+- "DAILY": "todos los días", "cada día", "diario", "diariamente"
+- "WEEKLY": "cada semana", "semanal", "semanalmente", "cada 7 días", "todos los lunes/martes/..."
+- "BI_WEEKLY": "cada 15 días", "quincenal", "quincenalmente", "cada dos semanas"
+- "MONTHLY": "cada mes", "mensual", "mensualmente", "todos los meses", "mes a mes", "arriendo", "sueldo", "salario", "nómina", "quincena" (inferir MONTHLY para ingresos laborales fijos)
+- "QUARTERLY": "cada tres meses", "trimestral", "cada trimestre"
+- "YEARLY": "cada año", "anual", "anualmente", "todos los años", "una vez al año", "SOAT", "predial", "impuesto de renta"
+- Si no menciona frecuencia Y no es salario/arriendo → "ONCE"`;
 
     try {
       const completion = await groq.chat.completions.create({

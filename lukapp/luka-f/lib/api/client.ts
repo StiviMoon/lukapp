@@ -69,6 +69,48 @@ export type AnalyticsSummary = {
 
 export type RecurringFrequency = "weekly" | "biweekly" | "monthly";
 
+export type PeriodicityValue =
+  | "ONCE"
+  | "DAILY"
+  | "WEEKLY"
+  | "BI_WEEKLY"
+  | "MONTHLY"
+  | "QUARTERLY"
+  | "YEARLY";
+
+export interface RecurringEntry {
+  id: string;
+  description: string | null;
+  categoryName: string | null;
+  amount: number;
+  periodicity: PeriodicityValue;
+  type: "INCOME" | "EXPENSE";
+  monthlyMin: number;
+  monthlyMax: number;
+}
+
+export interface RecurringCandidate {
+  categoryName: string;
+  avgAmount: number;
+  count: number;
+  suggestedPeriodicity: PeriodicityValue;
+}
+
+export interface BudgetProjection {
+  recurringIncome: RecurringEntry[];
+  recurringExpenses: RecurringEntry[];
+  monthlyIncomeMin: number;
+  monthlyIncomeMax: number;
+  monthlyExpenseMin: number;
+  monthlyExpenseMax: number;
+  deficitMin: number;
+  deficitMax: number;
+  goalContributionNeeded: number;
+  totalNeededMin: number;
+  totalNeededMax: number;
+  recurringCandidates: RecurringCandidate[];
+}
+
 export interface RecurringExpense {
   name: string;
   categoryId: string | null;
@@ -289,7 +331,8 @@ export const api = {
             suggestedCategoryName: string;
             categoryId?: string | null;
             accountId?: string | null;
-            date?: string; // ISO con offset — hora local del usuario
+            date?: string;
+            periodicity?: PeriodicityValue;
           }
         | Array<{
             type: "INCOME" | "EXPENSE";
@@ -299,6 +342,7 @@ export const api = {
             categoryId?: string | null;
             accountId?: string | null;
             date?: string;
+            periodicity?: PeriodicityValue;
           }>
     ) => apiClient.post("/voice/save", data),
   },
@@ -378,6 +422,7 @@ export const api = {
   analytics: {
     getSummary: () => apiClient.get<AnalyticsSummary>("/analytics/summary"),
     getRecurring: () => apiClient.get<RecurringExpense[]>("/analytics/recurring"),
+    getBudgetProjection: () => apiClient.get<BudgetProjection>("/analytics/budget-projection"),
   },
 
   savingGoals: {

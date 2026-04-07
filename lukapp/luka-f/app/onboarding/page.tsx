@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, User, Wallet, CheckCircle2, ArrowRight, ChevronLeft, Loader2, Banknote, Building2, PiggyBank } from "lucide-react";
+import { Sparkles, User, Wallet, CheckCircle2, ArrowRight, ChevronLeft, Loader2, Banknote, Building2, PiggyBank, TrendingUp, TrendingDown, Plus, X } from "lucide-react";
 import { useCompleteOnboarding, useUpdateProfile } from "@/lib/hooks/use-profile";
-import { api } from "@/lib/api/client";
+import { api, type PeriodicityValue } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const ACCOUNT_TYPES = [
   { value: "CASH",     label: "Efectivo",         icon: Banknote,  desc: "Dinero en mano" },
@@ -78,6 +78,11 @@ export default function OnboardingPage() {
   const [balance, setBalance]         = useState("");
   const [finishing, setFinishing]     = useState(false);
 
+  // Step recurring
+  const [recurringItems, setRecurringItems] = useState<
+    { type: "INCOME" | "EXPENSE"; description: string; amount: string; periodicity: PeriodicityValue }[]
+  >([]);
+
   const queryClient      = useQueryClient();
   const updateProfile    = useUpdateProfile();
   const completeOnboarding = useCompleteOnboarding();
@@ -106,12 +111,27 @@ export default function OnboardingPage() {
         type: accountType,
         balance: parseFloat(balance) || 0,
       });
-      // 3. Marcar onboarding como completado
+      // 3. Guardar recurrentes si hay alguno
+      const validItems = recurringItems.filter(
+        i => i.description.trim() && parseFloat(i.amount) > 0
+      );
+      if (validItems.length > 0) {
+        await api.voice.save(
+          validItems.map(i => ({
+            type: i.type,
+            amount: parseFloat(i.amount),
+            description: i.description.trim(),
+            suggestedCategoryName: i.type === "INCOME" ? "Ingresos" : "Gastos fijos",
+            periodicity: i.periodicity,
+          }))
+        );
+      }
+      // 4. Marcar onboarding como completado
       const updatedProfile = await completeOnboarding.mutateAsync();
-      // 4. Actualizar el cache ANTES de navegar — evita el race condition
+      // 5. Actualizar el cache ANTES de navegar — evita el race condition
       //    que haría que el dashboard leyera onboardingCompleted=false y volviera acá
       queryClient.setQueryData(["profile"], updatedProfile);
-      // 5. Ir al dashboard
+      // 6. Ir al dashboard
       router.push("/dashboard");
     } catch {
       toast.error("Hubo un error. Intenta de nuevo.");
@@ -199,6 +219,24 @@ export default function OnboardingPage() {
               exit="exit"
               className="h-full flex flex-col"
             >
+              <StepRecurring
+                items={recurringItems}
+                onChange={setRecurringItems}
+                onNext={goNext}
+                onSkip={goNext}
+              />
+            </motion.div>
+          )}
+          {step === 4 && (
+            <motion.div
+              key="step-4"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="h-full flex flex-col"
+            >
               <StepDone
                 name={fullName}
                 onFinish={handleFinish}
@@ -242,7 +280,7 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
           transition={{ delay: 0.2, duration: 0.3 }}
           className="text-[15px] text-muted-foreground leading-relaxed"
         >
-          Soy tu compinche financiero. En 3 pasitos dejamos tus lukas organizadas y te cuento cómo manejarlas mejor.
+          Soy tu compinche financiero. En 4 pasitos dejamos tus lukas organizadas y te cuento cómo manejarlas mejor.
         </motion.p>
       </div>
 
@@ -409,6 +447,200 @@ function StepAccount({
       >
         Continuar <ArrowRight className="w-4 h-4" />
       </button>
+    </div>
+  );
+}
+
+// ─── Recurring Item Types ──────────────────────────────────────────────────────
+
+type RecurringItem = {
+  type: "INCOME" | "EXPENSE";
+  description: string;
+  amount: string;
+  periodicity: PeriodicityValue;
+};
+
+const PERIODICITY_LABELS: Record<PeriodicityValue, string> = {
+  ONCE: "Una vez",
+  DAILY: "Diario",
+  WEEKLY: "Semanal",
+  BI_WEEKLY: "Quincenal",
+  MONTHLY: "Mensual",
+  QUARTERLY: "Trimestral",
+  YEARLY: "Anual",
+};
+
+const COMMON_PERIODICITIES: PeriodicityValue[] = ["WEEKLY", "BI_WEEKLY", "MONTHLY", "YEARLY"];
+
+function StepRecurring({
+  items,
+  onChange,
+  onNext,
+  onSkip,
+}: {
+  items: RecurringItem[];
+  onChange: (items: RecurringItem[]) => void;
+  onNext: () => void;
+  onSkip: () => void;
+}) {
+  const [addingType, setAddingType] = useState<"INCOME" | "EXPENSE" | null>(null);
+  const [draft, setDraft] = useState<RecurringItem>({
+    type: "INCOME",
+    description: "",
+    amount: "",
+    periodicity: "MONTHLY",
+  });
+
+  const startAdd = (type: "INCOME" | "EXPENSE") => {
+    setDraft({ type, description: "", amount: "", periodicity: "MONTHLY" });
+    setAddingType(type);
+  };
+
+  const confirmAdd = () => {
+    if (!draft.description.trim() || !parseFloat(draft.amount)) return;
+    onChange([...items, { ...draft }]);
+    setAddingType(null);
+  };
+
+  const remove = (i: number) => {
+    onChange(items.filter((_, idx) => idx !== i));
+  };
+
+  return (
+    <div className="flex flex-col gap-6 h-full">
+      <div className="flex-1 flex flex-col justify-start pt-2 overflow-y-auto">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+          <TrendingUp className="w-6 h-6 text-primary" />
+        </div>
+        <h2 className="text-[28px] font-bold tracking-tight text-foreground font-display mb-2 leading-tight">
+          ¿Tienes ingresos o gastos fijos?
+        </h2>
+        <p className="text-[13px] text-muted-foreground leading-relaxed mb-1">
+          Los <strong>gastos recurrentes</strong> son los que se repiten: arriendo, servicios, Netflix…
+        </p>
+        <p className="text-[12px] text-muted-foreground/60 mb-6">
+          Opcional — puedes agregarlos después desde Analíticas.
+        </p>
+
+        {/* Lista de items ya agregados */}
+        {items.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {items.map((item, i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-card border border-border/50">
+                <div className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                  item.type === "INCOME" ? "bg-lime/10" : "bg-rose-500/10"
+                }`}>
+                  {item.type === "INCOME"
+                    ? <TrendingUp className="w-3.5 h-3.5 text-lime-600 dark:text-lime-400" />
+                    : <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{item.description}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    ${parseFloat(item.amount).toLocaleString("es-CO")} · {PERIODICITY_LABELS[item.periodicity]}
+                  </p>
+                </div>
+                <button onClick={() => remove(i)} className="p-1.5 rounded-xl hover:bg-muted/50 transition-colors">
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Form de nuevo item */}
+        {addingType ? (
+          <div className="rounded-2xl bg-card border border-primary/30 p-4 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              {addingType === "INCOME" ? "Nuevo ingreso fijo" : "Nuevo gasto fijo"}
+            </p>
+            <input
+              autoFocus
+              type="text"
+              placeholder={addingType === "INCOME" ? "ej: Salario, Freelance…" : "ej: Arriendo, Netflix, Gym…"}
+              value={draft.description}
+              onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
+              className="w-full px-4 py-3 rounded-xl bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground/40">$</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0"
+                value={draft.amount}
+                onChange={e => setDraft(d => ({ ...d, amount: e.target.value }))}
+                className="w-full pl-8 pr-4 py-3 rounded-xl bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {COMMON_PERIODICITIES.map(p => (
+                <button
+                  key={p}
+                  onClick={() => setDraft(d => ({ ...d, periodicity: p }))}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all ${
+                    draft.periodicity === p
+                      ? "bg-primary text-background"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {PERIODICITY_LABELS[p]}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAddingType(null)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-muted/30 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmAdd}
+                disabled={!draft.description.trim() || !parseFloat(draft.amount)}
+                className="flex-1 py-2.5 rounded-xl bg-primary text-background text-sm font-semibold transition-all disabled:opacity-40"
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={() => startAdd("INCOME")}
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl border border-dashed border-lime/40 bg-lime/5 text-lime-700 dark:text-lime-400 text-sm font-semibold hover:bg-lime/10 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Ingreso
+            </button>
+            <button
+              onClick={() => startAdd("EXPENSE")}
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl border border-dashed border-rose-500/30 bg-rose-500/5 text-rose-600 dark:text-rose-400 text-sm font-semibold hover:bg-rose-500/10 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Gasto
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        {items.length === 0 && (
+          <button
+            onClick={onSkip}
+            className="flex-1 py-4 rounded-2xl border border-border text-foreground/60 font-semibold text-[14px] hover:bg-muted/30 transition-colors"
+          >
+            Omitir por ahora
+          </button>
+        )}
+        <button
+          onClick={onNext}
+          className={`py-4 rounded-2xl bg-primary text-background font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform ${
+            items.length === 0 ? "hidden" : "flex-1"
+          }`}
+        >
+          Continuar <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   safeFallbackForUnsafePrompt,
 } from "@/utils/ai-security";
 import { financialAnalyticsService } from "@/services/financial-analytics.service";
+import { budgetProjectionService } from "@/services/budget-projection.service";
 
 // Lazy init — garantiza que dotenv ya cargó el .env antes de leer la key
 const COACH_MODEL = "gemini-2.5-flash-lite";
@@ -40,8 +41,11 @@ DATOS:
 - Si no hay datos, anima a registrar en 1 frase
 - Si pregunta fuera de finanzas, redirige en 1 frase amable`;
 
-function buildFinancialContext(summary: Awaited<ReturnType<typeof financialAnalyticsService.getSummary>>): string {
-  return [
+function buildFinancialContext(
+  summary: Awaited<ReturnType<typeof financialAnalyticsService.getSummary>>,
+  projection?: Awaited<ReturnType<typeof budgetProjectionService.getProjection>>
+): string {
+  const lines = [
     "=== CONTEXTO FINANCIERO DETERMINISTICO ===",
     `Estado general: ${summary.health.level} (score ${summary.health.score}/100)`,
     `Disponible: ${summary.balances.available}`,
@@ -54,7 +58,46 @@ function buildFinancialContext(summary: Awaited<ReturnType<typeof financialAnaly
     `Forecast 90d: ${summary.forecast.next90Days}`,
     `Confianza forecast: ${summary.forecast.confidence}`,
     `Alertas: ${summary.alerts.length > 0 ? summary.alerts.join(" | ") : "Sin alertas"}`,
-  ].join("\n");
+  ];
+
+  if (projection) {
+    const fmt = (n: number) =>
+      new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+
+    lines.push("\n=== PRESUPUESTO RECURRENTE (proyección mensual) ===");
+    if (projection.recurringIncome.length > 0) {
+      lines.push(`Ingresos recurrentes registrados: ${projection.recurringIncome.length}`);
+      lines.push(`Rango ingresos/mes: ${fmt(projection.monthlyIncomeMin)} – ${fmt(projection.monthlyIncomeMax)}`);
+      projection.recurringIncome.forEach((e) => {
+        lines.push(`  + ${e.categoryName ?? e.description ?? "Ingreso"} (${e.periodicity}): ${fmt(e.amount)}`);
+      });
+    } else {
+      lines.push("Sin ingresos recurrentes registrados aún");
+    }
+
+    if (projection.recurringExpenses.length > 0) {
+      lines.push(`Gastos recurrentes registrados: ${projection.recurringExpenses.length}`);
+      lines.push(`Rango gastos fijos/mes: ${fmt(projection.monthlyExpenseMin)} – ${fmt(projection.monthlyExpenseMax)}`);
+      projection.recurringExpenses.forEach((e) => {
+        lines.push(`  - ${e.categoryName ?? e.description ?? "Gasto"} (${e.periodicity}): ${fmt(e.amount)}`);
+      });
+    } else {
+      lines.push("Sin gastos recurrentes registrados aún");
+    }
+
+    if (projection.deficitMax > 0) {
+      lines.push(`DÉFICIT estimado: ${fmt(projection.deficitMin)} – ${fmt(projection.deficitMax)}/mes`);
+    }
+    if (projection.goalContributionNeeded > 0) {
+      lines.push(`Para metas activas: necesita ${fmt(projection.goalContributionNeeded)}/mes adicional`);
+      lines.push(`Ingreso total necesario: ${fmt(projection.totalNeededMin)} – ${fmt(projection.totalNeededMax)}/mes`);
+    }
+    if (projection.recurringCandidates.length > 0) {
+      lines.push(`Patrones detectados (posibles recurrentes): ${projection.recurringCandidates.map((c) => c.categoryName).join(", ")}`);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 async function getProfileFirstName(userId: string): Promise<string | null> {
@@ -96,8 +139,11 @@ export const coachService = {
     if (cached) return cached.content;
 
     const firstName = await getProfileFirstName(userId);
-    const summary = await financialAnalyticsService.getSummary(userId);
-    const context = buildFinancialContext(summary);
+    const [summary, projection] = await Promise.all([
+      financialAnalyticsService.getSummary(userId),
+      budgetProjectionService.getProjection(userId),
+    ]);
+    const context = buildFinancialContext(summary, projection);
     const nameBlock = buildNameBlockForInsight(firstName);
     const fallback = firstName
       ? `${firstName}, ${summary.today.insight} ${summary.today.action}`.trim()
@@ -240,8 +286,11 @@ export const coachService = {
     });
 
     const firstName = await getProfileFirstName(userId);
-    const summary = await financialAnalyticsService.getSummary(userId);
-    const context = buildFinancialContext(summary);
+    const [summary, projection] = await Promise.all([
+      financialAnalyticsService.getSummary(userId),
+      budgetProjectionService.getProjection(userId),
+    ]);
+    const context = buildFinancialContext(summary, projection);
     const nameBlock = buildNameBlockForStream(firstName);
 
     // Gemini usa "model" para el rol del asistente (no "assistant")

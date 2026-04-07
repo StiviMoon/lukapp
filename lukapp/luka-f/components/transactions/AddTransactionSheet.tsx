@@ -13,6 +13,16 @@ import { Input } from "@/components/ui/input";
 import type { Transaction, TransactionCategory, Account } from "@/lib/types/transaction";
 import { useInvalidateTransactions } from "@/lib/hooks/use-invalidate-transactions";
 import { useOfflineQueue, type OfflineTransactionPayload } from "@/lib/hooks/use-offline-queue";
+import type { PeriodicityValue } from "@/lib/api/client";
+
+const PERIODICITY_OPTIONS: { value: PeriodicityValue; label: string }[] = [
+  { value: "DAILY",     label: "Diario" },
+  { value: "WEEKLY",    label: "Semanal" },
+  { value: "BI_WEEKLY", label: "Quincenal" },
+  { value: "MONTHLY",   label: "Mensual" },
+  { value: "QUARTERLY", label: "Trimestral" },
+  { value: "YEARLY",    label: "Anual" },
+];
 
 // ─── Account helpers ─────────────────────────────────────────────────────────
 
@@ -84,6 +94,7 @@ type SaveVars = {
   categoryId: string | null;
   accountId: string | null;
   date: string;
+  periodicity?: PeriodicityValue;
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -105,6 +116,8 @@ export function AddTransactionSheet({
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [periodicity, setPeriodicity] = useState<PeriodicityValue>("MONTHLY");
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
@@ -128,6 +141,9 @@ export function AddTransactionSheet({
           setSelectedCategoryName("");
         }
         setSelectedAccountId(editingTransaction.account?.id ?? null);
+        const txPeriodicity = (editingTransaction as unknown as { periodicity?: PeriodicityValue }).periodicity;
+        setIsRecurring(txPeriodicity != null && txPeriodicity !== "ONCE");
+        setPeriodicity(txPeriodicity && txPeriodicity !== "ONCE" ? txPeriodicity : "MONTHLY");
       } else {
         setType(defaultType);
         setRawAmount("");
@@ -136,6 +152,8 @@ export function AddTransactionSheet({
         setSelectedCategoryId(null);
         setSelectedCategoryName("");
         setSelectedAccountId(null);
+        setIsRecurring(false);
+        setPeriodicity("MONTHLY");
       }
       // Focus amount input after animation settles
       const timer = setTimeout(() => amountInputRef.current?.focus(), 350);
@@ -189,6 +207,7 @@ export function AddTransactionSheet({
       categoryId: vars.categoryId,
       accountId: vars.accountId,
       date: vars.date,
+      periodicity: vars.periodicity,
     }),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ["transactions"] });
@@ -317,6 +336,7 @@ export function AddTransactionSheet({
       categoryId: newCategoryInput.trim() ? null : selectedCategoryId,
       accountId: selectedAccountId,
       date: editingTransaction?.date ?? new Date().toISOString(),
+      periodicity: isRecurring ? periodicity : "ONCE",
     };
 
     // Modo offline: guardar en IDB
@@ -542,6 +562,61 @@ export function AddTransactionSheet({
                 onChange={(e) => setDescription(e.target.value)}
                 className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
               />
+
+              {/* Recurring toggle */}
+              {!isEditing && (
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsRecurring((v) => !v)}
+                    className="flex items-center justify-between w-full py-2.5 px-3.5 rounded-2xl bg-muted/40 hover:bg-muted/70 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-sm">🔁</span>
+                      <div className="text-left">
+                        <p className="text-xs font-semibold text-foreground">¿Es recurrente?</p>
+                        <p className="text-[10px] text-muted-foreground">Arriendo, sueldo, servicios…</p>
+                      </div>
+                    </div>
+                    {/* Toggle pill */}
+                    <div className={cn(
+                      "relative w-10 h-5.5 rounded-full transition-colors duration-200 flex-shrink-0",
+                      isRecurring ? "bg-lime" : "bg-muted-foreground/20"
+                    )}>
+                      <div className={cn(
+                        "absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform duration-200",
+                        isRecurring ? "translate-x-5" : "translate-x-0.5"
+                      )} />
+                    </div>
+                  </button>
+
+                  {/* Period selector */}
+                  {isRecurring && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide"
+                    >
+                      {PERIODICITY_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setPeriodicity(opt.value)}
+                          className={cn(
+                            "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150",
+                            periodicity === opt.value
+                              ? "bg-lime text-background"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </div>
+              )}
 
               {/* Submit */}
               <div className="flex flex-col gap-2">

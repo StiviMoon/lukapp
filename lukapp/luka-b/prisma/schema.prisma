@@ -225,6 +225,7 @@ model Transaction {
   amount      Decimal         @db.Decimal(12, 2)
   description String?
   date        DateTime        @default(now())
+  periodicity Periodicity     @default(ONCE)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -244,6 +245,16 @@ enum TransactionType {
   INCOME
   EXPENSE
   TRANSFER
+}
+
+enum Periodicity {
+  ONCE        // No recurrente (default)
+  DAILY
+  WEEKLY
+  BI_WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
 }
 
 // Presupuestos

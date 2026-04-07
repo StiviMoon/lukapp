@@ -10,12 +10,12 @@ import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Settings2,
-  AlertCircle, Zap, Clock, Target, Download, RefreshCw, Crown,
+  AlertCircle, Zap, Clock, Target, Download, RefreshCw, Crown, Repeat2,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { api, type AnalyticsSummary, type RecurringExpense } from "@/lib/api/client";
+import { api, type AnalyticsSummary, type RecurringExpense, type BudgetProjection, type RecurringEntry } from "@/lib/api/client";
 import { useMinDelay } from "@/lib/hooks/use-min-delay";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
@@ -942,7 +942,182 @@ export default function AnalyticsPage() {
       </div>
 
       <TransactionDetailSheet transaction={selectedTx} onClose={() => setSelectedTx(null)} />
+      <BudgetProjectionPanel />
     </>
+  );
+}
+
+// ─── Budget Projection Panel (sección dentro de Analytics) ───────────────────
+
+const PERIOD_LABELS: Record<string, string> = {
+  ONCE: "Único", DAILY: "Diario", WEEKLY: "Semanal",
+  BI_WEEKLY: "Quincenal", MONTHLY: "Mensual",
+  QUARTERLY: "Trimestral", YEARLY: "Anual",
+};
+
+function RecurringRow({ entry }: { entry: RecurringEntry }) {
+  const isIncome = entry.type === "INCOME";
+  const fmt = (n: number) => new Intl.NumberFormat("es-CO", {
+    style: "currency", currency: "COP", minimumFractionDigits: 0,
+  }).format(n);
+
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className={cn(
+          "w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-bold",
+          isIncome ? "bg-lime/10 text-lime-700 dark:text-lime-400" : "bg-rose-500/10 text-rose-500"
+        )}>
+          {isIncome ? "+" : "-"}
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-foreground truncate">
+            {entry.categoryName ?? entry.description ?? "Sin categoría"}
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            {PERIOD_LABELS[entry.periodicity]} · equiv. {fmt(entry.monthlyMin)}/mes
+          </p>
+        </div>
+      </div>
+      <p className={cn("text-xs font-bold flex-shrink-0 ml-2",
+        isIncome ? "text-lime-700 dark:text-lime-400" : "text-rose-500"
+      )}>
+        {fmt(entry.amount)}
+      </p>
+    </div>
+  );
+}
+
+function BudgetProjectionPanel() {
+  const { data: res, isLoading } = useQuery({
+    queryKey: ["budget-projection"],
+    queryFn: () => api.analytics.getBudgetProjection(),
+    staleTime: 10 * 60_000,
+  });
+
+  const p = res?.data as BudgetProjection | undefined;
+
+  const fmt = (n: number) => new Intl.NumberFormat("es-CO", {
+    style: "currency", currency: "COP", minimumFractionDigits: 0,
+  }).format(n);
+
+  const fmtRange = (min: number, max: number) =>
+    min === max ? fmt(min) : `${fmt(min)} – ${fmt(max)}`;
+
+  if (isLoading) return null;
+  if (!p) return null;
+
+  const hasAny = p.recurringIncome.length > 0 || p.recurringExpenses.length > 0;
+
+  return (
+    <div className="px-4 pb-8">
+      <div className="flex items-center gap-2 mb-4 mt-6">
+        <Repeat2 className="w-4 h-4 text-muted-foreground" />
+        <h2 className="text-base font-black text-foreground">Proyección mensual</h2>
+      </div>
+
+      {!hasAny ? (
+        <div className="rounded-3xl bg-card border border-border/40 p-6 text-center">
+          <p className="text-2xl mb-2">📊</p>
+          <p className="text-sm font-semibold text-foreground mb-1">Sin datos recurrentes</p>
+          <p className="text-xs text-muted-foreground">
+            Al registrar ingresos y gastos con frecuencia (mensual, anual…), aquí verás cuánto te cuesta vivir y cuánto necesitas ganar.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Resumen tarjetas */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-lime/8 border border-lime/20 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Ingresos fijos/mes</p>
+              <p className="text-lg font-black text-foreground">
+                {p.monthlyIncomeMin > 0
+                  ? fmtRange(p.monthlyIncomeMin, p.monthlyIncomeMax)
+                  : "Sin registrar"}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-rose-500/8 border border-rose-500/15 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Gastos fijos/mes</p>
+              <p className="text-lg font-black text-foreground">
+                {fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}
+              </p>
+            </div>
+          </div>
+
+          {/* Costo de vida */}
+          <div className="rounded-2xl bg-card border border-border/40 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Te cuesta vivir</p>
+            <p className="text-2xl font-black text-foreground">
+              {fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}
+              <span className="text-sm font-semibold text-muted-foreground"> /mes</span>
+            </p>
+            {p.deficitMax > 0 && (
+              <p className="text-xs text-rose-500 font-semibold mt-2">
+                ⚠️ Déficit estimado: {fmtRange(p.deficitMin, p.deficitMax)}/mes
+              </p>
+            )}
+          </div>
+
+          {/* Necesitas ganar */}
+          {(p.goalContributionNeeded > 0 || p.monthlyExpenseMin > 0) && (
+            <div className="rounded-2xl bg-card border border-border/40 p-4 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Necesitas ganar</p>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Para vivir</p>
+                  <p className="text-xs font-bold text-foreground">{fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}/mes</p>
+                </div>
+                {p.goalContributionNeeded > 0 && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">Para tus metas</p>
+                    <p className="text-xs font-bold text-foreground">+ {fmt(p.goalContributionNeeded)}/mes</p>
+                  </div>
+                )}
+                <div className="border-t border-border/30 pt-1.5 flex items-center justify-between">
+                  <p className="text-xs font-bold text-foreground">Total mínimo</p>
+                  <p className="text-sm font-black text-foreground">{fmtRange(p.totalNeededMin, p.totalNeededMax)}/mes</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Detalle ingresos */}
+          {p.recurringIncome.length > 0 && (
+            <div className="rounded-2xl bg-card border border-border/40 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Ingresos recurrentes</p>
+              {p.recurringIncome.map((e) => <RecurringRow key={e.id} entry={e} />)}
+            </div>
+          )}
+
+          {/* Detalle gastos */}
+          {p.recurringExpenses.length > 0 && (
+            <div className="rounded-2xl bg-card border border-border/40 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Gastos recurrentes</p>
+              {p.recurringExpenses.map((e) => <RecurringRow key={e.id} entry={e} />)}
+            </div>
+          )}
+
+          {/* Candidatos sugeridos */}
+          {p.recurringCandidates.length > 0 && (
+            <div className="rounded-2xl bg-muted/30 border border-border/30 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">💡 Podrían ser recurrentes</p>
+              <div className="space-y-2">
+                {p.recurringCandidates.map((c) => (
+                  <div key={c.categoryName} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">{c.categoryName}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {c.count} veces · prom. {fmt(c.avgAmount)} · sugerido: {PERIOD_LABELS[c.suggestedPeriodicity]}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

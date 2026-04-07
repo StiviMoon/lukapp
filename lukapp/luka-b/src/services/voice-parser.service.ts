@@ -1,4 +1,4 @@
-import type { ParsedTransaction } from "@/services/voice.service";
+import type { ParsedTransaction, PeriodicityValue } from "@/services/voice.service";
 
 // ─── Mapas de palabras → números ───────────────────────────────────────────
 
@@ -302,6 +302,39 @@ function inferAccount(
   return null;
 }
 
+// ─── Detección de periodicidad ────────────────────────────────────────────────
+
+const PERIODICITY_RULES: Array<{ pattern: RegExp; value: PeriodicityValue }> = [
+  // DAILY
+  { pattern: /cada d[ií]a|todos los d[ií]as|diari(o|a|amente)/i, value: "DAILY" },
+  // WEEKLY
+  { pattern: /cada semana|semanal(mente)?|cada 7 d[ií]as|todos los (lunes|martes|miércoles|miercoles|jueves|viernes|sábados?|sabados?|domingos?)/i, value: "WEEKLY" },
+  // BI_WEEKLY
+  { pattern: /cada 15 d[ií]as|quincenal(mente)?|cada dos semanas|cada quince/i, value: "BI_WEEKLY" },
+  // MONTHLY — palabras clave + ingresos laborales fijos
+  { pattern: /cada mes|mensual(mente)?|todos los meses|mes a mes/i, value: "MONTHLY" },
+  // QUARTERLY
+  { pattern: /cada tres meses|trimestral(mente)?|cada trimestre/i, value: "QUARTERLY" },
+  // YEARLY
+  { pattern: /cada a[ñn]o|anual(mente)?|todos los a[ñn]os|una vez al a[ñn]o|soat|predial|impuesto de renta/i, value: "YEARLY" },
+];
+
+// Palabras que implican ingreso/gasto mensual recurrente aunque no se diga explícitamente
+const IMPLICIT_MONTHLY_INCOME = /salario|sueldo|n[oó]mina|quincena|pago del mes/i;
+const IMPLICIT_MONTHLY_EXPENSE = /arriendo|alquiler|administraci[oó]n|cuota del cr[eé]dito|mensualidad/i;
+
+function detectPeriodicity(
+  text: string,
+  type: "INCOME" | "EXPENSE"
+): PeriodicityValue {
+  for (const rule of PERIODICITY_RULES) {
+    if (rule.pattern.test(text)) return rule.value;
+  }
+  if (type === "INCOME" && IMPLICIT_MONTHLY_INCOME.test(text)) return "MONTHLY";
+  if (type === "EXPENSE" && IMPLICIT_MONTHLY_EXPENSE.test(text)) return "MONTHLY";
+  return "ONCE";
+}
+
 /**
  * Parsea un segmento de texto en una sola transacción.
  * Retorna null si no puede determinar monto o tipo con confianza.
@@ -323,6 +356,7 @@ function parseSegment(
     userCategories
   );
   const accountId = inferAccount(segment, userAccounts);
+  const periodicity = detectPeriodicity(segment, type);
 
   // Construir descripción corta (máx 4 palabras relevantes)
   const descWords = normalize(segment)
@@ -352,6 +386,7 @@ function parseSegment(
     accountId,
     description,
     confidence,
+    periodicity,
   };
 }
 

@@ -30,6 +30,7 @@ import type { Transaction } from "@/lib/types/transaction";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/lib/hooks/use-profile";
 import { CoachCard, CoachCardSkeleton } from "@/components/coach/CoachCard";
+import { BudgetProjectionWidget } from "@/components/dashboard/BudgetProjectionWidget";
 import { haptics } from "@/lib/haptics";
 import { LukappLogo } from "@/components/ui/lukapp-logo";
 
@@ -386,6 +387,9 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+
+            {/* Presupuesto mensual recurrente */}
+            <BudgetProjectionWidget />
 
             {/* Coach IA */}
             <CoachCard />
