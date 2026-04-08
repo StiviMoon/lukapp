@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/lib/toast";
 import { Loader2 } from "lucide-react";
+import { AuthEmailDivider, GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 
 const signupSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -61,72 +62,78 @@ export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <div className="space-y-2.5">
-        <Label htmlFor="email" className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
-          Email
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="correo@ejemplo.com"
-          {...register("email")}
-          disabled={isLoading}
-          className="auth-input border-0 border-b-2 rounded-none bg-transparent px-2 h-11 focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/40 transition-colors duration-150"
-        />
-        {errors.email && (
-          <p className="text-xs text-destructive pt-1.5 pl-0.5">
-            {errors.email.message}
-          </p>
-        )}
-      </div>
+    <div className="space-y-8">
+      <GoogleSignInButton formBusy={isLoading} />
 
-      <div className="space-y-2.5">
-        <Label htmlFor="password" className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
-          Contraseña
-        </Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="Mínimo 6 caracteres"
-          {...register("password")}
-          disabled={isLoading}
-          className="auth-input border-0 border-b-2 rounded-none bg-transparent px-2 h-11 focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/40 transition-colors duration-150"
-        />
-        {errors.password && (
-          <p className="text-xs text-destructive pt-1.5 pl-0.5">
-            {errors.password.message}
-          </p>
-        )}
-      </div>
+      <AuthEmailDivider />
 
-      <div className="pt-4">
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-11 rounded-xl font-medium text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-opacity duration-150 disabled:opacity-50"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creando...
-            </>
-          ) : (
-            "Registrarse"
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <div className="space-y-2.5">
+          <Label htmlFor="email" className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
+            Email
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="correo@ejemplo.com"
+            {...register("email")}
+            disabled={isLoading}
+            className="auth-input border-0 border-b-2 rounded-none bg-transparent px-2 h-11 focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/40 transition-colors duration-150"
+          />
+          {errors.email && (
+            <p className="text-xs text-destructive pt-1.5 pl-0.5">
+              {errors.email.message}
+            </p>
           )}
-        </Button>
-      </div>
+        </div>
 
-      {onSwitchToLogin ? (
-        <button
-          type="button"
-          onClick={onSwitchToLogin}
-          className="w-full text-xs text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
-        >
-          ¿Ya tienes cuenta? Entrar
-        </button>
-      ) : null}
-    </form>
+        <div className="space-y-2.5">
+          <Label htmlFor="password" className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
+            Contraseña
+          </Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Mínimo 6 caracteres"
+            {...register("password")}
+            disabled={isLoading}
+            className="auth-input border-0 border-b-2 rounded-none bg-transparent px-2 h-11 focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/40 transition-colors duration-150"
+          />
+          {errors.password && (
+            <p className="text-xs text-destructive pt-1.5 pl-0.5">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        <div className="pt-4">
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-11 rounded-xl font-medium text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-opacity duration-150 disabled:opacity-50"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creando...
+              </>
+            ) : (
+              "Registrarse"
+            )}
+          </Button>
+        </div>
+
+        {onSwitchToLogin ? (
+          <button
+            type="button"
+            onClick={onSwitchToLogin}
+            className="w-full text-xs text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+          >
+            ¿Ya tienes cuenta? Entrar
+          </button>
+        ) : null}
+      </form>
+    </div>
   );
 };
 
