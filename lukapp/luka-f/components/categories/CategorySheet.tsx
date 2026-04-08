@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useKeyboardBottomInset } from "@/lib/hooks/use-keyboard-bottom-inset";
+import { useSheetAutofocus } from "@/lib/hooks/use-sheet-autofocus";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, PiggyBank, Pencil } from "lucide-react";
 import { cn, CATEGORY_COLORS, hashColor } from "@/lib/utils";
@@ -25,15 +27,13 @@ const backdropVariants = {
 };
 
 const sheetVariants = {
-  hidden: { y: "100%", opacity: 0 },
+  hidden: { y: "100%" },
   visible: {
     y: 0,
-    opacity: 1,
     transition: { type: "spring" as const, damping: 28, stiffness: 280 },
   },
   exit: {
     y: "100%",
-    opacity: 0,
     transition: { duration: 0.25, ease: "easeIn" as const },
   },
 };
@@ -98,6 +98,11 @@ export function CategorySheet({
   const isEditing = Boolean(category);
   const activeCategory = savedCategory ?? category;
   const isPending = createCategory.isPending || updateCategory.isPending || deleteCategory.isPending;
+
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const keyboardInset = useKeyboardBottomInset(isOpen);
+  /* Foco retrasado salvo pantalla “categoría creada” (sin campo nombre) */
+  useSheetAutofocus(isOpen && (isEditing || !savedCategory), nameInputRef);
 
   // Reset / prefill when sheet opens
   useEffect(() => {
@@ -213,7 +218,7 @@ export function CategorySheet({
             {/* Backdrop */}
             <motion.div
               key="cat-sheet-backdrop"
-              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-60 bg-black/50"
               variants={backdropVariants}
               initial="hidden"
               animate="visible"
@@ -224,22 +229,24 @@ export function CategorySheet({
             {/* Sheet */}
             <motion.div
               key="cat-sheet"
-              className="fixed bottom-0 left-0 right-0 z-[61] max-w-sm mx-auto rounded-t-[32px] px-6 pt-5 pb-10"
+              className={cn(
+                "fixed bottom-0 left-0 right-0 z-[61] max-w-sm mx-auto rounded-t-[32px] flex flex-col max-h-[min(92dvh,calc(100dvh-0.5rem))] px-6 pt-5",
+                "bg-card shadow-none border-t border-[#e0e0e0] dark:border-[#3d3560]"
+              )}
               style={{
-                backgroundColor: "var(--background)",
-                borderTop: "1px solid color-mix(in srgb, var(--border) 40%, transparent)",
-                boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
+                paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${keyboardInset}px)`,
               }}
               variants={sheetVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
-              {/* Drag handle */}
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
+              <div className="shrink-0">
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
+              </div>
 
-              {/* Close */}
               <button
+                type="button"
                 onClick={handleClose}
                 className="absolute top-5 right-6 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Cerrar"
@@ -247,7 +254,8 @@ export function CategorySheet({
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="flex flex-col gap-5">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+              <div className="flex flex-col gap-5 pb-1 px-1">
                 {/* Title */}
                 <p className="text-sm font-semibold text-foreground">
                   {isEditing ? "Editar categoría" : justCreated ? "Categoría creada" : "Nueva categoría"}
@@ -296,14 +304,19 @@ export function CategorySheet({
 
                 {/* Name input */}
                 {!justCreated && (
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 w-full">
                     <Input
+                      ref={nameInputRef}
                       type="text"
                       placeholder="Nombre de la categoría"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
-                      autoFocus={!isEditing}
+                      enterKeyHint="done"
+                      className={cn(
+                        "box-border w-full min-w-full shrink-0 rounded-2xl h-11 px-4 bg-muted/40",
+                        "border border-border/90 dark:border-white/12",
+                        "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 focus-visible:border-primary/35"
+                      )}
                     />
                     {!name.trim() && (
                       <p className="text-[11px] text-muted-foreground/55 px-1">
@@ -351,7 +364,12 @@ export function CategorySheet({
                     placeholder="Emoji (opcional) · ej. 🍕"
                     value={icon}
                     onChange={(e) => setIcon(e.target.value.slice(0, 2))}
-                    className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
+                    enterKeyHint="done"
+                    className={cn(
+                      "box-border w-full min-w-full shrink-0 rounded-2xl h-11 px-4 bg-muted/40",
+                      "border border-border/90 dark:border-white/12",
+                      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 focus-visible:border-primary/35"
+                    )}
                   />
                 )}
 
@@ -461,6 +479,7 @@ export function CategorySheet({
                     Listo
                   </Button>
                 )}
+              </div>
               </div>
             </motion.div>
           </>
