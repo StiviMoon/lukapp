@@ -53,21 +53,44 @@ export class ProfileRepository {
   }
 
   /**
-   * Actualiza o crea un perfil (upsert)
+   * Actualiza o crea un perfil (upsert).
+   * Si dos requests crean el perfil a la vez, el segundo puede recibir P2002 (unique userId);
+   * en ese caso hacemos update — mismo resultado, sin error ruidoso ni 500.
    */
   async upsert(
     userId: string,
     email: string,
     data?: Prisma.ProfileUpdateInput
   ): Promise<Profile> {
-    return await prisma.profile.upsert({
-      where: { userId },
-      update: data ?? {},
-      create: {
-        userId,
-        email,
-      } as Prisma.ProfileUncheckedCreateInput,
-    });
+    const updateData: Prisma.ProfileUpdateInput = {
+      ...(data ?? {}),
+      email,
+    };
+
+    try {
+      return await prisma.profile.upsert({
+        where: { userId },
+        update: updateData,
+        create: {
+          userId,
+          email,
+        } as Prisma.ProfileUncheckedCreateInput,
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        const existing = await this.findByUserId(userId);
+        if (existing) {
+          return prisma.profile.update({
+            where: { userId },
+            data: updateData,
+          });
+        }
+      }
+      throw e;
+    }
   }
 
   /**
