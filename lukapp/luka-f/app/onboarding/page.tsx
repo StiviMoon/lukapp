@@ -146,7 +146,7 @@ export default function OnboardingPage() {
       <div className="flex items-center justify-between mb-10">
         <button
           onClick={goBack}
-          className={`w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/60 hover:text-foreground transition-colors active:scale-90 ${step === 0 ? "invisible" : ""}`}
+          className={`w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/60 hover:text-foreground transition-colors active:scale-95 ${step === 0 ? "invisible" : ""}`}
           aria-label="Atrás"
         >
           <ChevronLeft className="w-4 h-4" />

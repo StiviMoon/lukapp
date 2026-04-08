@@ -69,6 +69,16 @@ function hashColor(name: string) {
   return CATEGORY_GRADIENTS[hashIndex(name)][0];
 }
 
+function truncateCat(name: string, max = 13) {
+  return name.length > max ? name.slice(0, max - 1) + "…" : name;
+}
+
+const FADE_UP = (delay = 0) => ({
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
+});
+
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
 function CardSkeleton({ className }: { className?: string }) {
@@ -216,6 +226,7 @@ export default function AnalyticsPage() {
 
   const { data: chartTxData, isLoading: chartLoading } = useQuery<{ month: string; income: number; expense: number }[]>({
     queryKey: ["analytics", "chart6m", year, month],
+    enabled: analyticsView === "simple",  // solo cargar cuando el tab Resumen está activo
     queryFn: async () => {
       const results = await Promise.allSettled(
         last6Months.map(async ({ month, year, monthIdx }) => {
@@ -250,7 +261,8 @@ export default function AnalyticsPage() {
     retry: 0,
   });
 
-  const isLoading    = useMinDelay(txRawLoading || mathLoading || chartLoading);
+  // chartLoading excluido — el chart no bloquea el skeleton principal
+  const isLoading    = useMinDelay(txRawLoading || mathLoading);
   const transactions = txData ?? [];
 
   const totalIncome  = useMemo(() => transactions.filter(t => t.type === "INCOME") .reduce((s, t) => s + Number(t.amount), 0), [transactions]);
@@ -344,14 +356,10 @@ export default function AnalyticsPage() {
           {isLoading ? (
             <AnalyticsSkeleton />
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-3 px-5 pt-1"
-            >
+            <div className="space-y-3 px-5 pt-1">
 
               {/* ── Sección analíticas math ── */}
+              <motion.div {...FADE_UP(0)}>
               {mathLoading ? (
                 <>
                   <div className="h-9 rounded-xl bg-muted-foreground/10 animate-pulse" />
@@ -459,25 +467,28 @@ export default function AnalyticsPage() {
                           )}
 
                           {/* Razones del score — chips contextuales */}
-                          {(mathData.health.reasons?.length ?? 0) > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1">
-                              {mathData.health.reasons.map((reason) => (
-                                <span
-                                  key={reason}
-                                  className={cn(
-                                    "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium leading-tight",
-                                    mathData.health.level === "estable"
-                                      ? "bg-lime/10 text-lime-dark dark:text-lime"
-                                      : mathData.health.level === "riesgo"
-                                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                      : "bg-rose-500/10 text-rose-600 dark:text-rose-400",
-                                  )}
-                                >
-                                  {reason}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                          {(mathData.health.reasons?.length ?? 0) > 0 && (() => {
+                            const chipClass = cn(
+                              "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium leading-tight",
+                              mathData.health.level === "estable"
+                                ? "bg-lime/10 text-lime-dark dark:text-lime"
+                                : mathData.health.level === "riesgo"
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                : "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+                            );
+                            const visible = mathData.health.reasons.slice(0, 3);
+                            const hidden = mathData.health.reasons.length - 3;
+                            return (
+                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                {visible.map((reason) => (
+                                  <span key={reason} className={chipClass}>{reason}</span>
+                                ))}
+                                {hidden > 0 && (
+                                  <span className={chipClass}>+{hidden}</span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Alertas activas — solo visible si llegan del backend (Premium) */}
@@ -496,7 +507,9 @@ export default function AnalyticsPage() {
                         )}
 
                         {/* Gráfico tendencia */}
-                        {chartTxData && chartTxData.length > 1 ? (
+                        {chartLoading ? (
+                          <ChartSkeleton />
+                        ) : chartTxData && chartTxData.length > 1 ? (
                           <div className="rounded-2xl border border-border/60 bg-card px-3.5 pt-3.5 pb-3">
                             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">
                               Tendencia — últimos 6 meses
@@ -702,14 +715,15 @@ export default function AnalyticsPage() {
                   </AnimatePresence>
                 </>
               )}
+              </motion.div>
 
               {/* ── Summary cards (ingresos / gastos / neto) ── */}
-              <div className="space-y-2">
+              <motion.div {...FADE_UP(0.08)} className="space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   {/* Ingresos */}
                   <button
                     onClick={() => handleTypeChange("INCOME")}
-                    className="rounded-2xl px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.97]"
+                    className="rounded-2xl px-4 py-3.5 text-left transition-all duration-75 active:scale-[0.97]"
                     style={{
                       background: activeType === "INCOME"
                         ? "color-mix(in srgb, var(--brand-lime) 18%, transparent)"
@@ -734,7 +748,7 @@ export default function AnalyticsPage() {
                   {/* Gastos */}
                   <button
                     onClick={() => handleTypeChange("EXPENSE")}
-                    className="rounded-2xl px-4 py-3.5 text-left transition-all duration-200 active:scale-[0.97]"
+                    className="rounded-2xl px-4 py-3.5 text-left transition-all duration-75 active:scale-[0.97]"
                     style={{
                       background: activeType === "EXPENSE"
                         ? "color-mix(in srgb, #f43f5e 18%, transparent)"
@@ -771,7 +785,7 @@ export default function AnalyticsPage() {
                       Balance del mes
                     </p>
                     <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-                      {net >= 0 ? "Ahorraste" : "Gastaste más de lo que entraste"}
+                      {net >= 0 ? "Ahorraste este mes" : "Déficit del mes"}
                     </p>
                   </div>
                   <p className={cn(
@@ -781,9 +795,10 @@ export default function AnalyticsPage() {
                     {net >= 0 ? "+" : ""}{formatCompact(net)}
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* ── Gastos recurrentes (Premium) ── */}
+              <motion.div {...FADE_UP(0.13)}>
               {isPremium ? (
                 (recurringData?.length ?? 0) > 0 ? (
                   <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
@@ -843,8 +858,10 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               )}
+              </motion.div>
 
               {/* ── Category breakdown / tx list ── */}
+              <motion.div {...FADE_UP(0.18)}>
               {categoryRows.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 rounded-[24px] bg-card gap-2">
                   <p className="text-sm font-semibold text-muted-foreground/40">
@@ -872,14 +889,14 @@ export default function AnalyticsPage() {
                         key={cat.name}
                         onClick={() => setSelectedCategory(prev => prev === cat.name ? null : cat.name)}
                         className={cn(
-                          "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95",
+                          "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-95",
                           selectedCategory === cat.name
                             ? "bg-primary text-primary-foreground shadow-sm"
                             : "bg-muted text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: hashColor(cat.name) }} />
-                        {cat.name}
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: hashColor(cat.name) }} />
+                        {truncateCat(cat.name)}
                       </button>
                     ))}
                   </div>
@@ -936,7 +953,8 @@ export default function AnalyticsPage() {
                   </AnimatePresence>
                 </>
               )}
-            </motion.div>
+              </motion.div>
+            </div>
           )}
         </div>
       </div>
@@ -1131,7 +1149,7 @@ function CategoryCard({ cat, type, onSelect }: { cat: CategoryRow; type: TxType;
   return (
     <button
       onClick={onSelect}
-      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/40 active:scale-[0.98] transition-all duration-150 text-left"
+      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/40 active:scale-[0.97] transition-all duration-75 text-left"
     >
       <div
         className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-[13px] font-bold text-white"

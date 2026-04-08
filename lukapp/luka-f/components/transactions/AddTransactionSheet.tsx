@@ -438,7 +438,7 @@ export function AddTransactionSheet({
                 <button
                   onClick={() => setType("EXPENSE")}
                   className={cn(
-                    "py-3 rounded-xl text-sm font-bold transition-all duration-200",
+                    "py-3 rounded-xl text-sm font-bold transition-all duration-75",
                     type === "EXPENSE"
                       ? "bg-rose-500 text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -449,7 +449,7 @@ export function AddTransactionSheet({
                 <button
                   onClick={() => setType("INCOME")}
                   className={cn(
-                    "py-3 rounded-xl text-sm font-bold transition-all duration-200",
+                    "py-3 rounded-xl text-sm font-bold transition-all duration-75",
                     type === "INCOME"
                       ? "bg-lime text-background shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -493,7 +493,7 @@ export function AddTransactionSheet({
                         key={acc.id}
                         onClick={() => setSelectedAccountId(acc.id)}
                         className={cn(
-                          "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150",
+                          "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-75",
                           selectedAccountId === acc.id
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground hover:text-foreground"
@@ -519,7 +519,7 @@ export function AddTransactionSheet({
                         key={cat.id}
                         onClick={() => handleChipSelect(cat)}
                         className={cn(
-                          "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150",
+                          "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-75",
                           selectedCategoryId === cat.id && !newCategoryInput
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground hover:text-foreground"
@@ -582,7 +582,7 @@ export function AddTransactionSheet({
                       isRecurring ? "bg-lime" : "bg-muted-foreground/20"
                     )}>
                       <div className={cn(
-                        "absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform duration-200",
+                        "absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform duration-75",
                         isRecurring ? "translate-x-5" : "translate-x-0.5"
                       )} />
                     </div>
@@ -602,7 +602,7 @@ export function AddTransactionSheet({
                           type="button"
                           onClick={() => setPeriodicity(opt.value)}
                           className={cn(
-                            "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150",
+                            "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-75",
                             periodicity === opt.value
                               ? "bg-lime text-background"
                               : "bg-muted text-muted-foreground hover:text-foreground"

@@ -5,6 +5,12 @@ import { useInactivityTimeout } from "@/lib/hooks/use-inactivity-timeout";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
+
+const FADE_UP = (delay = 0) => ({
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
+});
 import { LogOut, Moon, Sun, ChevronRight, Mail, User, Tag, Settings2, Users, Crown, Zap } from "lucide-react";
 import { useMinDelay } from "@/lib/hooks/use-min-delay";
 import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
@@ -106,15 +112,10 @@ export default function ProfilePage() {
         {showSkeleton ? (
           <ProfileSkeleton />
         ) : (
-          <motion.main
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.25 }}
-            className="px-5 pb-10 max-w-sm mx-auto"
-          >
+          <main className="px-5 pb-10 max-w-sm mx-auto">
 
             {/* Avatar & Name */}
-            <div className="flex flex-col items-center mb-10 mt-4">
+            <motion.div {...FADE_UP(0)} className="flex flex-col items-center mb-10 mt-4">
               <UserAvatar letter={avatarLetter} size="lg" className="mb-4" />
               <p className="text-xl font-bold text-foreground capitalize tracking-tight">
                 {fullName}
@@ -133,10 +134,10 @@ export default function ProfilePage() {
                 {isPremium ? "Premium ✦" : "Plan Gratuito"}
                 <ChevronRight className="w-3 h-3 opacity-50" />
               </button>
-            </div>
+            </motion.div>
 
             {/* Info Section */}
-            <div className="mb-5">
+            <motion.div {...FADE_UP(0.07)} className="mb-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">
                 Cuenta
               </p>
@@ -168,17 +169,17 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Preferencias */}
-            <div className="mb-5">
+            <motion.div {...FADE_UP(0.13)} className="mb-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">
                 Preferencias
               </p>
               <div className="rounded-2xl bg-card overflow-hidden">
                 <button
                   onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                  className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+                  className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-75 active:scale-[0.97]"
                 >
                   <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
                     {resolvedTheme === "dark" ? (
@@ -199,7 +200,7 @@ export default function ProfilePage() {
                 </button>
                 <button
                   onClick={() => router.push("/categories")}
-                  className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+                  className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-75 active:scale-[0.97]"
                 >
                   <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
                     <Tag className="w-4 h-4 text-muted-foreground/50" />
@@ -214,7 +215,7 @@ export default function ProfilePage() {
                 </button>
                 <button
                   onClick={() => router.push("/settings")}
-                  className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+                  className="w-full flex items-center gap-3 px-4 py-4 border-b border-border/30 hover:bg-muted/50 transition-colors duration-75 active:scale-[0.97]"
                 >
                   <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
                     <Settings2 className="w-4 h-4 text-muted-foreground/50" />
@@ -229,7 +230,7 @@ export default function ProfilePage() {
                 </button>
                 <button
                   onClick={() => router.push("/friends")}
-                  className="w-full flex items-center gap-3 px-4 py-4 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+                  className="w-full flex items-center gap-3 px-4 py-4 hover:bg-muted/50 transition-colors duration-75 active:scale-[0.97]"
                 >
                   <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
                     <Users className="w-4 h-4 text-muted-foreground/50" />
@@ -245,17 +246,17 @@ export default function ProfilePage() {
                   </span>
                 </button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Sign Out */}
-            <div>
+            <motion.div {...FADE_UP(0.19)}>
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-3">
                 Sesión
               </p>
               <div className="rounded-2xl bg-card overflow-hidden">
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center gap-3 px-4 py-4 hover:bg-muted/50 transition-colors duration-150 active:scale-[0.98]"
+                  className="w-full flex items-center gap-3 px-4 py-4 hover:bg-muted/50 transition-colors duration-75 active:scale-[0.97]"
                 >
                   <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center">
                     <LogOut className="w-4 h-4 text-destructive/60" />
@@ -268,9 +269,9 @@ export default function ProfilePage() {
               <p className="text-[10px] text-muted-foreground/25 text-center mt-4">
                 La sesión se cierra automáticamente tras 30 min de inactividad
               </p>
-            </div>
+            </motion.div>
 
-          </motion.main>
+          </main>
         )}
       </div>
     </div>

@@ -171,34 +171,38 @@ export function computeAnomalyAlerts(
 function buildHealthReasons(savingsRate: number, runwayDays: number | null, budgetOverruns: number): string[] {
   const reasons: string[] = [];
 
+  // Tasa de ahorro — badge corto
+  const rate = Math.round(savingsRate);
   if (savingsRate >= 20) {
-    reasons.push(`Ahorrando el ${savingsRate.toFixed(1)}% de tus ingresos — excelente ritmo.`);
+    reasons.push(`Ahorro ${rate}% ↑`);
   } else if (savingsRate >= 10) {
-    reasons.push(`Ahorro mensual saludable: ${savingsRate.toFixed(1)}% de tus ingresos.`);
+    reasons.push(`Ahorro ${rate}%`);
   } else if (savingsRate >= 1) {
-    reasons.push(`Ahorro mensual bajo: solo el ${savingsRate.toFixed(1)}%. Apunta al 10%.`);
+    reasons.push(`Ahorro bajo ${rate}%`);
   } else if (savingsRate < 0) {
-    reasons.push(`Este mes gastas mas de lo que ingresas (${savingsRate.toFixed(1)}%).`);
+    reasons.push(`Déficit ${Math.abs(rate)}%`);
   } else {
-    reasons.push("No registras ahorro este mes. Intenta separar aunque sea un poco.");
+    reasons.push("Sin ahorro");
   }
 
+  // Runway — badge corto
   if (runwayDays !== null) {
     if (runwayDays >= 180) {
-      reasons.push(`Tu fondo de emergencia cubre ${runwayDays} dias — muy bien respaldado.`);
+      reasons.push(`Runway ${runwayDays}d ✓`);
     } else if (runwayDays >= 90) {
-      reasons.push(`Runway de ${runwayDays} dias — estas bien cubierto ante imprevistos.`);
+      reasons.push(`Runway ${runwayDays}d`);
     } else if (runwayDays >= 30) {
-      reasons.push(`Runway de ${runwayDays} dias. Considera ahorrar mas para mayor seguridad.`);
+      reasons.push(`Runway ${runwayDays}d`);
     } else {
-      reasons.push(`Runway de solo ${runwayDays} dias — nivel de riesgo alto si dejas de ingresar.`);
+      reasons.push(`Runway bajo ${runwayDays}d`);
     }
   } else {
-    reasons.push("Sin burn rate activo: registra gastos para calcular tu runway.");
+    reasons.push("Sin runway");
   }
 
+  // Presupuestos excedidos
   if (budgetOverruns > 0) {
-    reasons.push(`Excediste ${budgetOverruns} presupuesto${budgetOverruns > 1 ? "s" : ""} este mes.`);
+    reasons.push(`${budgetOverruns} presup. excedido${budgetOverruns > 1 ? "s" : ""}`);
   }
 
   return reasons.slice(0, 3);

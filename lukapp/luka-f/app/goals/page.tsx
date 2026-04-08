@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const FADE_UP = (delay = 0) => ({
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
+});
 import { ArrowLeft, Target, Plus, CheckCircle2, Trash2, X, Loader2, PiggyBank } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSavingGoals, useCreateSavingGoal, useUpdateSavingGoal, useDeleteSavingGoal, SavingGoal } from "@/lib/hooks/use-saving-goals";
@@ -534,8 +540,9 @@ export default function GoalsPage() {
           ) : (
             <>
             {active.length > 0 && (
-              <>
-                <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider px-1">En progreso</p>
+              <motion.div {...FADE_UP(0)}>
+                <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider px-1 mb-3">En progreso</p>
+                <div className="space-y-3">
                 <AnimatePresence>
                   {active.map((goal) => (
                     <GoalCard
@@ -547,12 +554,14 @@ export default function GoalsPage() {
                     />
                   ))}
                 </AnimatePresence>
-              </>
+                </div>
+              </motion.div>
             )}
 
             {completed.length > 0 && (
-              <>
-                <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider px-1 pt-2">Completadas</p>
+              <motion.div {...FADE_UP(0.08)}>
+                <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider px-1 pt-2 mb-3">Completadas</p>
+                <div className="space-y-3">
                 <AnimatePresence>
                   {completed.map((goal) => (
                     <GoalCard
@@ -564,7 +573,8 @@ export default function GoalsPage() {
                     />
                   ))}
                 </AnimatePresence>
-              </>
+                </div>
+              </motion.div>
             )}
             </>
           )}

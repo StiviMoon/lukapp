@@ -66,7 +66,7 @@ export function TransactionItem({ transaction, onClick }: TransactionItemProps) 
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3.5 w-full px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/40 active:scale-[0.97] transition-all duration-150 text-left"
+      className="flex items-center gap-3.5 w-full px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/40 active:scale-[0.96] transition-all duration-75 text-left"
     >
       {/* Category avatar — gradient */}
       <div

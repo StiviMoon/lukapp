@@ -174,7 +174,7 @@ function UpgradePageContent() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/60 hover:text-foreground transition-colors active:scale-90"
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/60 hover:text-foreground transition-colors active:scale-95"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>

@@ -104,7 +104,7 @@ function SalaryModal({
         <button
           onClick={() => onSave(salary)}
           disabled={salary <= 0 || isPending}
-          className="w-full py-3.5 rounded-2xl bg-primary text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.98] transition-all"
+          className="w-full py-3.5 rounded-2xl bg-primary text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.97] transition-all"
         >
           {isPending ? "Guardando..." : "Guardar"}
         </button>
@@ -192,7 +192,7 @@ function AddBudgetModal({
         <button
           onClick={() => onSave(name.trim(), Number(pct))}
           disabled={!name.trim() || Number(pct) < 1 || Number(pct) > 100 || isPending}
-          className="w-full py-3.5 rounded-2xl bg-primary text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.98] transition-all"
+          className="w-full py-3.5 rounded-2xl bg-primary text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.97] transition-all"
         >
           {isPending ? "Creando..." : "Crear presupuesto"}
         </button>
@@ -266,7 +266,7 @@ function TxActionSheet({
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => { onEdit(tx); onClose(); }}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-colors active:scale-[0.98] text-left"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-colors active:scale-[0.97] text-left"
               >
                 <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Pencil className="w-3.5 h-3.5 text-primary" />
@@ -275,7 +275,7 @@ function TxActionSheet({
               </button>
               <button
                 onClick={() => { onDelete(tx); onClose(); }}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-rose-500/5 hover:bg-rose-500/10 transition-colors active:scale-[0.98] text-left"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-rose-500/5 hover:bg-rose-500/10 transition-colors active:scale-[0.97] text-left"
               >
                 <div className="w-8 h-8 rounded-xl bg-rose-500/10 flex items-center justify-center">
                   <Trash2 className="w-3.5 h-3.5 text-rose-500" />
@@ -461,7 +461,7 @@ function SpaceSettingsSheet({
             <button
               onClick={() => { onRequestDelete(); onClose(); }}
               disabled={isPending}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-rose-500/8 hover:bg-rose-500/12 transition-colors active:scale-[0.98] text-left disabled:opacity-40"
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-rose-500/8 hover:bg-rose-500/12 transition-colors active:scale-[0.97] text-left disabled:opacity-40"
             >
               <div className="w-8 h-8 rounded-xl bg-rose-500/15 flex items-center justify-center shrink-0">
                 <Trash className="w-4 h-4 text-rose-500" />
@@ -523,7 +523,7 @@ function DeleteConfirmModal({
             <button
               onClick={onCancel}
               disabled={isPending}
-              className="w-full py-3.5 rounded-2xl bg-muted/60 text-[14px] font-semibold text-foreground disabled:opacity-40 active:scale-[0.98]"
+              className="w-full py-3.5 rounded-2xl bg-muted/60 text-[14px] font-semibold text-foreground disabled:opacity-40 active:scale-[0.97]"
             >
               Cancelar solicitud
             </button>
@@ -540,7 +540,7 @@ function DeleteConfirmModal({
               <button
                 onClick={onConfirm}
                 disabled={isPending}
-                className="w-full py-3.5 rounded-2xl bg-rose-500 text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.98]"
+                className="w-full py-3.5 rounded-2xl bg-rose-500 text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.97]"
               >
                 {isPending ? "Eliminando..." : "Sí, eliminar sala"}
               </button>
@@ -573,7 +573,7 @@ function DeletionPendingBanner({
   return (
     <button
       onClick={onViewRequest}
-      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-left active:scale-[0.98] transition-all"
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-left active:scale-[0.97] transition-all"
     >
       <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
       <div className="flex-1 min-w-0">
@@ -902,7 +902,7 @@ export default function SharedSpacePage() {
 
             <button
               onClick={() => setAddBudgetOpen(true)}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-muted-foreground/15 text-[13px] font-semibold text-muted-foreground/40 hover:border-primary/30 hover:text-primary/60 transition-colors active:scale-[0.98]"
+              className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-muted-foreground/15 text-[13px] font-semibold text-muted-foreground/40 hover:border-primary/30 hover:text-primary/60 transition-colors active:scale-[0.97]"
             >
               <Plus className="w-4 h-4" />
               Nuevo presupuesto

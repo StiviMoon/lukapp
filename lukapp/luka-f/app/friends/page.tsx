@@ -228,7 +228,7 @@ function CreateSpaceSheet({
               <button
                 onClick={handlePareja}
                 disabled={isCreating}
-                className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-colors text-left active:scale-[0.98] disabled:opacity-40"
+                className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-colors text-left active:scale-[0.97] disabled:opacity-40"
               >
                 <div className="w-10 h-10 rounded-2xl bg-rose-500/15 flex items-center justify-center shrink-0 text-lg">
                   ❤️
@@ -241,7 +241,7 @@ function CreateSpaceSheet({
               <button
                 onClick={handleFamiliar}
                 disabled={isCreating}
-                className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-colors text-left active:scale-[0.98] disabled:opacity-40"
+                className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-muted/50 hover:bg-muted/80 transition-colors text-left active:scale-[0.97] disabled:opacity-40"
               >
                 <div className="w-10 h-10 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0 text-lg">
                   👨‍👩‍👧
@@ -295,7 +295,7 @@ function CreateSpaceSheet({
             <button
               onClick={handleConfirmFamiliar}
               disabled={isCreating || selected.size < 1}
-              className="w-full py-3.5 rounded-2xl bg-primary text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.98] transition-all"
+              className="w-full py-3.5 rounded-2xl bg-primary text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.97] transition-all"
             >
               {isCreating ? "Creando..." : `Crear sala familiar (${selected.size + 1} miembros)`}
             </button>

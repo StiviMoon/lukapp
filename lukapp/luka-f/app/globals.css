@@ -570,6 +570,15 @@ button, a, [role="button"] { cursor: pointer; }
   display: none;
 }
 
+/* ─── Scroll momentum iOS (PWA) ──────────────────────────────────────────── */
+/* Activa el scroll cinético nativo en Safari/iOS para contenedores overflow */
+.overflow-y-auto,
+.overflow-y-scroll,
+.overflow-x-auto,
+.overflow-x-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ─── PWA Safe Areas (iPhone notch / Dynamic Island / Android nav bar) ──── */
 
 /* Padding bottom que respeta la barra de navegación nativa */

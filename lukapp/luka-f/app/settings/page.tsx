@@ -315,9 +315,9 @@ export default function SettingsPage() {
           <SettingsContentSkeleton />
         ) : (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.25 }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="flex flex-col gap-6 pt-2"
         >
 
@@ -352,7 +352,7 @@ export default function SettingsPage() {
                     key={opt.value}
                     onClick={() => setTheme(opt.value)}
                     className={cn(
-                      "flex flex-col items-center gap-2 py-3 rounded-xl transition-all duration-150 text-xs font-semibold",
+                      "flex flex-col items-center gap-2 py-3 rounded-xl transition-all duration-75 text-xs font-semibold",
                       theme === opt.value
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted/50 text-muted-foreground hover:text-foreground"

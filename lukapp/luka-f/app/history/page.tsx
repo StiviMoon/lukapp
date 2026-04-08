@@ -4,6 +4,12 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+
+const FADE_UP = (delay = 0) => ({
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
+});
 import {
   startOfMonth, endOfMonth, format, addMonths, subMonths,
   parseISO, isToday, isSameMonth, addDays, startOfWeek,
@@ -139,7 +145,7 @@ function FullCalendar({
               onClick={() => onSelect(day)}
               className={cn(
                 "relative flex flex-col items-center justify-center aspect-square w-full rounded-xl",
-                "text-[13px] font-semibold transition-all duration-150 select-none focus:outline-none active:scale-90",
+                "text-[13px] font-semibold transition-all duration-150 select-none focus:outline-none active:scale-95",
                 isSel && "bg-primary text-primary-foreground shadow-lg scale-[1.04]",
                 isTod && !isSel && "ring-[1.5px] ring-primary/60 text-primary",
                 isOut && "opacity-20 pointer-events-none",
@@ -260,15 +266,11 @@ export default function HistoryPage() {
           {isLoading ? (
             <HistorySkeleton />
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-4"
-            >
+            <div className="space-y-4">
               {/* Banner plan FREE — historial limitado */}
               {!isPremium && (
-                <button
+                <motion.button
+                  {...FADE_UP(0)}
                   onClick={() => router.push("/upgrade")}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left"
                 >
@@ -277,11 +279,11 @@ export default function HistoryPage() {
                     <p className="text-[12px] font-bold text-amber-600 dark:text-amber-400">Historial limitado a 3 meses</p>
                     <p className="text-[11px] text-muted-foreground">Activa Premium para ver todo tu historial.</p>
                   </div>
-                </button>
+                </motion.button>
               )}
 
               {/* Resumen del mes */}
-              <div className="grid grid-cols-2 gap-2">
+              <motion.div {...FADE_UP(0.06)} className="grid grid-cols-2 gap-2">
                 <div className="flex items-center gap-2.5 rounded-2xl bg-lime/10 px-3.5 py-3">
                   <TrendingUp className="w-4 h-4 text-lime shrink-0" />
                   <div className="min-w-0">
@@ -296,9 +298,10 @@ export default function HistoryPage() {
                     <p className="text-[13px] font-bold text-rose-600 dark:text-rose-400 font-nums leading-tight truncate">{formatCOP(monthExpense)}</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* ── Vista calendario ── */}
+              <motion.div {...FADE_UP(0.12)}>
               {viewMode === "calendar" && (
                 <>
                   <div className="rounded-[28px] bg-card p-4">
@@ -380,7 +383,8 @@ export default function HistoryPage() {
                   )}
                 </>
               )}
-            </motion.div>
+              </motion.div>
+            </div>
           )}
 
         </div>

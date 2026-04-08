@@ -54,7 +54,7 @@ function ColorDot({
       type="button"
       onClick={onSelect}
       className={cn(
-        "w-8 h-8 rounded-full shrink-0 transition-all duration-150 active:scale-90",
+        "w-8 h-8 rounded-full shrink-0 transition-all duration-150 active:scale-95",
         selected && "ring-2 ring-white ring-offset-2 ring-offset-background scale-110"
       )}
       style={{ backgroundColor: color }}

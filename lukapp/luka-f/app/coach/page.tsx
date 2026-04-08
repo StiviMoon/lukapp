@@ -314,7 +314,7 @@ export default function CoachPage() {
       <header className="flex-none px-5 pt-12 pb-4 flex items-center justify-between border-b border-border/30">
         <button
           onClick={() => router.back()}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/60 hover:text-foreground transition-colors active:scale-90"
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/60 hover:text-foreground transition-colors active:scale-95"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -341,7 +341,7 @@ export default function CoachPage() {
 
         <button
           onClick={clearChat}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/40 hover:text-destructive/70 transition-colors active:scale-90"
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-card text-muted-foreground/40 hover:text-destructive/70 transition-colors active:scale-95"
           aria-label="Limpiar chat"
         >
           <Trash2 className="w-3.5 h-3.5" />

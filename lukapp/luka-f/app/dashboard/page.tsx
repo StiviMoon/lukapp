@@ -69,6 +69,12 @@ function splitCOP(n: number) {
 
 const MASKED = "••••••";
 
+const FADE_UP = (delay = 0) => ({
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
+});
+
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
 function TxSkeleton() {
@@ -305,14 +311,10 @@ export default function DashboardPage() {
         {showDashboardSkeleton ? (
           <DashboardSkeleton />
         ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.25 }}
-            className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1 pb-app-scroll"
-          >
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1 pb-app-scroll">
             {/* Balance card — hero gradient */}
-            <div
+            <motion.div
+              {...FADE_UP(0)}
               className="balance-card mt-1 rounded-[28px] p-6 relative overflow-hidden balance-card-themed"
             >
               {/* Glow orb top-right */}
@@ -328,7 +330,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={toggleBalance}
-                  className="text-white/50 hover:text-white/90 transition-colors active:scale-90 p-0.5 shrink-0"
+                  className="text-white/50 hover:text-white/90 transition-colors active:scale-95 p-0.5 shrink-0"
                   aria-label={balanceVisible ? "Ocultar balance" : "Mostrar balance"}
                 >
                   {balanceVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -386,16 +388,16 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Presupuesto mensual recurrente */}
-            <BudgetProjectionWidget />
-
-            {/* Coach IA */}
-            <CoachCard />
+            {/* Presupuesto mensual recurrente + Coach IA */}
+            <motion.div {...FADE_UP(0.07)} className="space-y-5">
+              <BudgetProjectionWidget />
+              <CoachCard />
+            </motion.div>
 
             {/* Quick actions — 3 col */}
-            <div>
+            <motion.div {...FADE_UP(0.13)}>
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60 mb-3">Acciones</p>
               <div className="grid grid-cols-4 gap-2">
                 {[
@@ -431,7 +433,7 @@ export default function DashboardPage() {
                   <button
                     key={label}
                     onClick={action}
-                    className="flex flex-col items-center gap-3 py-5 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.95]"
+                    className="flex flex-col items-center gap-3 py-5 rounded-2xl bg-card hover:bg-muted/50 transition-all duration-75 active:scale-[0.94]"
                   >
                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${bg}`}>
                       <Icon className={`w-5 h-5 ${iconColor}`} />
@@ -440,11 +442,11 @@ export default function DashboardPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Presupuestos widget */}
             {hasBudgets && (
-              <div>
+              <motion.div {...FADE_UP(0.18)}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">Presupuestos</p>
                   <button onClick={() => router.push("/categories")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground dark:hover:text-white/70 transition-colors">
@@ -467,12 +469,12 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* En pareja */}
             {hasSharedSpaces && (
-              <div>
+              <motion.div {...FADE_UP(0.21)}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">En pareja</p>
                   <button onClick={() => router.push("/friends")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground dark:hover:text-white/70 transition-colors">
@@ -481,7 +483,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   {sharedOverview?.spaces.map((s) => (
-                    <button key={s.id} onClick={() => router.push(`/shared/${s.id}`)} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/50 transition-all active:scale-[0.98] text-left w-full">
+                    <button key={s.id} onClick={() => router.push(`/shared/${s.id}`)} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card hover:bg-muted/50 transition-all duration-75 active:scale-[0.97] text-left w-full">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
                         <Users className="w-4 h-4 text-primary" />
                       </div>
@@ -504,11 +506,11 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Recientes */}
-            <div>
+            <motion.div {...FADE_UP(0.24)}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">Recientes</p>
                 <button onClick={() => router.push("/history")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground/80 dark:hover:text-white/70 transition-colors">
@@ -540,9 +542,9 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground/25">Registra tu primer gasto o ingreso 👆</p>
                 </div>
               )}
-            </div>
+            </motion.div>
 
-          </motion.div>
+          </div>
         )}
       </div>
 
