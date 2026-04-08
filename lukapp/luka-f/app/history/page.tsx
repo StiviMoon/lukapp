@@ -3,13 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 
-const FADE_UP = (delay = 0) => ({
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
-});
 import {
   startOfMonth, endOfMonth, format, addMonths, subMonths,
   parseISO, isToday, isSameMonth, addDays, startOfWeek,
@@ -20,7 +14,7 @@ import {
   ChevronLeft, ChevronRight, TrendingDown, TrendingUp, Crown,
 } from "lucide-react";
 import { api } from "@/lib/api/client";
-import { useMinDelay } from "@/lib/hooks/use-min-delay";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
@@ -195,7 +189,7 @@ export default function HistoryPage() {
   });
 
   const { isPremium, isLoading: planLoading } = usePlan();
-  const isLoading    = useMinDelay(txRawLoading || planLoading);
+  const isLoading    = txData === undefined && (txRawLoading || planLoading);
   const transactions = txData ?? [];
   const txByDate     = useMemo(() => groupByDate(transactions), [transactions]);
   const sortedKeys   = useMemo(
@@ -269,8 +263,7 @@ export default function HistoryPage() {
             <div className="space-y-4">
               {/* Banner plan FREE — historial limitado */}
               {!isPremium && (
-                <motion.button
-                  {...FADE_UP(0)}
+                <button
                   onClick={() => router.push("/upgrade")}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left"
                 >
@@ -279,11 +272,11 @@ export default function HistoryPage() {
                     <p className="text-[12px] font-bold text-amber-600 dark:text-amber-400">Historial limitado a 3 meses</p>
                     <p className="text-[11px] text-muted-foreground">Activa Premium para ver todo tu historial.</p>
                   </div>
-                </motion.button>
+                </button>
               )}
 
               {/* Resumen del mes */}
-              <motion.div {...FADE_UP(0.06)} className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="flex items-center gap-2.5 rounded-2xl bg-lime/10 px-3.5 py-3">
                   <TrendingUp className="w-4 h-4 text-lime shrink-0" />
                   <div className="min-w-0">
@@ -298,10 +291,10 @@ export default function HistoryPage() {
                     <p className="text-[13px] font-bold text-rose-600 dark:text-rose-400 font-nums leading-tight truncate">{formatCOP(monthExpense)}</p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* ── Vista calendario ── */}
-              <motion.div {...FADE_UP(0.12)}>
+              <div>
               {viewMode === "calendar" && (
                 <>
                   <div className="rounded-[28px] bg-card p-4">
@@ -314,7 +307,7 @@ export default function HistoryPage() {
                   </div>
 
                   {/* Panel del día seleccionado */}
-                  <div className="rounded-[24px] bg-card overflow-hidden">
+                  <div className="mt-4 rounded-[24px] bg-card overflow-hidden">
                     <div className="flex items-start justify-between px-5 pt-4 pb-3 border-b border-border/30">
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/50 mb-1">
@@ -383,7 +376,7 @@ export default function HistoryPage() {
                   )}
                 </>
               )}
-              </motion.div>
+              </div>
             </div>
           )}
 

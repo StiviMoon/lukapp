@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, User, Wallet, CheckCircle2, ArrowRight, ChevronLeft, Loader2, Banknote, Building2, PiggyBank, TrendingUp, TrendingDown, Plus, X } from "lucide-react";
+import { Sparkles, User, Wallet, CheckCircle2, ArrowRight, ChevronLeft, Loader2, Banknote, Building2, PiggyBank, TrendingUp, TrendingDown, Plus, X, DollarSign } from "lucide-react";
 import { useCompleteOnboarding, useUpdateProfile } from "@/lib/hooks/use-profile";
 import { api, type PeriodicityValue } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
@@ -12,7 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 const ACCOUNT_TYPES = [
   { value: "CASH",     label: "Efectivo",         icon: Banknote,  desc: "Dinero en mano" },
@@ -73,10 +73,25 @@ export default function OnboardingPage() {
   const [fullName, setFullName] = useState(
     user?.user_metadata?.full_name ?? ""
   );
+  const [currency, setCurrency]       = useState<"COP" | "USD">("COP");
   const [accountType, setAccountType] = useState("CASH");
   const [accountName, setAccountName] = useState("Mi billetera");
   const [balance, setBalance]         = useState("");
   const [finishing, setFinishing]     = useState(false);
+  const [nameConfirmed, setNameConfirmed] = useState(false);
+
+  const firstName = fullName.trim().split(" ")[0] || "";
+
+  // Micro-feedback: avanza al step 2 después de mostrar "¡Hola, {nombre}!"
+  useEffect(() => {
+    if (!nameConfirmed) return;
+    const t = setTimeout(() => {
+      setNameConfirmed(false);
+      goNext();
+    }, 700);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nameConfirmed]);
 
   // Step recurring
   const [recurringItems, setRecurringItems] = useState<
@@ -101,10 +116,11 @@ export default function OnboardingPage() {
     if (finishing) return;
     setFinishing(true);
     try {
-      // 1. Guardar nombre si fue modificado
-      if (fullName.trim()) {
-        await updateProfile.mutateAsync({ fullName: fullName.trim() });
-      }
+      // 1. Guardar nombre y moneda
+      await updateProfile.mutateAsync({
+        ...(fullName.trim() ? { fullName: fullName.trim() } : {}),
+        currency,
+      });
       // 2. Crear primera cuenta
       await api.accounts.create({
         name: accountName.trim() || "Mi billetera",
@@ -184,7 +200,8 @@ export default function OnboardingPage() {
               <StepName
                 value={fullName}
                 onChange={setFullName}
-                onNext={goNext}
+                confirmed={nameConfirmed}
+                onNext={() => { setNameConfirmed(true); }}
               />
             </motion.div>
           )}
@@ -198,13 +215,10 @@ export default function OnboardingPage() {
               exit="exit"
               className="h-full flex flex-col"
             >
-              <StepAccount
-                type={accountType}
-                onTypeChange={setAccountType}
-                name={accountName}
-                onNameChange={setAccountName}
-                balance={balance}
-                onBalanceChange={setBalance}
+              <StepCurrency
+                value={currency}
+                onChange={setCurrency}
+                firstName={firstName}
                 onNext={goNext}
               />
             </motion.div>
@@ -219,11 +233,16 @@ export default function OnboardingPage() {
               exit="exit"
               className="h-full flex flex-col"
             >
-              <StepRecurring
-                items={recurringItems}
-                onChange={setRecurringItems}
+              <StepAccount
+                type={accountType}
+                onTypeChange={setAccountType}
+                name={accountName}
+                onNameChange={setAccountName}
+                balance={balance}
+                onBalanceChange={setBalance}
+                currency={currency}
+                firstName={firstName}
                 onNext={goNext}
-                onSkip={goNext}
               />
             </motion.div>
           )}
@@ -237,8 +256,31 @@ export default function OnboardingPage() {
               exit="exit"
               className="h-full flex flex-col"
             >
+              <StepRecurring
+                items={recurringItems}
+                onChange={setRecurringItems}
+                firstName={firstName}
+                onNext={goNext}
+                onSkip={goNext}
+              />
+            </motion.div>
+          )}
+          {step === 5 && (
+            <motion.div
+              key="step-5"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="h-full flex flex-col"
+            >
               <StepDone
                 name={fullName}
+                accountName={accountName}
+                accountType={accountType}
+                currency={currency}
+                recurringCount={recurringItems.length}
                 onFinish={handleFinish}
                 loading={finishing}
               />
@@ -253,14 +295,20 @@ export default function OnboardingPage() {
 // ─── Steps ─────────────────────────────────────────────────────────────────────
 
 function StepWelcome({ onNext }: { onNext: () => void }) {
+  const features = [
+    { emoji: "🎙️", text: "Registra gastos con tu voz en segundos" },
+    { emoji: "🤖", text: "Luka analiza tus finanzas y te da tips reales" },
+    { emoji: "🎯", text: "Metas, presupuestos y análisis todo en un lugar" },
+  ];
+
   return (
-    <div className="flex flex-col gap-10 h-full">
+    <div className="flex flex-col gap-8 h-full">
       <div className="flex-1 flex flex-col justify-center">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
-          className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-10"
+          className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-8"
         >
           <Sparkles className="w-7 h-7 text-primary" />
         </motion.div>
@@ -269,7 +317,7 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.14, duration: 0.3 }}
-          className="text-[34px] font-bold tracking-tight text-foreground font-display leading-tight mb-5"
+          className="text-[34px] font-bold tracking-tight text-foreground font-display leading-tight mb-4"
         >
           ¡Hola!<br />Llegaste a Lukapp ✦
         </motion.h1>
@@ -278,16 +326,36 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
-          className="text-[15px] text-muted-foreground leading-relaxed"
+          className="text-[15px] text-muted-foreground leading-relaxed mb-7"
         >
-          Soy tu compinche financiero. En 4 pasitos dejamos tus lukas organizadas y te cuento cómo manejarlas mejor.
+          Soy tu compinche financiero. En unos pasitos dejamos tus lukas organizadas.
         </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.26, duration: 0.3 }}
+          className="flex flex-col gap-3"
+        >
+          {features.map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 + i * 0.07, duration: 0.25 }}
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card border border-border/40"
+            >
+              <span className="text-xl shrink-0">{f.emoji}</span>
+              <span className="text-[13px] text-foreground/80 font-medium leading-snug">{f.text}</span>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
 
       <motion.button
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.28, duration: 0.3 }}
+        transition={{ delay: 0.52, duration: 0.3 }}
         onClick={onNext}
         className="w-full py-4 rounded-2xl bg-primary text-background font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
       >
@@ -300,12 +368,16 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
 function StepName({
   value,
   onChange,
+  confirmed,
   onNext,
 }: {
   value: string;
   onChange: (v: string) => void;
+  confirmed: boolean;
   onNext: () => void;
 }) {
+  const firstName = value.trim().split(" ")[0] || "";
+
   return (
     <div className="flex flex-col gap-10 h-full">
       <div className="flex-1 flex flex-col justify-center">
@@ -313,29 +385,123 @@ function StepName({
           <User className="w-6 h-6 text-brand-blue" />
         </div>
 
-        <h2 className="text-[30px] font-bold tracking-tight text-foreground font-display mb-3">
-          ¿Cómo te llaman<br />tus parceros?
-        </h2>
-        <p className="text-[14px] text-muted-foreground mb-8 leading-relaxed">
-          Tu nombre, apodo, como te digan — así te voy a saludar cada vez que abramos esto 😊
-        </p>
+        <AnimatePresence mode="wait">
+          {confirmed ? (
+            <motion.div
+              key="confirmed"
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col items-start gap-2 mb-8"
+            >
+              <span className="text-[38px]">👋</span>
+              <h2 className="text-[32px] font-bold tracking-tight text-foreground font-display">
+                ¡Hola, {firstName}!
+              </h2>
+              <p className="text-[14px] text-muted-foreground">Qué bueno tenerte por acá…</p>
+            </motion.div>
+          ) : (
+            <motion.div key="form" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <h2 className="text-[30px] font-bold tracking-tight text-foreground font-display mb-3">
+                ¿Cómo te llaman<br />tus parceros?
+              </h2>
+              <p className="text-[14px] text-muted-foreground mb-8 leading-relaxed">
+                Tu nombre, apodo, como te digan — así te voy a saludar cada vez que abramos esto 😊
+              </p>
 
-        <input
-          autoFocus
-          type="text"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder="Tu nombre o apodo"
-          maxLength={60}
-          className="w-full px-4 py-4 rounded-2xl bg-card border border-border text-foreground text-base placeholder:text-muted-foreground/35 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
-          onKeyDown={e => e.key === "Enter" && value.trim() && onNext()}
-        />
+              <input
+                type="text"
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder="Tu nombre o apodo"
+                maxLength={60}
+                className="w-full px-4 py-4 rounded-2xl bg-card border border-border text-foreground text-base placeholder:text-muted-foreground/35 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+                onKeyDown={e => e.key === "Enter" && value.trim() && onNext()}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <button
         onClick={onNext}
-        disabled={!value.trim()}
+        disabled={!value.trim() || confirmed}
         className="w-full py-4 rounded-2xl bg-primary text-background font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform disabled:opacity-35 disabled:cursor-not-allowed"
+      >
+        Continuar <ArrowRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+function StepCurrency({
+  value,
+  onChange,
+  firstName,
+  onNext,
+}: {
+  value: "COP" | "USD";
+  onChange: (v: "COP" | "USD") => void;
+  firstName: string;
+  onNext: () => void;
+}) {
+  const options: { value: "COP" | "USD"; label: string; symbol: string; desc: string }[] = [
+    { value: "COP", label: "Peso colombiano", symbol: "$", desc: "Colombia · COP" },
+    { value: "USD", label: "Dólar americano", symbol: "$", desc: "Estados Unidos · USD" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-10 h-full">
+      <div className="flex-1 flex flex-col justify-center">
+        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-10">
+          <DollarSign className="w-6 h-6 text-emerald-500" />
+        </div>
+
+        <h2 className="text-[30px] font-bold tracking-tight text-foreground font-display mb-3">
+          {firstName ? `¿Con qué moneda manejas tu plata, ${firstName}?` : "¿Con qué moneda manejas tu plata?"}
+        </h2>
+        <p className="text-[14px] text-muted-foreground mb-8 leading-relaxed">
+          Solo afecta el formato de los números — puedes cambiarlo después en ajustes.
+        </p>
+
+        <div className="flex flex-col gap-3">
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => onChange(opt.value)}
+              className={`flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all active:scale-[0.98] ${
+                value === opt.value
+                  ? "border-primary/50 bg-primary/8 shadow-sm"
+                  : "border-border bg-card hover:border-primary/25"
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 ${
+                value === opt.value ? "bg-primary/15 text-primary" : "bg-muted/60 text-muted-foreground"
+              }`}>
+                {opt.symbol}
+              </div>
+              <div className="text-left">
+                <p className={`text-[15px] font-semibold ${value === opt.value ? "text-foreground" : "text-foreground/80"}`}>
+                  {opt.label}
+                </p>
+                <p className="text-[12px] text-muted-foreground">{opt.desc}</p>
+              </div>
+              {value === opt.value && (
+                <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
+                  <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 12 12">
+                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={onNext}
+        className="w-full py-4 rounded-2xl bg-primary text-background font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
       >
         Continuar <ArrowRight className="w-4 h-4" />
       </button>
@@ -347,6 +513,7 @@ function StepAccount({
   type, onTypeChange,
   name, onNameChange,
   balance, onBalanceChange,
+  currency, firstName,
   onNext,
 }: {
   type: string;
@@ -355,6 +522,8 @@ function StepAccount({
   onNameChange: (v: string) => void;
   balance: string;
   onBalanceChange: (v: string) => void;
+  currency: "COP" | "USD";
+  firstName: string;
   onNext: () => void;
 }) {
   return (
@@ -365,10 +534,10 @@ function StepAccount({
             <Wallet className="w-6 h-6 text-lime" />
           </div>
           <h2 className="text-[30px] font-bold tracking-tight text-foreground font-display mb-3">
-            ¿Dónde guardas<br />tus lukas?
+            {firstName ? `${firstName}, ¿dónde guardas tus lukas?` : "¿Dónde guardas tus lukas?"}
           </h2>
           <p className="text-[14px] text-muted-foreground leading-relaxed">
-            Elige tu cuenta principal — efectivo, banco, lo que uses. Más adelante agregas las que quieras.
+            Elige tu cuenta principal — efectivo, Nequi, banco, lo que uses. Más adelante agregas las que quieras.
           </p>
         </div>
 
@@ -418,11 +587,11 @@ function StepAccount({
         {/* Balance inicial */}
         <div className="space-y-2">
           <label className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground/45 block">
-            ¿Cuánto tienes ahorita?{" "}
+            ¿Cuánto tienes en esta cuenta?{" "}
             <span className="text-muted-foreground/30 normal-case font-normal">· opcional</span>
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground/40">$</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground/40">{currency === "USD" ? "US$" : "$"}</span>
             <input
               type="number"
               inputMode="decimal"
@@ -433,6 +602,9 @@ function StepAccount({
               className="w-full pl-9 pr-4 py-4 rounded-2xl bg-card border border-border text-foreground text-[15px] placeholder:text-muted-foreground/35 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
             />
           </div>
+          <p className="text-[11px] text-muted-foreground/50 px-1">
+            Le da a Luka un punto de partida real — pon 0 si no sabes exacto.
+          </p>
         </div>
       </div>
 
@@ -475,11 +647,13 @@ const COMMON_PERIODICITIES: PeriodicityValue[] = ["WEEKLY", "BI_WEEKLY", "MONTHL
 function StepRecurring({
   items,
   onChange,
+  firstName,
   onNext,
   onSkip,
 }: {
   items: RecurringItem[];
   onChange: (items: RecurringItem[]) => void;
+  firstName: string;
   onNext: () => void;
   onSkip: () => void;
 }) {
@@ -513,10 +687,10 @@ function StepRecurring({
           <TrendingUp className="w-6 h-6 text-primary" />
         </div>
         <h2 className="text-[28px] font-bold tracking-tight text-foreground font-display mb-2 leading-tight">
-          ¿Tienes ingresos o gastos fijos?
+          {firstName ? `¿Tienes pagos fijos, ${firstName}?` : "¿Tienes ingresos o gastos fijos?"}
         </h2>
         <p className="text-[13px] text-muted-foreground leading-relaxed mb-1">
-          Los <strong>gastos recurrentes</strong> son los que se repiten: arriendo, servicios, Netflix…
+          Los <strong>gastos recurrentes</strong> son los que se repiten: arriendo, Nequi, servicios, streaming, gym…
         </p>
         <p className="text-[12px] text-muted-foreground/60 mb-6">
           Opcional — puedes agregarlos después desde Analíticas.
@@ -527,7 +701,7 @@ function StepRecurring({
           <div className="space-y-2 mb-4">
             {items.map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-card border border-border/50">
-                <div className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
                   item.type === "INCOME" ? "bg-lime/10" : "bg-rose-500/10"
                 }`}>
                   {item.type === "INCOME"
@@ -556,7 +730,6 @@ function StepRecurring({
               {addingType === "INCOME" ? "Nuevo ingreso fijo" : "Nuevo gasto fijo"}
             </p>
             <input
-              autoFocus
               type="text"
               placeholder={addingType === "INCOME" ? "ej: Salario, Freelance…" : "ej: Arriendo, Netflix, Gym…"}
               value={draft.description}
@@ -623,43 +796,58 @@ function StepRecurring({
         )}
       </div>
 
-      <div className="flex gap-2">
-        {items.length === 0 && (
-          <button
-            onClick={onSkip}
-            className="flex-1 py-4 rounded-2xl border border-border text-foreground/60 font-semibold text-[14px] hover:bg-muted/30 transition-colors"
-          >
-            Omitir por ahora
-          </button>
-        )}
-        <button
-          onClick={onNext}
-          className={`py-4 rounded-2xl bg-primary text-background font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform ${
-            items.length === 0 ? "hidden" : "flex-1"
-          }`}
-        >
-          Continuar <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
+      {!addingType && (
+        <div className="flex gap-2">
+          {items.length === 0 ? (
+            <button
+              onClick={onSkip}
+              className="flex-1 py-4 rounded-2xl border border-border text-foreground/60 font-semibold text-[14px] hover:bg-muted/30 transition-colors"
+            >
+              Omitir por ahora
+            </button>
+          ) : (
+            <button
+              onClick={onNext}
+              className="flex-1 py-4 rounded-2xl bg-primary text-background font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
+            >
+              Continuar <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function StepDone({ name, onFinish, loading }: {
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  CASH: "Efectivo", CHECKING: "Cuenta corriente", SAVINGS: "Ahorros",
+};
+
+function StepDone({ name, accountName, accountType, currency, recurringCount, onFinish, loading }: {
   name: string;
+  accountName: string;
+  accountType: string;
+  currency: "COP" | "USD";
+  recurringCount: number;
   onFinish: () => void;
   loading: boolean;
 }) {
   const firstName = name.split(" ")[0] || "tú";
 
+  const summary = [
+    { label: "Cuenta", value: `${accountName} · ${ACCOUNT_TYPE_LABELS[accountType] ?? accountType}` },
+    { label: "Moneda", value: currency === "COP" ? "Peso colombiano (COP)" : "Dólar americano (USD)" },
+    { label: "Pagos fijos", value: recurringCount > 0 ? `${recurringCount} registrado${recurringCount > 1 ? "s" : ""}` : "Ninguno — puedes agregar después" },
+  ];
+
   return (
-    <div className="flex flex-col gap-10 h-full">
+    <div className="flex flex-col gap-6 h-full">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] }}
-          className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-8"
+          className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6"
         >
           <CheckCircle2 className="w-9 h-9 text-primary" />
         </motion.div>
@@ -668,7 +856,7 @@ function StepDone({ name, onFinish, loading }: {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-[32px] font-bold tracking-tight text-foreground font-display mb-4"
+          className="text-[32px] font-bold tracking-tight text-foreground font-display mb-3"
         >
           ¡Ya estás, {firstName}! 🎉
         </motion.h2>
@@ -677,16 +865,38 @@ function StepDone({ name, onFinish, loading }: {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.28 }}
-          className="text-[15px] text-muted-foreground leading-relaxed max-w-[270px]"
+          className="text-[14px] text-muted-foreground leading-relaxed max-w-[270px] mb-6"
         >
-          Todo listo. Ahora soy tu compinche y te ayudo a manejar esas lukas con cabeza 💪
+          Todo quedó guardado. Soy tu compinche y te ayudo a manejar esas lukas con cabeza 💪
         </motion.p>
+
+        {/* Resumen de configuración */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.36 }}
+          className="w-full rounded-2xl bg-card border border-border/50 overflow-hidden text-left"
+        >
+          {summary.map((item, i) => (
+            <div key={i} className={`flex items-start gap-3 px-4 py-3 ${i < summary.length - 1 ? "border-b border-border/30" : ""}`}>
+              <div className="w-4 h-4 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                <svg className="w-2.5 h-2.5 text-primary" fill="none" viewBox="0 0 12 12">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">{item.label}</p>
+                <p className="text-[13px] font-semibold text-foreground">{item.value}</p>
+              </div>
+            </div>
+          ))}
+        </motion.div>
       </div>
 
       <motion.button
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
+        transition={{ delay: 0.44 }}
         onClick={onFinish}
         disabled={loading}
         className="w-full py-4 rounded-2xl bg-primary text-background font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform disabled:opacity-60"

@@ -61,15 +61,13 @@ const backdropVariants = {
 };
 
 const sheetVariants = {
-  hidden: { y: "100%", opacity: 0 },
+  hidden: { y: "100%" },
   visible: {
     y: 0,
-    opacity: 1,
     transition: { type: "spring" as const, damping: 28, stiffness: 280 },
   },
   exit: {
     y: "100%",
-    opacity: 0,
     transition: { duration: 0.25, ease: "easeIn" as const },
   },
 };
@@ -111,7 +109,7 @@ export function TransactionDetailSheet({
           {/* Backdrop */}
           <motion.div
             key="detail-backdrop"
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/50"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -122,13 +120,7 @@ export function TransactionDetailSheet({
           {/* Bottom sheet */}
           <motion.div
             key="detail-sheet"
-            className="fixed bottom-0 left-0 right-0 z-60 max-w-sm mx-auto rounded-t-[32px] px-6 pt-5 pb-10"
-            style={{
-              backgroundColor: "var(--background)",
-              borderTop:
-                "1px solid color-mix(in srgb, var(--border) 40%, transparent)",
-              boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
-            }}
+            className="fixed bottom-0 left-0 right-0 z-60 max-w-sm mx-auto rounded-t-[32px] px-6 pt-5 pb-10 bg-card shadow-none border-t border-[#e0e0e0] dark:border-[#3d3560]"
             variants={sheetVariants}
             initial="hidden"
             animate="visible"

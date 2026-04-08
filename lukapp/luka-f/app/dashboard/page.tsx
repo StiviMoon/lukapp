@@ -16,10 +16,9 @@ import { useInactivityTimeout } from "@/lib/hooks/use-inactivity-timeout";
 import {
   useTotalBalance, useMonthStats, useRecentTransactions,
 } from "@/lib/hooks/use-dashboard-data";
-import { useMinDelay } from "@/lib/hooks/use-min-delay";
 import { useBudgetStatus } from "@/lib/hooks/use-budgets";
 import { useSharedOverview } from "@/lib/hooks/use-spaces";
-import { formatCompact } from "@/lib/utils";
+
 import { BudgetBar } from "@/components/categories/BudgetBar";
 import { Users } from "lucide-react";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
@@ -33,6 +32,7 @@ import { CoachCard, CoachCardSkeleton } from "@/components/coach/CoachCard";
 import { BudgetProjectionWidget } from "@/components/dashboard/BudgetProjectionWidget";
 import { haptics } from "@/lib/haptics";
 import { LukappLogo } from "@/components/ui/lukapp-logo";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -55,25 +55,8 @@ const TIME_CONFIG: Record<TimeOfDay, { greeting: string; Icon: React.ElementType
   night:     { greeting: "Buenas noches", Icon: Moon,    iconClass: "text-indigo-300" },
 };
 
-function formatCOP(n: number) {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency", currency: "COP", minimumFractionDigits: 0,
-  }).format(n);
-}
-
-function splitCOP(n: number) {
-  const f = formatCOP(n);
-  const p = f.split(",");
-  return p.length === 2 ? { integer: p[0], decimal: "," + p[1] } : { integer: f, decimal: "" };
-}
-
 const MASKED = "••••••";
 
-const FADE_UP = (delay = 0) => ({
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
-});
 
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
@@ -149,6 +132,7 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const { user, loading, isAuthenticated } = useAuth();
   const { isPremium } = usePlan();
+  const { currency, formatAmount, formatCompact: fmtCompact } = useCurrency();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { hide: hideGlobalLoading } = useLoadingOverlay();
@@ -172,9 +156,13 @@ export default function DashboardPage() {
   const hasSharedSpaces = (sharedOverview?.spaces.length ?? 0) > 0;
 
   // Solo “sin datos aún” (isPending). Con caché de React Query al volver al home: sin skeleton ni delay.
-  const dashboardDataPending =
-    balancePending || statsPending || txPending || overviewPending;
-  const isDataLoading = useMinDelay(dashboardDataPending, 320);
+  // Skeleton solo si no hay NINGÚN dato previo en caché.
+  const dashboardHasData = balance !== undefined && stats !== undefined && transactions !== undefined;
+  const hasCachedDashboardData =
+    queryClient.getQueryData(["balance"]) !== undefined &&
+    queryClient.getQueryData(["stats", "month"]) !== undefined &&
+    queryClient.getQueryData(["transactions", "recent"]) !== undefined;
+  const dashboardDataPending = !dashboardHasData && (balancePending || statsPending || txPending);
 
   // Resetear paginación cuando llegan nuevas transacciones (ej. después de registrar una)
   useEffect(() => {
@@ -232,9 +220,9 @@ export default function DashboardPage() {
     }
   }, [profilePending, profile, router]);
 
-  // Mientras auth resuelve y no tenemos user en caché: mostrar skeleton completo (header + body).
-  // Con el nuevo useAuth optimista, esto solo ocurre la primera vez (sin sesión previa en storage).
-  if (loading && !user) {
+  // Mientras auth resuelve y no tenemos user: mostrar skeleton SOLO si tampoco hay datos cacheados.
+  // Si hay caché, evitamos el “flash” de skeleton al volver al dashboard.
+  if (loading && !user && !hasCachedDashboardData) {
     return (
       <div className="h-dvh flex flex-col bg-transparent max-w-sm mx-auto">
         <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
@@ -248,7 +236,7 @@ export default function DashboardPage() {
       </div>
     );
   }
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated && !loading) return null;
 
   const firstName =
     user?.user_metadata?.full_name?.split(" ")[0] ||
@@ -256,7 +244,7 @@ export default function DashboardPage() {
 
   // Skeleton solo cuando no hay datos en caché (isPending = sin resultado previo).
   // Si el perfil ya está en caché, profile !== undefined aunque profilePending sea true.
-  const showDashboardSkeleton = (profilePending && !profile) || isDataLoading;
+  const showDashboardSkeleton = (!profile && profilePending) || dashboardDataPending;
 
   const dashboardHeader = (
     <header className="flex-none px-5 pt-12 pb-3 flex items-center justify-between">
@@ -296,7 +284,11 @@ export default function DashboardPage() {
   const { greeting, Icon: TimeIcon, iconClass } = TIME_CONFIG[getTimeOfDay()];
 
   const balanceValue = balance ?? 0;
-  const { integer: balInt, decimal: balDec } = splitCOP(balanceValue);
+  const balFormatted = formatAmount(balanceValue);
+  const balSep = currency === "USD" ? "." : ",";
+  const balParts = balFormatted.split(balSep);
+  const balInt = balParts[0];
+  const balDec = balParts.length > 1 ? balSep + balParts[1] : "";
 
   return (
     <>
@@ -313,8 +305,7 @@ export default function DashboardPage() {
         ) : (
           <div className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pt-1 pb-app-scroll">
             {/* Balance card — hero gradient */}
-            <motion.div
-              {...FADE_UP(0)}
+            <div
               className="balance-card mt-1 rounded-[28px] p-6 relative overflow-hidden balance-card-themed"
             >
               {/* Glow orb top-right */}
@@ -382,22 +373,22 @@ export default function DashboardPage() {
                         className={`text-[13px] font-bold font-nums tabular-nums leading-none h-[18px] flex items-center gap-1 ${color}`}
                       >
                         <Icon className="w-3 h-3 shrink-0" />
-                        <span>{value != null ? formatCOP(value) : "—"}</span>
+                        <span>{value != null ? formatAmount(value) : "—"}</span>
                       </motion.div>
                     </div>
                   ))}
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Presupuesto mensual recurrente + Coach IA */}
-            <motion.div {...FADE_UP(0.07)} className="space-y-5">
+            <div className="space-y-5">
               <BudgetProjectionWidget />
               <CoachCard />
-            </motion.div>
+            </div>
 
             {/* Quick actions — 3 col */}
-            <motion.div {...FADE_UP(0.13)}>
+            <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60 mb-3">Acciones</p>
               <div className="grid grid-cols-4 gap-2">
                 {[
@@ -442,11 +433,11 @@ export default function DashboardPage() {
                   </button>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {/* Presupuestos widget */}
             {hasBudgets && (
-              <motion.div {...FADE_UP(0.18)}>
+              <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">Presupuestos</p>
                   <button onClick={() => router.push("/categories")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground dark:hover:text-white/70 transition-colors">
@@ -469,12 +460,12 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* En pareja */}
             {hasSharedSpaces && (
-              <motion.div {...FADE_UP(0.21)}>
+              <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">En pareja</p>
                   <button onClick={() => router.push("/friends")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground dark:hover:text-white/70 transition-colors">
@@ -493,7 +484,7 @@ export default function DashboardPage() {
                       </div>
                       {s.myDeductions > 0 && (
                         <div className="text-right shrink-0">
-                          <p className="text-[12px] font-bold text-rose-400 font-nums">-{formatCompact(s.myDeductions)}</p>
+                          <p className="text-[12px] font-bold text-rose-400 font-nums">-{fmtCompact(s.myDeductions)}</p>
                           <p className="text-[10px] text-muted-foreground/40">mi parte</p>
                         </div>
                       )}
@@ -502,15 +493,15 @@ export default function DashboardPage() {
                   {(sharedOverview?.totalMyDeductions ?? 0) > 0 && (sharedOverview?.spaces.length ?? 0) > 1 && (
                     <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-muted/30">
                       <p className="text-[11px] text-muted-foreground/60">Total comprometido en pareja</p>
-                      <p className="text-[12px] font-bold text-rose-400 font-nums">-{formatCompact(sharedOverview!.totalMyDeductions)}</p>
+                      <p className="text-[12px] font-bold text-rose-400 font-nums">-{fmtCompact(sharedOverview!.totalMyDeductions)}</p>
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Recientes */}
-            <motion.div {...FADE_UP(0.24)}>
+            <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground dark:text-white/60">Recientes</p>
                 <button onClick={() => router.push("/history")} className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground/80 dark:text-white/40 hover:text-muted-foreground/80 dark:hover:text-white/70 transition-colors">
@@ -542,7 +533,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground/25">Registra tu primer gasto o ingreso 👆</p>
                 </div>
               )}
-            </motion.div>
+            </div>
 
           </div>
         )}

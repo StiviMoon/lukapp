@@ -7,9 +7,9 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 
 const FADE_UP = (delay = 0) => ({
-  initial: { opacity: 0, y: 10 },
+  initial: { opacity: 1, y: 0 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
+  transition: { duration: 0, delay: 0, ease: "linear" as const },
 });
 import { LogOut, Moon, Sun, ChevronRight, Mail, User, Tag, Settings2, Users, Crown, Zap } from "lucide-react";
 import { useMinDelay } from "@/lib/hooks/use-min-delay";

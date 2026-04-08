@@ -25,6 +25,8 @@ import {
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useMinDelay } from "@/lib/hooks/use-min-delay";
 import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
+import { useCurrency } from "@/lib/hooks/use-currency";
+import { useUpdateProfile } from "@/lib/hooks/use-profile";
 import { api } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,14 +34,6 @@ import { cn } from "@/lib/utils";
 import { PwaInstallSection } from "@/components/settings/PwaInstallSection";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: 0,
-  }).format(amount);
-}
 
 // ─── Skeletons ───────────────────────────────────────────────────────────────
 
@@ -201,6 +195,8 @@ export default function SettingsPage() {
   const { show: showOverlay, hide: hideOverlay } = useLoadingOverlay();
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
+  const { currency, formatAmount } = useCurrency();
+  const updateProfile = useUpdateProfile();
 
   const [showAddAccount,  setShowAddAccount]  = useState(false);
   const [newAccountName,  setNewAccountName]  = useState("");
@@ -342,26 +338,52 @@ export default function SettingsPage() {
 
           {/* Apariencia */}
           <SettingsSection title="Apariencia">
-            <div className="px-4 py-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-3">
-                Tema
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {themeOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setTheme(opt.value)}
-                    className={cn(
-                      "flex flex-col items-center gap-2 py-3 rounded-xl transition-all duration-75 text-xs font-semibold",
-                      theme === opt.value
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/50 text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {opt.icon}
-                    {opt.label}
-                  </button>
-                ))}
+            <div className="px-4 py-4 space-y-5">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-3">
+                  Tema
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {themeOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTheme(opt.value)}
+                      className={cn(
+                        "flex flex-col items-center gap-2 py-3 rounded-xl transition-all duration-75 text-xs font-semibold",
+                        theme === opt.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {opt.icon}
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-3">
+                  Moneda
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["COP", "USD"] as const).map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => updateProfile.mutate({ currency: c })}
+                      disabled={updateProfile.isPending}
+                      className={cn(
+                        "flex flex-col items-center gap-1 py-3 rounded-xl transition-all duration-75 text-xs font-semibold disabled:opacity-50",
+                        currency === c
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/50 text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span className="text-base font-bold">$</span>
+                      {c === "COP" ? "Peso (COP)" : "Dólar (USD)"}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </SettingsSection>
@@ -404,7 +426,7 @@ export default function SettingsPage() {
                 {/* Balance */}
                 <div className="text-right shrink-0">
                   <span className="text-[13px] font-bold font-nums text-foreground">
-                    {formatCOP(Number(acc.balance))}
+                    {formatAmount(Number(acc.balance))}
                   </span>
                 </div>
                 {/* Delete */}
@@ -445,7 +467,6 @@ export default function SettingsPage() {
                   value={newAccountName}
                   onChange={(e) => setNewAccountName(e.target.value)}
                   className="bg-muted/40 border-0 focus-visible:ring-1 focus-visible:ring-primary/40"
-                  autoFocus
                 />
                 <select
                   value={newAccountType}

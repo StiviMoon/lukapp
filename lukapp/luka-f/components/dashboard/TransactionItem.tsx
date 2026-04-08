@@ -3,6 +3,7 @@
 import { isToday, isYesterday, format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { Transaction } from "@/lib/types/transaction";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ interface TransactionItemProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TransactionItem({ transaction, onClick }: TransactionItemProps) {
+  const { formatAmount } = useCurrency();
   const { type, amount, description, date, category } = transaction;
 
   const categoryName = category?.name ?? (type === "INCOME" ? "Ingreso" : "Gasto");
@@ -98,7 +100,7 @@ export function TransactionItem({ transaction, onClick }: TransactionItemProps) 
           }`}
         >
           {isIncome ? "+" : "-"}
-          {formatCOP(numAmount)}
+          {formatAmount(numAmount)}
         </span>
         {dateLabel && (
           <span className="text-[10px] text-muted-foreground/40 font-medium">

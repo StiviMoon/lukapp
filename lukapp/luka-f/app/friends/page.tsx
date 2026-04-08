@@ -206,7 +206,7 @@ function CreateSpaceSheet({
   return (
     <>
       <motion.div
-        className="fixed inset-0 bg-black/40 z-60"
+        className="fixed inset-0 bg-black/50 z-60"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.16 }}
         onClick={onClose}

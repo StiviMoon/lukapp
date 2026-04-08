@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Plus, Wallet, Pencil, Trash2, TrendingDown, Heart, MoreHorizontal, Settings2, AlertTriangle, Trash, Share2 } from "lucide-react";
@@ -28,6 +28,8 @@ import { formatCompact, cn } from "@/lib/utils";
 import { useMinDelay } from "@/lib/hooks/use-min-delay";
 import type { SharedSpace, SharedTransaction } from "@/lib/types/shared";
 import { useAuth } from "@/lib/hooks";
+import { useKeyboardBottomInset } from "@/lib/hooks/use-keyboard-bottom-inset";
+import { useSheetAutofocus } from "@/lib/hooks/use-sheet-autofocus";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -73,41 +75,52 @@ function SalaryModal({
 }) {
   const [raw, setRaw] = useState(currentSalary > 0 ? currentSalary.toLocaleString("es-CO") : "");
   const salary = parseFloat(raw.replace(/\./g, "").replace(",", ".")) || 0;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const keyboardInset = useKeyboardBottomInset(isOpen);
+  useSheetAutofocus(isOpen, inputRef);
 
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-card rounded-t-3xl px-5 pt-5 pb-10 w-full max-w-sm mx-auto z-10">
-        <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
-        <h3 className="text-[15px] font-bold mb-1">
-          {currentSalary > 0 ? "Actualizar salario" : "Declara tu salario"}
-        </h3>
-        <p className="text-[12px] text-muted-foreground/60 mb-5">
-          Solo tu pareja verá este dato. Tus gastos personales siguen siendo 100% privados.
-        </p>
-        <div className="flex items-center gap-2 mb-5 bg-muted/40 rounded-2xl px-4 py-3">
-          <span className="text-xl font-bold text-muted-foreground/40 font-nums">$</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={raw}
-            onChange={(e) => {
-              const val = e.target.value.replace(/[^\d]/g, "");
-              setRaw(val ? Number(val).toLocaleString("es-CO") : "");
-            }}
-            placeholder="0"
-            autoFocus
-            className="flex-1 text-[28px] font-extrabold bg-transparent outline-none text-foreground placeholder:text-muted-foreground/20 font-nums tabular-nums"
-          />
+      <div
+        className="relative bg-card shadow-none border-t border-[#e0e0e0] dark:border-[#3d3560] rounded-t-3xl px-5 pt-5 w-full max-w-sm mx-auto z-10 flex flex-col max-h-[min(92dvh,calc(100dvh-0.5rem))]"
+        style={{
+          paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${keyboardInset}px)`,
+        }}
+      >
+        <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5 shrink-0" />
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          <h3 className="text-[15px] font-bold mb-1">
+            {currentSalary > 0 ? "Actualizar salario" : "Declara tu salario"}
+          </h3>
+          <p className="text-[12px] text-muted-foreground/60 mb-5">
+            Solo tu pareja verá este dato. Tus gastos personales siguen siendo 100% privados.
+          </p>
+          <div className="flex items-center gap-2 mb-5 bg-muted/40 rounded-2xl px-4 py-3">
+            <span className="text-xl font-bold text-muted-foreground/40 font-nums">$</span>
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="numeric"
+              enterKeyHint="done"
+              value={raw}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^\d]/g, "");
+                setRaw(val ? Number(val).toLocaleString("es-CO") : "");
+              }}
+              placeholder="0"
+              className="flex-1 text-[28px] font-extrabold bg-transparent outline-none text-foreground placeholder:text-muted-foreground/20 font-nums tabular-nums"
+            />
+          </div>
+          <button
+            onClick={() => onSave(salary)}
+            disabled={salary <= 0 || isPending}
+            className="w-full py-3.5 rounded-2xl bg-primary text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.97] transition-all"
+          >
+            {isPending ? "Guardando..." : "Guardar"}
+          </button>
         </div>
-        <button
-          onClick={() => onSave(salary)}
-          disabled={salary <= 0 || isPending}
-          className="w-full py-3.5 rounded-2xl bg-primary text-white text-[14px] font-bold disabled:opacity-40 active:scale-[0.97] transition-all"
-        >
-          {isPending ? "Guardando..." : "Guardar"}
-        </button>
       </div>
     </div>
   );
@@ -124,6 +137,15 @@ function AddBudgetModal({
 }) {
   const [name, setName] = useState("");
   const [pct,  setPct]  = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const keyboardInset = useKeyboardBottomInset(isOpen);
+  useSheetAutofocus(isOpen, nameInputRef);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setName("");
+    setPct("");
+  }, [isOpen]);
 
   const handleTemplate = (t: typeof BUDGET_TEMPLATES[0]) => {
     setName(t.name);
@@ -137,8 +159,14 @@ function AddBudgetModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-card rounded-t-3xl px-5 pt-5 pb-10 w-full max-w-sm mx-auto z-10 flex flex-col gap-4">
-        <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto" />
+      <div
+        className="relative bg-card shadow-none border-t border-[#e0e0e0] dark:border-[#3d3560] rounded-t-3xl px-5 pt-5 w-full max-w-sm mx-auto z-10 flex flex-col max-h-[min(92dvh,calc(100dvh-0.5rem))]"
+        style={{
+          paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${keyboardInset}px)`,
+        }}
+      >
+        <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto shrink-0" />
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-4 mt-4">
         <h3 className="text-[15px] font-bold">Nuevo presupuesto compartido</h3>
 
         {/* Plantillas rápidas */}
@@ -168,11 +196,13 @@ function AddBudgetModal({
 
         {/* Nombre personalizado */}
         <input
+          ref={nameInputRef}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          enterKeyHint="next"
           placeholder="O escribe un nombre personalizado"
-          className="w-full px-4 py-3 rounded-2xl bg-muted/50 text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+          className="w-full px-4 py-3 rounded-2xl bg-muted/50 text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 transition-all"
         />
 
         {/* % del salario */}
@@ -184,7 +214,8 @@ function AddBudgetModal({
             placeholder="% del salario de cada uno"
             min={1}
             max={100}
-            className="w-full px-4 py-3 rounded-2xl bg-muted/50 text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none focus:ring-2 focus:ring-primary/30 pr-10 transition-all font-nums"
+            enterKeyHint="done"
+            className="w-full px-4 py-3 rounded-2xl bg-muted/50 text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 pr-10 transition-all font-nums"
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-muted-foreground/40 font-nums">%</span>
         </div>
@@ -196,6 +227,7 @@ function AddBudgetModal({
         >
           {isPending ? "Creando..." : "Crear presupuesto"}
         </button>
+        </div>
       </div>
     </div>
   );
@@ -231,14 +263,14 @@ function TxActionSheet({
         <>
           <motion.div
             key="backdrop"
-            className="fixed inset-0 bg-black/40 z-60"
+            className="fixed inset-0 bg-black/50 z-60"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={onClose}
           />
           <motion.div
             key="sheet"
-            className="fixed bottom-0 left-0 right-0 z-60 bg-card rounded-t-3xl px-5 pt-4 pb-10 max-w-sm mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-60 bg-card shadow-none border-t border-[#e0e0e0] dark:border-[#3d3560] rounded-t-3xl px-5 pt-4 pb-10 max-w-sm mx-auto"
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 280 }}
           >
@@ -445,14 +477,14 @@ function SpaceSettingsSheet({
         <>
           <motion.div
             key="bd"
-            className="fixed inset-0 bg-black/40 z-60"
+            className="fixed inset-0 bg-black/50 z-60"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.16 }}
             onClick={onClose}
           />
           <motion.div
             key="sheet"
-            className="fixed bottom-0 left-0 right-0 z-60 bg-card rounded-t-3xl px-5 pt-4 pb-10 max-w-sm mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-60 bg-card shadow-none border-t border-[#e0e0e0] dark:border-[#3d3560] rounded-t-3xl px-5 pt-4 pb-10 max-w-sm mx-auto"
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 280 }}
           >

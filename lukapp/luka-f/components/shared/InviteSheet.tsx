@@ -15,9 +15,9 @@ const backdropVariants = {
 };
 
 const sheetVariants = {
-  hidden: { y: "100%", opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: "spring" as const, damping: 28, stiffness: 280 } },
-  exit: { y: "100%", opacity: 0, transition: { duration: 0.25, ease: "easeIn" as const } },
+  hidden: { y: "100%" },
+  visible: { y: 0, transition: { type: "spring" as const, damping: 28, stiffness: 280 } },
+  exit: { y: "100%", transition: { duration: 0.25, ease: "easeIn" as const } },
 };
 
 interface InviteSheetProps {
@@ -62,7 +62,7 @@ export function InviteSheet({ isOpen, onClose }: InviteSheetProps) {
         <>
           <motion.div
             key="backdrop"
-            className="fixed inset-0 bg-black/50 z-[60]"
+            className="fixed inset-0 bg-black/50 z-60"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -71,7 +71,7 @@ export function InviteSheet({ isOpen, onClose }: InviteSheetProps) {
           />
           <motion.div
             key="sheet"
-            className="fixed bottom-0 left-0 right-0 z-[60] bg-card rounded-t-3xl max-w-sm mx-auto flex flex-col max-h-[min(92dvh,calc(100dvh-0.5rem))] shadow-lg outline-none"
+            className="fixed bottom-0 left-0 right-0 z-60 bg-card rounded-t-3xl max-w-sm mx-auto flex flex-col max-h-[min(92dvh,calc(100dvh-0.5rem))] shadow-lg outline-none"
             style={{
               paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${keyboardInset}px)`,
             }}
@@ -80,7 +80,7 @@ export function InviteSheet({ isOpen, onClose }: InviteSheetProps) {
             animate="visible"
             exit="exit"
           >
-            <div className="flex-shrink-0 px-5 pt-5">
+            <div className="shrink-0 px-5 pt-5">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
 
               <div className="flex items-center justify-between mb-4">

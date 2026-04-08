@@ -125,6 +125,12 @@ export function CategorySheet({
 
   const resolvedColor = selectedColor ?? (name ? hashColor(name) : CATEGORY_COLORS[0]);
 
+  const hasChanges = !isEditing || !category ? true : (
+    name.trim() !== category.name ||
+    (selectedColor ?? resolvedColor) !== (category.color ?? resolvedColor) ||
+    (icon.trim() || null) !== (category.icon ?? null)
+  );
+
   const handleClose = () => {
     setBudgetSheetOpen(false);
     onClose();
@@ -420,7 +426,7 @@ export function CategorySheet({
                   <div className="flex flex-col gap-2">
                     <Button
                       onClick={handleSave}
-                      disabled={!name.trim() || isPending}
+                      disabled={!name.trim() || isPending || !hasChanges}
                       className="w-full"
                     >
                       {isPending
@@ -429,6 +435,11 @@ export function CategorySheet({
                         ? "Guardar cambios"
                         : "Crear categoría"}
                     </Button>
+                    {isEditing && !hasChanges && (
+                      <p className="text-[11px] text-muted-foreground/50 text-center">
+                        Sin cambios que guardar
+                      </p>
+                    )}
 
                     {isEditing && !confirmDelete && (
                       <Button

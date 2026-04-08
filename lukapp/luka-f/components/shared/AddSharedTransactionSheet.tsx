@@ -18,9 +18,9 @@ const backdropVariants = {
 };
 
 const sheetVariants = {
-  hidden: { y: "100%", opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: "spring" as const, damping: 28, stiffness: 280 } },
-  exit: { y: "100%", opacity: 0, transition: { duration: 0.25, ease: "easeIn" as const } },
+  hidden: { y: "100%" },
+  visible: { y: 0, transition: { type: "spring" as const, damping: 28, stiffness: 280 } },
+  exit: { y: "100%", transition: { duration: 0.25, ease: "easeIn" as const } },
 };
 
 interface AddSharedTransactionSheetProps {
@@ -145,7 +145,7 @@ export function AddSharedTransactionSheet({
             animate="visible"
             exit="exit"
           >
-            <div className="flex-shrink-0 px-5 pt-5">
+            <div className="shrink-0 px-5 pt-5">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
 
               <div className="flex items-center justify-between mb-4">

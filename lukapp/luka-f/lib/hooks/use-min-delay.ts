@@ -3,18 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 
 /**
- * Muestra skeleton durante al menos `minMs` ms SOLO cuando hay una carga real.
+ * Muestra skeleton durante al menos `minMs` ms SOLO cuando hay una carga real sin datos previos.
  *
  * Reglas:
- * - Si al montar ya hay datos (isLoading=false) → devuelve false inmediatamente.
- * - Si al montar hay carga real → skeleton hasta que (a) termine Y (b) pasen minMs.
- * - Si los datos llegan antes de minMs → esperamos el resto del tiempo para evitar
- *   un flash de skeleton demasiado corto (peor que no mostrarlo).
- * - minMs por defecto: 300ms (suficiente para no ser un parpadeo, no tan largo que moleste).
+ * - Si `hasData=true` → devuelve false inmediatamente (datos en caché: sin skeleton).
+ * - Si al montar isLoading=false → devuelve false inmediatamente.
+ * - Si hay carga real → skeleton hasta que (a) termine Y (b) pasen minMs.
+ * - minMs por defecto: 300ms (evita flash de skeleton demasiado corto).
  */
-export function useMinDelay(isLoading: boolean, minMs = 300): boolean {
-  const wasLoadingOnMount = useRef(isLoading);
-  const [minElapsed, setMinElapsed] = useState(!isLoading);
+export function useMinDelay(isLoading: boolean, minMs = 300, hasData = false): boolean {
+  const wasLoadingOnMount = useRef(isLoading && !hasData);
+  const [minElapsed, setMinElapsed] = useState(!isLoading || hasData);
 
   useEffect(() => {
     if (!wasLoadingOnMount.current) return;
@@ -22,6 +21,7 @@ export function useMinDelay(isLoading: boolean, minMs = 300): boolean {
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (hasData) return false;
   if (!wasLoadingOnMount.current) return false;
   return isLoading || !minElapsed;
 }

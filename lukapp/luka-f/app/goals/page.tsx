@@ -4,14 +4,15 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const FADE_UP = (delay = 0) => ({
-  initial: { opacity: 0, y: 10 },
+  initial: { opacity: 1, y: 0 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
+  transition: { duration: 0, delay: 0, ease: "linear" as const },
 });
 import { ArrowLeft, Target, Plus, CheckCircle2, Trash2, X, Loader2, PiggyBank } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSavingGoals, useCreateSavingGoal, useUpdateSavingGoal, useDeleteSavingGoal, SavingGoal } from "@/lib/hooks/use-saving-goals";
-import { formatCOP, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { toast } from "@/lib/toast";
 import { haptics } from "@/lib/haptics";
 import { useLoadingOverlay } from "@/lib/store/loading-overlay-store";
@@ -64,6 +65,7 @@ function GoalCard({
 }) {
   const [sumOpen, setSumOpen] = useState(false);
   const [addAmount, setAddAmount] = useState("");
+  const { formatAmount: formatCOP } = useCurrency();
   const saved = Number(goal.savedAmount);
   const target = Number(goal.targetAmount);
   const progress = Math.min((saved / target) * 100, 100);
@@ -450,12 +452,15 @@ function NewGoalSheet({ onClose, onCreate }: {
 
 export default function GoalsPage() {
   const router = useRouter();
-  const { data: goals = [], isLoading } = useSavingGoals();
+  const { data: goalsData, isLoading: goalsLoading } = useSavingGoals();
   const createGoal = useCreateSavingGoal();
   const updateGoal = useUpdateSavingGoal();
   const deleteGoal = useDeleteSavingGoal();
   const [showNew, setShowNew] = useState(false);
   const { show: showLoading, hide: hideLoading } = useLoadingOverlay();
+  const { formatAmount: formatCOP } = useCurrency();
+  const goals = goalsData ?? [];
+  const isLoading = goalsData === undefined && goalsLoading;
 
   useEffect(() => {
     if (createGoal.isPending) {

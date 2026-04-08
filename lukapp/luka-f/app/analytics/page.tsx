@@ -16,7 +16,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { api, type AnalyticsSummary, type RecurringExpense, type BudgetProjection, type RecurringEntry } from "@/lib/api/client";
-import { useMinDelay } from "@/lib/hooks/use-min-delay";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
@@ -73,10 +73,11 @@ function truncateCat(name: string, max = 13) {
   return name.length > max ? name.slice(0, max - 1) + "…" : name;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FADE_UP = (delay = 0) => ({
-  initial: { opacity: 0, y: 10 },
+  initial: { opacity: 1, y: 0 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.22, delay, ease: [0.25, 0.46, 0.45, 0.94] as const },
+  transition: { duration: 0, delay: 0, ease: "linear" as const },
 });
 
 // ─── Skeletons ────────────────────────────────────────────────────────────────
@@ -173,6 +174,7 @@ function exportCSV(transactions: Transaction[], monthLabel: string) {
 export default function AnalyticsPage() {
   const router = useRouter();
   const { isPremium } = usePlan();
+  const { formatAmount, formatCompact: fmtCompact } = useCurrency();
   const [currentMonth,      setCurrentMonth]      = useState(() => new Date());
   const [activeType,        setActiveType]        = useState<TxType>("EXPENSE");
   const [selectedCategory,  setSelectedCategory]  = useState<string | null>(null);
@@ -262,7 +264,7 @@ export default function AnalyticsPage() {
   });
 
   // chartLoading excluido — el chart no bloquea el skeleton principal
-  const isLoading    = useMinDelay(txRawLoading || mathLoading);
+  const isLoading    = txData === undefined && (txRawLoading || mathLoading);
   const transactions = txData ?? [];
 
   const totalIncome  = useMemo(() => transactions.filter(t => t.type === "INCOME") .reduce((s, t) => s + Number(t.amount), 0), [transactions]);
@@ -359,7 +361,7 @@ export default function AnalyticsPage() {
             <div className="space-y-3 px-5 pt-1">
 
               {/* ── Sección analíticas math ── */}
-              <motion.div {...FADE_UP(0)}>
+              <div>
               {mathLoading ? (
                 <>
                   <div className="h-9 rounded-xl bg-muted-foreground/10 animate-pulse" />
@@ -447,7 +449,7 @@ export default function AnalyticsPage() {
                                 (mathData.forecast?.next30Days ?? 0) >= 0 ? "text-lime" : "text-rose-500",
                               )}>
                                 {(mathData.forecast?.next30Days ?? 0) >= 0 ? "+" : ""}
-                                {formatCompact(mathData.forecast?.next30Days ?? 0)}
+                                {fmtCompact(mathData.forecast?.next30Days ?? 0)}
                               </p>
                             </div>
                           </div>
@@ -547,7 +549,7 @@ export default function AnalyticsPage() {
                                     boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
                                   }}
                                   formatter={(val: number | undefined, name: string | undefined) => [
-                                    formatCOP(val ?? 0),
+                                    formatAmount(val ?? 0),
                                     name === "income" ? "Ingresos" : "Gastos",
                                   ]}
                                   labelStyle={{ fontWeight: 600, marginBottom: 4, fontSize: 11 }}
@@ -587,14 +589,14 @@ export default function AnalyticsPage() {
                                   <p className={cn("text-[15px] font-bold font-nums", incPct >= 0 ? "text-lime" : "text-rose-500")}>
                                     {incPct >= 0 ? "+" : ""}{incPct.toFixed(1)}%
                                   </p>
-                                  <p className="text-[11px] text-muted-foreground/50">{formatCompact(last.income)}</p>
+                                  <p className="text-[11px] text-muted-foreground/50">{fmtCompact(last.income)}</p>
                                 </div>
                                 <div>
                                   <p className="text-[11px] text-muted-foreground mb-1">Gastos</p>
                                   <p className={cn("text-[15px] font-bold font-nums", expPct <= 0 ? "text-lime" : "text-rose-500")}>
                                     {expPct >= 0 ? "+" : ""}{expPct.toFixed(1)}%
                                   </p>
-                                  <p className="text-[11px] text-muted-foreground/50">{formatCompact(last.expense)}</p>
+                                  <p className="text-[11px] text-muted-foreground/50">{fmtCompact(last.expense)}</p>
                                 </div>
                               </div>
                             </div>
@@ -627,7 +629,7 @@ export default function AnalyticsPage() {
                               <p className="text-[10px] text-muted-foreground/50 mt-0.5">Cuánto quemas por día este mes</p>
                             </div>
                             <p className="text-[14px] font-bold font-nums text-rose-500 tabular-nums shrink-0">
-                              {formatCompact(mathData.balances?.burnRateDaily ?? 0)}
+                              {fmtCompact(mathData.balances?.burnRateDaily ?? 0)}
                             </p>
                           </div>
 
@@ -660,7 +662,7 @@ export default function AnalyticsPage() {
                               "text-[14px] font-bold font-nums tabular-nums shrink-0",
                               (mathData.forecast?.next30Days ?? 0) >= 0 ? "text-lime" : "text-rose-500",
                             )}>
-                              {(mathData.forecast?.next30Days ?? 0) >= 0 ? "+" : ""}{formatCompact(mathData.forecast?.next30Days ?? 0)}
+                              {(mathData.forecast?.next30Days ?? 0) >= 0 ? "+" : ""}{fmtCompact(mathData.forecast?.next30Days ?? 0)}
                             </p>
                           </div>
 
@@ -677,7 +679,7 @@ export default function AnalyticsPage() {
                               "text-[14px] font-bold font-nums tabular-nums shrink-0",
                               (mathData.forecast?.next60Days ?? 0) >= 0 ? "text-lime" : "text-rose-500",
                             )}>
-                              {(mathData.forecast?.next60Days ?? 0) >= 0 ? "+" : ""}{formatCompact(mathData.forecast?.next60Days ?? 0)}
+                              {(mathData.forecast?.next60Days ?? 0) >= 0 ? "+" : ""}{fmtCompact(mathData.forecast?.next60Days ?? 0)}
                             </p>
                           </div>
 
@@ -694,7 +696,7 @@ export default function AnalyticsPage() {
                               "text-[14px] font-bold font-nums tabular-nums shrink-0",
                               (mathData.forecast?.next90Days ?? 0) >= 0 ? "text-lime" : "text-rose-500",
                             )}>
-                              {(mathData.forecast?.next90Days ?? 0) >= 0 ? "+" : ""}{formatCompact(mathData.forecast?.next90Days ?? 0)}
+                              {(mathData.forecast?.next90Days ?? 0) >= 0 ? "+" : ""}{fmtCompact(mathData.forecast?.next90Days ?? 0)}
                             </p>
                           </div>
                         </div>
@@ -715,10 +717,10 @@ export default function AnalyticsPage() {
                   </AnimatePresence>
                 </>
               )}
-              </motion.div>
+              </div>
 
               {/* ── Summary cards (ingresos / gastos / neto) ── */}
-              <motion.div {...FADE_UP(0.08)} className="space-y-2">
+              <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   {/* Ingresos */}
                   <button
@@ -738,7 +740,7 @@ export default function AnalyticsPage() {
                       </span>
                     </div>
                     <p className="text-[17px] font-black text-lime-dark dark:text-lime font-nums leading-none">
-                      {formatCompact(totalIncome)}
+                      {fmtCompact(totalIncome)}
                     </p>
                     <p className="text-[10px] text-lime-dark/40 dark:text-lime/35 mt-1.5 font-medium">
                       {transactions.filter(t => t.type === "INCOME").length} movimientos
@@ -763,7 +765,7 @@ export default function AnalyticsPage() {
                       </span>
                     </div>
                     <p className="text-[17px] font-black text-rose-600 dark:text-rose-400 font-nums leading-none">
-                      {formatCompact(totalExpense)}
+                      {fmtCompact(totalExpense)}
                     </p>
                     <p className="text-[10px] text-rose-600/40 dark:text-rose-400/35 mt-1.5 font-medium">
                       {transactions.filter(t => t.type === "EXPENSE").length} movimientos
@@ -792,13 +794,13 @@ export default function AnalyticsPage() {
                     "text-[18px] font-black font-nums tabular-nums",
                     net >= 0 ? "text-lime" : "text-rose-500",
                   )}>
-                    {net >= 0 ? "+" : ""}{formatCompact(net)}
+                    {net >= 0 ? "+" : ""}{fmtCompact(net)}
                   </p>
                 </div>
-              </motion.div>
+              </div>
 
               {/* ── Gastos recurrentes (Premium) ── */}
-              <motion.div {...FADE_UP(0.13)}>
+              <div>
               {isPremium ? (
                 (recurringData?.length ?? 0) > 0 ? (
                   <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
@@ -839,7 +841,7 @@ export default function AnalyticsPage() {
                               </div>
                             </div>
                             <p className="text-[14px] font-bold font-nums text-rose-500 tabular-nums shrink-0">
-                              -{formatCompact(item.averageAmount)}
+                              -{fmtCompact(item.averageAmount)}
                             </p>
                           </div>
                         );
@@ -858,10 +860,10 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               )}
-              </motion.div>
+              </div>
 
               {/* ── Category breakdown / tx list ── */}
-              <motion.div {...FADE_UP(0.18)}>
+              <div>
               {categoryRows.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 rounded-[24px] bg-card gap-2">
                   <p className="text-sm font-semibold text-muted-foreground/40">
@@ -953,7 +955,7 @@ export default function AnalyticsPage() {
                   </AnimatePresence>
                 </>
               )}
-              </motion.div>
+              </div>
             </div>
           )}
         </div>
@@ -983,7 +985,7 @@ function RecurringRow({ entry }: { entry: RecurringEntry }) {
     <div className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
       <div className="flex items-center gap-2.5 min-w-0">
         <div className={cn(
-          "w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-bold",
+          "w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold",
           isIncome ? "bg-lime/10 text-lime-700 dark:text-lime-400" : "bg-rose-500/10 text-rose-500"
         )}>
           {isIncome ? "+" : "-"}
@@ -997,7 +999,7 @@ function RecurringRow({ entry }: { entry: RecurringEntry }) {
           </p>
         </div>
       </div>
-      <p className={cn("text-xs font-bold flex-shrink-0 ml-2",
+      <p className={cn("text-xs font-bold shrink-0 ml-2",
         isIncome ? "text-lime-700 dark:text-lime-400" : "text-rose-500"
       )}>
         {fmt(entry.amount)}
@@ -1145,6 +1147,7 @@ function CategoryCard({ cat, type, onSelect }: { cat: CategoryRow; type: TxType;
   const isExpense = type === "EXPENSE";
   const idx       = hashIndex(cat.name);
   const [c1, c2]  = CATEGORY_GRADIENTS[idx];
+  const { formatCompact: fmtCompact } = useCurrency();
 
   return (
     <button
@@ -1176,7 +1179,7 @@ function CategoryCard({ cat, type, onSelect }: { cat: CategoryRow; type: TxType;
       </div>
 
       <p className={cn("text-[14px] font-bold font-nums shrink-0 ml-1", isExpense ? "text-rose-500" : "text-lime")}>
-        {formatCompact(cat.amount)}
+        {fmtCompact(cat.amount)}
       </p>
     </button>
   );
