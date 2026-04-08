@@ -31,7 +31,7 @@ export default function Error({
           <button
             type="button"
             onClick={reset}
-            className="flex-1 h-11 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm active:scale-[0.99] transition-transform"
+            className="flex-1 h-11 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm active:scale-[0.97] transition-all duration-75"
           >
             Reintentar
           </button>

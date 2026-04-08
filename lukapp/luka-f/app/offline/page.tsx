@@ -1,6 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 export default function OfflinePage() {
+  const [retrying, setRetrying] = useState(false);
+
+  // Auto-recarga cuando el browser detecta que volvió la conexión
+  useEffect(() => {
+    const handleOnline = () => {
+      setRetrying(true);
+      window.location.reload();
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
+
+  const handleRetry = () => {
+    setRetrying(true);
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-dvh bg-transparent flex flex-col items-center justify-center px-6 text-center">
       <div className="w-16 h-16 rounded-2xl bg-purple-brand/10 flex items-center justify-center mb-6">
@@ -10,13 +29,14 @@ export default function OfflinePage() {
       </div>
       <h1 className="text-[22px] font-bold text-foreground mb-2">Sin conexión</h1>
       <p className="text-[14px] text-muted-foreground mb-8 max-w-[260px] leading-relaxed">
-        Revisa tu conexión a internet e intenta de nuevo.
+        Revisa tu conexión a internet. La app se reconectará automáticamente.
       </p>
       <button
-        onClick={() => window.location.reload()}
-        className="px-6 py-3 bg-purple-brand text-white font-semibold text-[14px] rounded-2xl"
+        onClick={handleRetry}
+        disabled={retrying}
+        className="px-6 py-3 bg-purple-brand text-white font-semibold text-[14px] rounded-2xl transition-all duration-75 active:scale-[0.97] disabled:opacity-60"
       >
-        Reintentar
+        {retrying ? "Reconectando…" : "Reintentar"}
       </button>
     </div>
   );
