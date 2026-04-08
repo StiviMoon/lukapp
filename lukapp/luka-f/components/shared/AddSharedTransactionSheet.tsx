@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useAddSharedTransaction, useUpdateSharedTransaction } from "@/lib/hooks/use-spaces";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
+import { useKeyboardBottomInset } from "@/lib/hooks/use-keyboard-bottom-inset";
+import { useSheetAutofocus } from "@/lib/hooks/use-sheet-autofocus";
 import type { SharedBudget, SharedTransaction } from "@/lib/types/shared";
 
 const backdropVariants = {
@@ -39,6 +41,9 @@ export function AddSharedTransactionSheet({
   editingTransaction = null,
 }: AddSharedTransactionSheetProps) {
   const isEditing = !!editingTransaction;
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const keyboardInset = useKeyboardBottomInset(isOpen);
+  useSheetAutofocus(isOpen, amountInputRef);
 
   const [rawAmount, setRawAmount] = useState("");
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
@@ -131,38 +136,44 @@ export function AddSharedTransactionSheet({
           />
           <motion.div
             key="sheet"
-            className="fixed bottom-0 left-0 right-0 z-60 bg-card rounded-t-3xl px-5 pt-5 pb-10 max-w-sm mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-60 bg-card rounded-t-3xl max-w-sm mx-auto flex flex-col max-h-[min(92dvh,calc(100dvh-0.5rem))] shadow-lg outline-none"
+            style={{
+              paddingBottom: `calc(1.25rem + env(safe-area-inset-bottom, 0px) + ${keyboardInset}px)`,
+            }}
             variants={sheetVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
           >
-            {/* Handle */}
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
+            <div className="flex-shrink-0 px-5 pt-5">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
 
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-base font-bold text-foreground">
-                {isEditing ? "Editar gasto" : "Gasto compartido"}
-              </h2>
-              <button
-                onClick={handleClose}
-                className="w-8 h-8 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-              >
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-foreground">
+                  {isEditing ? "Editar gasto" : "Gasto compartido"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
             </div>
 
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5">
             {/* Amount input */}
             <div className="flex items-center justify-center mb-6">
               <span className="text-3xl font-bold text-muted-foreground/40 mr-1">$</span>
               <input
+                ref={amountInputRef}
                 type="text"
                 inputMode="numeric"
+                enterKeyHint="done"
                 value={rawAmount}
                 onChange={handleAmountChange}
                 placeholder="0"
-                autoFocus
                 className="text-4xl font-bold text-foreground bg-transparent outline-none text-center w-full placeholder:text-muted-foreground/20 font-nums tabular-nums"
               />
             </div>
@@ -205,17 +216,19 @@ export function AddSharedTransactionSheet({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Nota (opcional)"
-              className="w-full px-4 py-3 rounded-2xl bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none focus:ring-2 focus:ring-primary/30 mb-4 transition-all"
+              className="w-full px-4 py-3 rounded-2xl bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 mb-4 transition-all"
             />
 
             {/* Save button */}
             <button
+              type="button"
               onClick={handleSubmit}
               disabled={amount <= 0 || isPending}
               className="w-full py-3.5 rounded-2xl bg-primary text-white text-sm font-bold disabled:opacity-40 transition-opacity active:scale-[0.98]"
             >
               {isPending ? "Guardando..." : isEditing ? "Actualizar gasto" : "Guardar gasto"}
             </button>
+            </div>
           </motion.div>
         </>
       )}
