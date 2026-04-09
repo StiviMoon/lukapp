@@ -48,6 +48,7 @@ const CATEGORY_RULES: CategoryRule[] = [
       "comida", "almuerzo", "desayuno", "cena", "restaurante", "domicilio",
       "mercado", "supermercado", "snack", "bebida", "tinto", "café", "cafe",
       "rappi", "ifood", "uber eats", "fruta", "verdura", "tienda",
+      "helado", "helados", "postre",
     ],
   },
   {
@@ -176,12 +177,118 @@ function normalize(text: string): string {
     .replace(/[\u0300-\u036f]/g, ""); // quitar acentos
 }
 
+function parseNumericToken(raw: string): number {
+  const cleaned = raw.trim().replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function parseQuantityToken(raw: string): number | null {
+  const normalized = normalize(raw).trim();
+  if (!normalized) return null;
+  if (WORD_NUMBERS[normalized] !== undefined) return WORD_NUMBERS[normalized];
+
+  const n = parseNumericToken(normalized);
+  if (Number.isFinite(n) && n > 0) return n;
+  return null;
+}
+
+/** Cantidad en palabra o dígito (1–10 + un/una) para patrones "X en 2 helados" */
+const QTY_WORD_OR_DIGIT =
+  String.raw`\d+|un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez`;
+
+const TOTAL_THEN_ITEMS_END = String.raw`(?=\s*$|,|\s+y\s|\s+y\s+tambien\b)`;
+
+/**
+ * Monto total ya dicho primero + "en"/"por" + cantidad + ítem.
+ * Ej: "me gasté 6000 en 2 helados", "50 mil en dos helados".
+ * El monto es el total (no cantidad × precio).
+ */
+function parseTotalEnItems(
+  text: string
+): { amount: number; description: string } | null {
+  const t = normalize(text);
+
+  const plainRe = new RegExp(
+    String.raw`\b(\d{1,3}(?:[.,]\d{3})+|\d+)\s+(?:en|por)\s+(${QTY_WORD_OR_DIGIT})\s+((?:\w+(?:\s+\w+){0,3}))${TOTAL_THEN_ITEMS_END}`,
+    "i"
+  );
+  const kRe = new RegExp(
+    String.raw`\b(\d+(?:[.,]\d+)?)\s*k\s+(?:en|por)\s+(${QTY_WORD_OR_DIGIT})\s+((?:\w+(?:\s+\w+){0,3}))${TOTAL_THEN_ITEMS_END}`,
+    "i"
+  );
+  const numMilRe = new RegExp(
+    String.raw`\b(\d+(?:[.,]\d+)?)\s*mil\s+(?:en|por)\s+(${QTY_WORD_OR_DIGIT})\s+((?:\w+(?:\s+\w+){0,3}))${TOTAL_THEN_ITEMS_END}`,
+    "i"
+  );
+
+  const tryMatch = (
+    m: RegExpMatchArray | null,
+    scale: number
+  ): { amount: number; description: string } | null => {
+    if (!m) return null;
+    const amount = Math.round(parseFloat(m[1].replace(",", ".")) * scale);
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+    const qtyRaw = m[2];
+    const itemRaw = m[3].trim();
+    if (!parseQuantityToken(qtyRaw) || !itemRaw) return null;
+    const description = `${qtyRaw} ${itemRaw}`.replace(/\s+/g, " ").trim();
+    return { amount, description };
+  };
+
+  const fromK = tryMatch(t.match(kRe), 1000);
+  if (fromK) return fromK;
+
+  const fromNumMil = tryMatch(t.match(numMilRe), 1000);
+  if (fromNumMil) return fromNumMil;
+
+  const fromPlain = tryMatch(t.match(plainRe), 1);
+  if (fromPlain) return fromPlain;
+
+  const wordMilRe = new RegExp(
+    String.raw`\b(un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|veinte|treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa|cien|ciento|doscientos|trescientos|cuatrocientos|quinientos|seiscientos|setecientos|ochocientos|novecientos)\s+mil\s+(?:en|por)\s+(${QTY_WORD_OR_DIGIT})\s+((?:\w+(?:\s+\w+){0,3}))${TOTAL_THEN_ITEMS_END}`,
+    "i"
+  );
+  const wm = t.match(wordMilRe);
+  if (wm) {
+    const w = wm[1];
+    const base = WORD_NUMBERS[w];
+    if (base === undefined) return null;
+    const amount = base * 1000;
+    const qtyRaw = wm[2];
+    const itemRaw = wm[3].trim();
+    if (!parseQuantityToken(qtyRaw) || !itemRaw) return null;
+    const description = `${qtyRaw} ${itemRaw}`.replace(/\s+/g, " ").trim();
+    return { amount, description };
+  }
+
+  return null;
+}
+
 /**
  * Extrae el monto numérico de una frase en español colombiano.
  * Soporta: "50k", "50 mil", "2 millones", "un palo", "quinientos", "50000"
  */
 function extractAmount(text: string): number | null {
   const t = normalize(text);
+
+  // 0. Patrones cantidad × precio unitario (ej: "5 helados de 4500", "2 x 30k", "3 por 12000")
+  const qtyPricePatterns: Array<{ re: RegExp; qtyIndex: number; unitIndex: number }> = [
+    { re: /\b(\d+|un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+(?:\w+\s+){0,3}?de\s+(\d{1,3}(?:[.,]\d{3})*|\d+)\b/i, qtyIndex: 1, unitIndex: 2 },
+    { re: /\b(\d+|un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s*(?:x|por)\s*(\d{1,3}(?:[.,]\d{3})*|\d+)\b/i, qtyIndex: 1, unitIndex: 2 },
+    { re: /\b(\d+|un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s+de\s+(\d{1,3}(?:[.,]\d{3})*|\d+)\b/i, qtyIndex: 1, unitIndex: 2 },
+  ];
+
+  for (const { re, qtyIndex, unitIndex } of qtyPricePatterns) {
+    const match = t.match(re);
+    if (!match) continue;
+
+    const qty = parseQuantityToken(match[qtyIndex]);
+    const unit = parseNumericToken(match[unitIndex]);
+    if (qty && Number.isFinite(unit) && unit > 0) {
+      return Math.round(qty * unit);
+    }
+  }
 
   // 1. Número con "k" → multiplicar por 1000
   const kMatch = t.match(/(\d+(?:[.,]\d+)?)\s*k\b/);
@@ -224,8 +331,7 @@ function extractAmount(text: string): number | null {
   // 9. Número puro (con o sin puntos de miles)
   const pureMatch = t.match(/\b(\d{1,3}(?:[.,]\d{3})*|\d+)\b/);
   if (pureMatch) {
-    const cleaned = pureMatch[1].replace(/\./g, "").replace(",", ".");
-    const n = parseFloat(cleaned);
+    const n = parseNumericToken(pureMatch[1]);
     if (!isNaN(n) && n > 0) return n;
   }
 
@@ -344,7 +450,8 @@ function parseSegment(
   userCategories: Array<{ id: string; name: string; type: string }>,
   userAccounts: Array<{ id: string; name: string; type: string }>
 ): ParsedTransaction | null {
-  const amount = extractAmount(segment);
+  const totalEnItems = parseTotalEnItems(segment);
+  const amount = totalEnItems?.amount ?? extractAmount(segment);
   if (!amount) return null;
 
   const type = detectType(segment);
@@ -359,20 +466,24 @@ function parseSegment(
   const periodicity = detectPeriodicity(segment, type);
 
   // Construir descripción corta (máx 4 palabras relevantes)
-  const descWords = normalize(segment)
-    .replace(/\d+/g, "")
-    .replace(/\bk\b|\bmil\b|\bmillon(es)?\b|\bpalo(s)?\b/g, "")
-    .split(/\s+/)
-    .filter(
-      (w) =>
-        w.length > 3 &&
-        !EXPENSE_KEYWORDS.map(normalize).includes(w) &&
-        !INCOME_KEYWORDS.map(normalize).includes(w)
-    )
-    .slice(0, 4)
-    .join(" ");
-
-  const description = descWords.trim() || categoryName;
+  let description: string;
+  if (totalEnItems) {
+    description = totalEnItems.description.split(/\s+/).slice(0, 5).join(" ");
+  } else {
+    const descWords = normalize(segment)
+      .replace(/\d+/g, "")
+      .replace(/\bk\b|\bmil\b|\bmillon(es)?\b|\bpalo(s)?\b/g, "")
+      .split(/\s+/)
+      .filter(
+        (w) =>
+          w.length > 3 &&
+          !EXPENSE_KEYWORDS.map(normalize).includes(w) &&
+          !INCOME_KEYWORDS.map(normalize).includes(w)
+      )
+      .slice(0, 4)
+      .join(" ");
+    description = descWords.trim() || categoryName;
+  }
 
   // Confianza: high si categoría específica, medium si es fallback
   const isFallback = categoryName === "Otros gastos" || categoryName === "Otros ingresos";
