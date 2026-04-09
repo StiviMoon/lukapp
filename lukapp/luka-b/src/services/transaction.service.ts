@@ -58,6 +58,7 @@ export class TransactionService {
           amount: data.amount,
           description: data.description,
           date: data.date ?? new Date(),
+          periodicity: data.periodicity ?? "ONCE",
           userId,
           accountId: data.accountId,
           ...(data.categoryId && { categoryId: data.categoryId }),
@@ -228,6 +229,7 @@ export class TransactionService {
       ...(data.amount !== undefined && { amount: data.amount }),
       ...(data.description !== undefined && { description: data.description }),
       ...(data.date && { date: data.date }),
+      ...(data.periodicity !== undefined && { periodicity: data.periodicity }),
     });
   }
 

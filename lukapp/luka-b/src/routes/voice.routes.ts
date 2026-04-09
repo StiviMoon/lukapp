@@ -13,7 +13,7 @@ import { categoryRepository } from "@/repositories/category.repository";
 import { accountRepository } from "@/repositories/account.repository";
 import { transactionRepository } from "@/repositories/transaction.repository";
 import { profileRepository } from "@/repositories/profile.repository";
-import { TransactionType, AccountType } from "@prisma/client";
+import { TransactionType, AccountType, Periodicity } from "@prisma/client";
 
 const router = Router();
 router.use(authenticate);
@@ -81,6 +81,7 @@ const saveVoiceTransactionItemSchema = z.object({
     .transform((val) => (val === "null" ? null : val)),
   // Fecha local del cliente — evita problemas de timezone con el servidor
   date: z.string().datetime({ offset: true }).optional(),
+  periodicity: z.nativeEnum(Periodicity).optional(),
 });
 
 const saveVoiceTransactionSchema = z.union([
@@ -126,7 +127,7 @@ router.post(
 
       const created = [];
       for (const item of items) {
-        const { type, amount, description, suggestedCategoryName, categoryId, accountId: requestedAccountId, date } = item;
+        const { type, amount, description, suggestedCategoryName, categoryId, accountId: requestedAccountId, date, periodicity } = item;
 
         // Resolver cuenta: usar la del item si es válida y pertenece al usuario, sino la default
         const resolvedAccount = requestedAccountId
@@ -162,6 +163,7 @@ router.post(
           amount,
           description: description ?? suggestedCategoryName,
           date: date ? new Date(date) : new Date(),
+          periodicity: periodicity ?? "ONCE",
           profile: { connect: { userId } },
           account: { connect: { id: accountId } },
           ...(resolvedCategoryId && {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   startOfMonth, endOfMonth, format, addMonths, subMonths, eachMonthOfInterval,
@@ -15,13 +15,14 @@ import {
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { api, type AnalyticsSummary, type RecurringExpense, type BudgetProjection, type RecurringEntry } from "@/lib/api/client";
+import { api, type AnalyticsSummary, type RecurringExpense, type BudgetProjection, type RecurringEntry, type PeriodicityValue } from "@/lib/api/client";
 import { useCurrency } from "@/lib/hooks/use-currency";
 import { usePlan } from "@/lib/hooks/use-plan";
 import { TransactionItem } from "@/components/dashboard/TransactionItem";
 import { TransactionDetailSheet } from "@/components/dashboard/TransactionDetailSheet";
 import type { Transaction } from "@/lib/types/transaction";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/toast";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -862,6 +863,10 @@ export default function AnalyticsPage() {
               )}
               </div>
 
+              <div className="pt-2 pb-1">
+                <BudgetProjectionPanel />
+              </div>
+
               {/* ── Category breakdown / tx list ── */}
               <div>
               {categoryRows.length === 0 ? (
@@ -909,7 +914,7 @@ export default function AnalyticsPage() {
                         key="breakdown"
                         initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.15 }}
-                        className="space-y-2"
+                        className="space-y-2 pt-3"
                       >
                         {visibleCategoryRows.map(cat => (
                           <CategoryCard key={cat.name} cat={cat} type={activeType} onSelect={() => setSelectedCategory(cat.name)} />
@@ -962,7 +967,6 @@ export default function AnalyticsPage() {
       </div>
 
       <TransactionDetailSheet transaction={selectedTx} onClose={() => setSelectedTx(null)} />
-      <BudgetProjectionPanel />
     </>
   );
 }
@@ -973,6 +977,16 @@ const PERIOD_LABELS: Record<string, string> = {
   ONCE: "Único", DAILY: "Diario", WEEKLY: "Semanal",
   BI_WEEKLY: "Quincenal", MONTHLY: "Mensual",
   QUARTERLY: "Trimestral", YEARLY: "Anual",
+};
+
+const CANDIDATE_MONTHLY_FACTOR: Record<string, number> = {
+  WEEKLY: 4.3,
+  BI_WEEKLY: 2.17,
+  MONTHLY: 1,
+  QUARTERLY: 1 / 3,
+  YEARLY: 1 / 12,
+  DAILY: 30,
+  ONCE: 0,
 };
 
 function RecurringRow({ entry }: { entry: RecurringEntry }) {
@@ -1009,10 +1023,20 @@ function RecurringRow({ entry }: { entry: RecurringEntry }) {
 }
 
 function BudgetProjectionPanel() {
+  const queryClient = useQueryClient();
+  const [candidateToConfirm, setCandidateToConfirm] = useState<{
+    categoryId: string;
+    categoryName: string;
+    periodicity: PeriodicityValue;
+  } | null>(null);
   const { data: res, isLoading } = useQuery({
     queryKey: ["budget-projection"],
     queryFn: () => api.analytics.getBudgetProjection(),
     staleTime: 10 * 60_000,
+  });
+  const confirmRecurringMutation = useMutation({
+    mutationFn: (vars: { categoryId: string; periodicity: PeriodicityValue }) =>
+      api.analytics.confirmRecurringCandidate(vars),
   });
 
   const p = res?.data as BudgetProjection | undefined;
@@ -1028,15 +1052,50 @@ function BudgetProjectionPanel() {
   if (!p) return null;
 
   const hasAny = p.recurringIncome.length > 0 || p.recurringExpenses.length > 0;
+  const hasCandidates = p.recurringCandidates.length > 0;
+  const candidatesEstimatedMonthly = Math.round(
+    p.recurringCandidates.reduce((sum, c) => {
+      const factor = CANDIDATE_MONTHLY_FACTOR[c.suggestedPeriodicity] ?? 1;
+      return sum + c.avgAmount * factor;
+    }, 0)
+  );
+
+  const handleConfirmCandidate = async () => {
+    if (!candidateToConfirm) return;
+    try {
+      const response = await confirmRecurringMutation.mutateAsync({
+        categoryId: candidateToConfirm.categoryId,
+        periodicity: candidateToConfirm.periodicity,
+      });
+      if (!response.success) {
+        toast.error(response.error?.message ?? "No se pudo guardar como recurrente");
+        return;
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["budget-projection"] }),
+        queryClient.invalidateQueries({ queryKey: ["analytics", "recurring"] }),
+      ]);
+      toast.success("Listo, ahora es gasto recurrente");
+      setCandidateToConfirm(null);
+    } catch {
+      toast.error("No se pudo guardar como recurrente");
+    }
+  };
 
   return (
-    <div className="px-4 pb-8">
-      <div className="flex items-center gap-2 mb-4 mt-6">
-        <Repeat2 className="w-4 h-4 text-muted-foreground" />
-        <h2 className="text-base font-black text-foreground">Proyección mensual</h2>
-      </div>
+    <>
+      <section className="rounded-3xl border border-border/50 bg-card/80 backdrop-blur-sm p-4 sm:p-5 space-y-5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Repeat2 className="w-4 h-4 text-muted-foreground" />
+            <h2 className="text-base font-black text-foreground">Proyección mensual</h2>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/55">
+            Premium
+          </span>
+        </div>
 
-      {!hasAny ? (
+      {!hasAny && !hasCandidates ? (
         <div className="rounded-3xl bg-card border border-border/40 p-6 text-center">
           <p className="text-2xl mb-2">📊</p>
           <p className="text-sm font-semibold text-foreground mb-1">Sin datos recurrentes</p>
@@ -1046,57 +1105,76 @@ function BudgetProjectionPanel() {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Resumen tarjetas */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-lime/8 border border-lime/20 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Ingresos fijos/mes</p>
-              <p className="text-lg font-black text-foreground">
-                {p.monthlyIncomeMin > 0
-                  ? fmtRange(p.monthlyIncomeMin, p.monthlyIncomeMax)
-                  : "Sin registrar"}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-rose-500/8 border border-rose-500/15 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Gastos fijos/mes</p>
-              <p className="text-lg font-black text-foreground">
-                {fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}
-              </p>
-            </div>
-          </div>
-
-          {/* Costo de vida */}
-          <div className="rounded-2xl bg-card border border-border/40 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Te cuesta vivir</p>
-            <p className="text-2xl font-black text-foreground">
-              {fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}
-              <span className="text-sm font-semibold text-muted-foreground"> /mes</span>
-            </p>
-            {p.deficitMax > 0 && (
-              <p className="text-xs text-rose-500 font-semibold mt-2">
-                ⚠️ Déficit estimado: {fmtRange(p.deficitMin, p.deficitMax)}/mes
-              </p>
-            )}
-          </div>
-
-          {/* Necesitas ganar */}
-          {(p.goalContributionNeeded > 0 || p.monthlyExpenseMin > 0) && (
-            <div className="rounded-2xl bg-card border border-border/40 p-4 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Necesitas ganar</p>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Para vivir</p>
-                  <p className="text-xs font-bold text-foreground">{fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}/mes</p>
+          {hasAny && (
+            <>
+              {/* Resumen tarjetas */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-lime/8 border border-lime/20 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Ingresos fijos/mes</p>
+                  <p className="text-lg font-black text-foreground">
+                    {p.monthlyIncomeMin > 0
+                      ? fmtRange(p.monthlyIncomeMin, p.monthlyIncomeMax)
+                      : "Sin registrar"}
+                  </p>
                 </div>
-                {p.goalContributionNeeded > 0 && (
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">Para tus metas</p>
-                    <p className="text-xs font-bold text-foreground">+ {fmt(p.goalContributionNeeded)}/mes</p>
-                  </div>
+                <div className="rounded-2xl bg-rose-500/8 border border-rose-500/15 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Gastos fijos/mes</p>
+                  <p className="text-lg font-black text-foreground">
+                    {fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Costo de vida */}
+              <div className="rounded-2xl bg-card border border-border/40 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Te cuesta vivir</p>
+                <p className="text-2xl font-black text-foreground">
+                  {fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}
+                  <span className="text-sm font-semibold text-muted-foreground"> /mes</span>
+                </p>
+                {p.deficitMax > 0 && (
+                  <p className="text-xs text-rose-500 font-semibold mt-2">
+                    ⚠️ Déficit estimado: {fmtRange(p.deficitMin, p.deficitMax)}/mes
+                  </p>
                 )}
-                <div className="border-t border-border/30 pt-1.5 flex items-center justify-between">
-                  <p className="text-xs font-bold text-foreground">Total mínimo</p>
-                  <p className="text-sm font-black text-foreground">{fmtRange(p.totalNeededMin, p.totalNeededMax)}/mes</p>
+              </div>
+
+              {/* Necesitas ganar */}
+              {(p.goalContributionNeeded > 0 || p.monthlyExpenseMin > 0) && (
+                <div className="rounded-2xl bg-card border border-border/40 p-4 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Necesitas ganar</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">Para vivir</p>
+                      <p className="text-xs font-bold text-foreground">{fmtRange(p.monthlyExpenseMin, p.monthlyExpenseMax)}/mes</p>
+                    </div>
+                    {p.goalContributionNeeded > 0 && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">Para tus metas</p>
+                        <p className="text-xs font-bold text-foreground">+ {fmt(p.goalContributionNeeded)}/mes</p>
+                      </div>
+                    )}
+                    <div className="border-t border-border/30 pt-1.5 flex items-center justify-between">
+                      <p className="text-xs font-bold text-foreground">Total mínimo</p>
+                      <p className="text-sm font-black text-foreground">{fmtRange(p.totalNeededMin, p.totalNeededMax)}/mes</p>
+                    </div>
+                  </div>
                 </div>
+              )}
+            </>
+          )}
+
+          {!hasAny && hasCandidates && (
+            <div className="rounded-2xl bg-amber-500/8 border border-amber-500/20 p-4 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600/80 dark:text-amber-400/80">
+                Detectamos gastos que parecen recurrentes
+              </p>
+              <p className="text-xs text-foreground/80">
+                Ya encontramos patrones (ej. alimentación), pero aún no están marcados como recurrentes.
+              </p>
+              <div className="flex items-center justify-between pt-1">
+                <p className="text-xs text-muted-foreground">Estimado mensual con detectados</p>
+                <p className="text-sm font-black text-foreground">{fmt(candidatesEstimatedMonthly)}/mes</p>
               </div>
             </div>
           )}
@@ -1123,13 +1201,27 @@ function BudgetProjectionPanel() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">💡 Podrían ser recurrentes</p>
               <div className="space-y-2">
                 {p.recurringCandidates.map((c) => (
-                  <div key={c.categoryName} className="flex items-center justify-between">
+                  <div key={c.categoryId} className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-semibold text-foreground">{c.categoryName}</p>
                       <p className="text-[10px] text-muted-foreground">
                         {c.count} veces · prom. {fmt(c.avgAmount)} · sugerido: {PERIOD_LABELS[c.suggestedPeriodicity]}
                       </p>
                     </div>
+                    <button
+                      type="button"
+                      disabled={confirmRecurringMutation.isPending}
+                      onClick={() =>
+                        setCandidateToConfirm({
+                          categoryId: c.categoryId,
+                          categoryName: c.categoryName,
+                          periodicity: c.suggestedPeriodicity as PeriodicityValue,
+                        })
+                      }
+                      className="shrink-0 ml-3 px-3 py-1.5 rounded-full text-[10px] font-bold bg-brand-blue/12 text-brand-blue hover:bg-brand-blue/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Marcar
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1137,7 +1229,58 @@ function BudgetProjectionPanel() {
           )}
         </div>
       )}
-    </div>
+      </section>
+
+      <AnimatePresence>
+        {candidateToConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-70 bg-black/50 flex items-end justify-center"
+            onClick={() => !confirmRecurringMutation.isPending && setCandidateToConfirm(null)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 320 }}
+              className="w-full max-w-sm bg-card rounded-t-3xl border-t border-border px-5 pt-5 pb-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mx-auto h-1 w-10 rounded-full bg-muted-foreground/25" aria-hidden />
+              <div className="space-y-1">
+                <p className="text-[15px] font-bold text-foreground">
+                  Convertir en gasto recurrente
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Esto marcará los movimientos recientes de <span className="font-semibold text-foreground">{candidateToConfirm.categoryName}</span> como{" "}
+                  <span className="font-semibold text-foreground">{PERIOD_LABELS[candidateToConfirm.periodicity]}</span> para incluirlos en tu proyección mensual.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCandidateToConfirm(null)}
+                  disabled={confirmRecurringMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl bg-muted text-sm font-semibold text-foreground/80 disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmCandidate}
+                  disabled={confirmRecurringMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl bg-brand-blue text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {confirmRecurringMutation.isPending ? "Guardando..." : "Sí, marcar"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 

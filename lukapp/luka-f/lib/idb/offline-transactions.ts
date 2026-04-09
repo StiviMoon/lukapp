@@ -16,6 +16,7 @@ export interface OfflineTransactionPayload {
   categoryId: string | null;
   accountId: string | null;
   date: string;
+  periodicity?: "ONCE" | "DAILY" | "WEEKLY" | "BI_WEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY";
 }
 
 export interface PendingTransaction {

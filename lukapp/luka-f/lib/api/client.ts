@@ -90,6 +90,7 @@ export interface RecurringEntry {
 }
 
 export interface RecurringCandidate {
+  categoryId: string;
   categoryName: string;
   avgAmount: number;
   count: number;
@@ -423,6 +424,8 @@ export const api = {
     getSummary: () => apiClient.get<AnalyticsSummary>("/analytics/summary"),
     getRecurring: () => apiClient.get<RecurringExpense[]>("/analytics/recurring"),
     getBudgetProjection: () => apiClient.get<BudgetProjection>("/analytics/budget-projection"),
+    confirmRecurringCandidate: (data: { categoryId: string; periodicity: PeriodicityValue }) =>
+      apiClient.post<{ updated: number }>("/analytics/budget-projection/confirm-candidate", data),
   },
 
   savingGoals: {

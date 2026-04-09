@@ -24,6 +24,7 @@ export interface Transaction {
   id: string;
   type: "INCOME" | "EXPENSE";
   amount: string; // comes as string from Prisma Decimal
+  periodicity?: "ONCE" | "DAILY" | "WEEKLY" | "BI_WEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY";
   description?: string;
   date: string;
   createdAt: string;

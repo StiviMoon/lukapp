@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TransactionType } from "@prisma/client";
+import { TransactionType, Periodicity } from "@prisma/client";
 
 /**
  * Esquemas Zod para validación de transacciones
@@ -17,6 +17,7 @@ export const createTransactionSchema = z.object({
     .max(999999999.99, "Monto demasiado grande"),
   description: z.string().max(500).optional(),
   date: z.coerce.date().default(() => new Date()).optional(),
+  periodicity: z.nativeEnum(Periodicity).default("ONCE").optional(),
 });
 
 export const updateTransactionSchema = createTransactionSchema

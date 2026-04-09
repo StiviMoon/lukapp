@@ -40,6 +40,13 @@ export function BudgetProjectionWidget() {
 
   const hasData =
     projection &&
+    (
+      projection.recurringIncome.length > 0 ||
+      projection.recurringExpenses.length > 0 ||
+      projection.recurringCandidates.length > 0
+    );
+  const hasRecurring =
+    projection &&
     (projection.recurringIncome.length > 0 || projection.recurringExpenses.length > 0);
 
   if (!hasData) {
@@ -54,10 +61,35 @@ export function BudgetProjectionWidget() {
         <div>
           <p className="text-sm font-semibold text-foreground">Presupuesto mensual</p>
           <p className="text-xs text-muted-foreground">
-            Registra ingresos/gastos recurrentes para ver cuánto te cuesta vivir
+            Marca sugerencias recurrentes o registra ingresos/gastos fijos para activar esta proyección
           </p>
         </div>
         <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto flex-shrink-0" />
+      </button>
+    );
+  }
+
+  if (!hasRecurring && projection.recurringCandidates.length > 0) {
+    return (
+      <button
+        onClick={() => router.push("/analytics")}
+        className="w-full rounded-3xl bg-card border border-border/40 p-5 text-left hover:bg-muted/20 transition-colors"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Repeat2 className="w-4 h-4 text-muted-foreground" />
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              Presupuesto mensual
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-semibold text-foreground mb-1">
+          Detectamos gastos que parecen recurrentes
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Confírmalos en Analíticas para incluirlos en tu proyección mensual.
+        </p>
       </button>
     );
   }

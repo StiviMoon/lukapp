@@ -5,6 +5,8 @@ import { recurringDetectorService } from "@/services/recurring-detector.service"
 import { budgetProjectionService } from "@/services/budget-projection.service";
 import { profileRepository } from "@/repositories/profile.repository";
 import { formatError } from "@/errors/error-handler";
+import { z } from "zod";
+import { Periodicity } from "@prisma/client";
 
 const router = Router();
 router.use(authenticate);
@@ -67,6 +69,28 @@ router.get("/summary", async (req: Request, res: Response) => {
 router.get("/budget-projection", async (req: Request, res: Response) => {
   try {
     const data = await budgetProjectionService.getProjection(req.userId!);
+    res.json({ success: true, data });
+  } catch (error) {
+    const formattedError = formatError(error);
+    res.status(formattedError.statusCode).json({ success: false, error: formattedError });
+  }
+});
+
+const confirmRecurringCandidateSchema = z.object({
+  categoryId: z.string().uuid(),
+  periodicity: z.nativeEnum(Periodicity).refine((v) => v !== "ONCE", {
+    message: "La periodicidad debe ser recurrente",
+  }),
+});
+
+router.post("/budget-projection/confirm-candidate", async (req: Request, res: Response) => {
+  try {
+    const parsed = confirmRecurringCandidateSchema.parse(req.body);
+    const data = await budgetProjectionService.confirmCandidate(
+      req.userId!,
+      parsed.categoryId,
+      parsed.periodicity
+    );
     res.json({ success: true, data });
   } catch (error) {
     const formattedError = formatError(error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAddTransactionStore } from "@/lib/store/add-transaction-store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
@@ -140,7 +140,7 @@ export function AddTransactionSheet({
           setSelectedCategoryName("");
         }
         setSelectedAccountId(editingTransaction.account?.id ?? null);
-        const txPeriodicity = (editingTransaction as unknown as { periodicity?: PeriodicityValue }).periodicity;
+        const txPeriodicity = editingTransaction.periodicity;
         setIsRecurring(txPeriodicity != null && txPeriodicity !== "ONCE");
         setPeriodicity(txPeriodicity && txPeriodicity !== "ONCE" ? txPeriodicity : "MONTHLY");
       } else {
@@ -273,6 +273,7 @@ export function AddTransactionSheet({
         categoryId: vars.categoryId,
         accountId: vars.accountId ?? undefined,
         date: vars.date,
+        periodicity: vars.periodicity,
       }),
     onSuccess: async (res) => {
       if (!res.success) {
@@ -310,9 +311,40 @@ export function AddTransactionSheet({
 
   const parsedAmount = parseFloat(rawAmount) || 0;
   const effectiveCategoryName = newCategoryInput.trim() || selectedCategoryName;
+  const effectivePeriodicity: PeriodicityValue = isRecurring ? periodicity : "ONCE";
+  const isDirty = useMemo(() => {
+    if (!editingTransaction) return true;
+
+    const initialAmount = Number(editingTransaction.amount);
+    const initialDescription = (editingTransaction.description ?? "").trim();
+    const currentDescription = description.trim();
+    const initialCategoryId = editingTransaction.category?.id ?? null;
+    const initialAccountId = editingTransaction.account?.id ?? null;
+    const initialPeriodicity: PeriodicityValue = editingTransaction.periodicity ?? "ONCE";
+
+    return (
+      type !== editingTransaction.type ||
+      parsedAmount !== initialAmount ||
+      currentDescription !== initialDescription ||
+      (newCategoryInput.trim() ? null : selectedCategoryId) !== initialCategoryId ||
+      selectedAccountId !== initialAccountId ||
+      effectivePeriodicity !== initialPeriodicity
+    );
+  }, [
+    editingTransaction,
+    type,
+    parsedAmount,
+    description,
+    newCategoryInput,
+    selectedCategoryId,
+    selectedAccountId,
+    effectivePeriodicity,
+  ]);
+
   const canSubmit =
     parsedAmount > 0 &&
     effectiveCategoryName.length > 0 &&
+    (!isEditing || isDirty) &&
     !createMutation.isPending &&
     !updateMutation.isPending;
 
@@ -326,6 +358,7 @@ export function AddTransactionSheet({
     setSubmitAttempted(true);
     const categoryName = newCategoryInput.trim() || selectedCategoryName;
     if (!categoryName) return;
+    if (editingTransaction && !isDirty) return;
 
     const vars: SaveVars = {
       type,
@@ -349,6 +382,7 @@ export function AddTransactionSheet({
           categoryId: vars.categoryId,
           accountId: vars.accountId,
           date: vars.date,
+          periodicity: vars.periodicity,
         };
         await enqueueOffline(payload);
         toast.info("Sin conexión — se enviará automáticamente");
@@ -562,59 +596,57 @@ export function AddTransactionSheet({
               />
 
               {/* Recurring toggle */}
-              {!isEditing && (
-                <div className="flex flex-col gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsRecurring((v) => !v)}
-                    className="flex items-center justify-between w-full py-2.5 px-3.5 rounded-2xl bg-muted/40 hover:bg-muted/70 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-sm">🔁</span>
-                      <div className="text-left">
-                        <p className="text-xs font-semibold text-foreground">¿Es recurrente?</p>
-                        <p className="text-[10px] text-muted-foreground">Arriendo, sueldo, servicios…</p>
-                      </div>
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsRecurring((v) => !v)}
+                  className="flex items-center justify-between w-full py-2.5 px-3.5 rounded-2xl bg-muted/40 hover:bg-muted/70 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-sm">🔁</span>
+                    <div className="text-left">
+                      <p className="text-xs font-semibold text-foreground">¿Es recurrente?</p>
+                      <p className="text-[10px] text-muted-foreground">Arriendo, sueldo, servicios…</p>
                     </div>
-                    {/* Toggle pill */}
+                  </div>
+                  {/* Toggle pill */}
+                  <div className={cn(
+                    "relative w-10 h-5.5 rounded-full transition-colors duration-200 flex-shrink-0",
+                    isRecurring ? "bg-lime" : "bg-muted-foreground/20"
+                  )}>
                     <div className={cn(
-                      "relative w-10 h-5.5 rounded-full transition-colors duration-200 flex-shrink-0",
-                      isRecurring ? "bg-lime" : "bg-muted-foreground/20"
-                    )}>
-                      <div className={cn(
-                        "absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform duration-75",
-                        isRecurring ? "translate-x-5" : "translate-x-0.5"
-                      )} />
-                    </div>
-                  </button>
+                      "absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform duration-75",
+                      isRecurring ? "translate-x-5" : "translate-x-0.5"
+                    )} />
+                  </div>
+                </button>
 
-                  {/* Period selector */}
-                  {isRecurring && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide"
-                    >
-                      {PERIODICITY_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setPeriodicity(opt.value)}
-                          className={cn(
-                            "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-75",
-                            periodicity === opt.value
-                              ? "bg-lime text-background"
-                              : "bg-muted text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </div>
-              )}
+                {/* Period selector */}
+                {isRecurring && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide"
+                  >
+                    {PERIODICITY_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setPeriodicity(opt.value)}
+                        className={cn(
+                          "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-75",
+                          periodicity === opt.value
+                            ? "bg-lime text-background"
+                            : "bg-muted text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </div>
 
               {/* Submit */}
               <div className="flex flex-col gap-2">

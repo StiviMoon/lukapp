@@ -43,7 +43,8 @@ DATOS:
 
 function buildFinancialContext(
   summary: Awaited<ReturnType<typeof financialAnalyticsService.getSummary>>,
-  projection?: Awaited<ReturnType<typeof budgetProjectionService.getProjection>>
+  projection?: Awaited<ReturnType<typeof budgetProjectionService.getProjection>>,
+  userSnapshot?: string
 ): string {
   const lines = [
     "=== CONTEXTO FINANCIERO DETERMINISTICO ===",
@@ -97,6 +98,11 @@ function buildFinancialContext(
     }
   }
 
+  if (userSnapshot) {
+    lines.push("\n=== PERFIL USUARIO ===");
+    lines.push(userSnapshot);
+  }
+
   return lines.join("\n");
 }
 
@@ -123,6 +129,47 @@ function buildNameBlockForStream(firstName: string | null): string {
   return `\n\nCOMUNICACION:\nEl usuario se registró como "${firstName}". Usa ese nombre a veces cuando suene natural. No uses "parcero" ni "parcera" como sustituto de su nombre.`;
 }
 
+async function getUserSnapshot(userId: string): Promise<string> {
+  const [profile, goals] = await Promise.all([
+    prisma.profile.findUnique({
+      where: { userId },
+      select: {
+        fullName: true,
+        email: true,
+        currency: true,
+        plan: true,
+        onboardingCompleted: true,
+      },
+    }),
+    prisma.savingGoal.findMany({
+      where: { userId, completed: false },
+      select: { name: true, targetAmount: true, savedAmount: true, deadline: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+  ]);
+
+  const lines = [
+    `Nombre completo: ${profile?.fullName ?? "No definido"}`,
+    `Email: ${profile?.email ?? "No definido"}`,
+    `Moneda preferida: ${profile?.currency ?? "COP"}`,
+    `Plan: ${profile?.plan ?? "FREE"}`,
+    `Onboarding completo: ${profile?.onboardingCompleted ? "si" : "no"}`,
+    `Metas activas: ${goals.length}`,
+  ];
+
+  if (goals.length > 0) {
+    const fmt = (n: number) =>
+      new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+    goals.forEach((goal) => {
+      const remaining = Math.max(0, Number(goal.targetAmount) - Number(goal.savedAmount));
+      lines.push(`- Meta ${goal.name}: faltan ${fmt(remaining)}${goal.deadline ? ` (deadline ${goal.deadline.toISOString().slice(0, 10)})` : ""}`);
+    });
+  }
+
+  return lines.join("\n");
+}
+
 // ─── Servicio público ─────────────────────────────────────────────────────────
 
 export const coachService = {
@@ -139,11 +186,12 @@ export const coachService = {
     if (cached) return cached.content;
 
     const firstName = await getProfileFirstName(userId);
-    const [summary, projection] = await Promise.all([
+    const [summary, projection, userSnapshot] = await Promise.all([
       financialAnalyticsService.getSummary(userId),
       budgetProjectionService.getProjection(userId),
+      getUserSnapshot(userId),
     ]);
-    const context = buildFinancialContext(summary, projection);
+    const context = buildFinancialContext(summary, projection, userSnapshot);
     const nameBlock = buildNameBlockForInsight(firstName);
     const fallback = firstName
       ? `${firstName}, ${summary.today.insight} ${summary.today.action}`.trim()
@@ -198,8 +246,12 @@ export const coachService = {
     ];
 
     try {
-      const summary = await financialAnalyticsService.getSummary(userId);
-      const context = buildFinancialContext(summary);
+      const [summary, projection, userSnapshot] = await Promise.all([
+        financialAnalyticsService.getSummary(userId),
+        budgetProjectionService.getProjection(userId),
+        getUserSnapshot(userId),
+      ]);
+      const context = buildFinancialContext(summary, projection, userSnapshot);
 
       const response = await getAI().models.generateContent({
         model: COACH_MODEL,
@@ -286,11 +338,12 @@ export const coachService = {
     });
 
     const firstName = await getProfileFirstName(userId);
-    const [summary, projection] = await Promise.all([
+    const [summary, projection, userSnapshot] = await Promise.all([
       financialAnalyticsService.getSummary(userId),
       budgetProjectionService.getProjection(userId),
+      getUserSnapshot(userId),
     ]);
-    const context = buildFinancialContext(summary, projection);
+    const context = buildFinancialContext(summary, projection, userSnapshot);
     const nameBlock = buildNameBlockForStream(firstName);
 
     // Gemini usa "model" para el rol del asistente (no "assistant")

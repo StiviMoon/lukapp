@@ -37,6 +37,7 @@ export interface BudgetProjection {
 }
 
 export interface RecurringCandidate {
+  categoryId: string;
   categoryName: string;
   avgAmount: number;
   count: number;
@@ -177,6 +178,7 @@ export const budgetProjectionService = {
       else if (count >= 3) suggestedPeriodicity = "MONTHLY";
 
       return {
+        categoryId: c.categoryId!,
         categoryName: catMap.get(c.categoryId ?? "") ?? "Categoría desconocida",
         avgAmount: Math.round(Number(c._avg.amount ?? 0)),
         count,
@@ -198,5 +200,69 @@ export const budgetProjectionService = {
       totalNeededMax,
       recurringCandidates,
     };
+  },
+
+  async confirmCandidate(
+    userId: string,
+    categoryId: string,
+    periodicity: Periodicity
+  ): Promise<{ updated: number }> {
+    if (periodicity === "ONCE") {
+      return { updated: 0 };
+    }
+
+    const windowStart = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const grouped = await prisma.transaction.groupBy({
+      by: ["categoryId"],
+      where: {
+        userId,
+        type: "EXPENSE",
+        periodicity: "ONCE",
+        categoryId,
+        date: { gte: windowStart },
+      },
+      _count: { id: true },
+      _avg: { amount: true },
+    });
+
+    const candidate = grouped[0];
+    if (!candidate || candidate._count.id < 3) {
+      return { updated: 0 };
+    }
+
+    const avg = Number(candidate._avg.amount ?? 0);
+    const tolerance = Math.max(2_000, avg * 0.35);
+
+    const txsToPromote = await prisma.transaction.findMany({
+      where: {
+        userId,
+        type: "EXPENSE",
+        periodicity: "ONCE",
+        categoryId,
+        date: { gte: windowStart },
+        ...(avg > 0 && {
+          amount: {
+            gte: avg - tolerance,
+            lte: avg + tolerance,
+          },
+        }),
+      },
+      orderBy: { date: "desc" },
+      take: candidate._count.id,
+      select: { id: true },
+    });
+
+    if (txsToPromote.length === 0) {
+      return { updated: 0 };
+    }
+
+    const result = await prisma.transaction.updateMany({
+      where: {
+        id: { in: txsToPromote.map((tx) => tx.id) },
+      },
+      data: { periodicity },
+    });
+
+    return { updated: result.count };
   },
 };
