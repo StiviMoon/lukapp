@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 import {
@@ -34,6 +35,7 @@ export interface UseOfflineQueueReturn {
 }
 
 export function useOfflineQueue(): UseOfflineQueueReturn {
+  const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState<boolean>(
     typeof navigator !== "undefined" ? navigator.onLine : true
   );
@@ -137,6 +139,16 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
       console.log(`[useOfflineQueue] Synced ${successful}/${pending.length}`);
 
       await updateCounts();
+      if (successful > 0) {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+          queryClient.invalidateQueries({ queryKey: ["balance"] }),
+          queryClient.invalidateQueries({ queryKey: ["stats"] }),
+          queryClient.invalidateQueries({ queryKey: ["budget-projection"] }),
+          queryClient.invalidateQueries({ queryKey: ["analytics", "summary"] }),
+          queryClient.invalidateQueries({ queryKey: ["analytics", "recurring"] }),
+        ]);
+      }
 
       // Toast informativo si hay pendientes aun
       const stillPending = await getAllPending();
@@ -148,7 +160,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     } finally {
       isFlushing.current = false;
     }
-  }, [syncTransaction, updateCounts]);
+  }, [syncTransaction, updateCounts, queryClient]);
 
   // Reintentar transacciones fallidas
   const retryFailed = useCallback(async (): Promise<void> => {

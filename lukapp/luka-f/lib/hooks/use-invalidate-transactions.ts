@@ -11,5 +11,9 @@ export function useInvalidateTransactions() {
       qc.invalidateQueries({ queryKey: ["stats"] }),
       qc.invalidateQueries({ queryKey: ["accounts"] }),
       qc.invalidateQueries({ queryKey: ["budgets", "status"] }),
+      qc.invalidateQueries({ queryKey: ["analytics", "summary"] }),
+      qc.invalidateQueries({ queryKey: ["analytics", "recurring"] }),
+      qc.invalidateQueries({ queryKey: ["budget-projection"] }),
+      qc.invalidateQueries({ queryKey: ["saving-goals"] }),
     ]);
 }

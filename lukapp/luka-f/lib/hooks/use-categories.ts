@@ -28,6 +28,9 @@ export function useCreateCategory() {
     onSuccess: (res) => {
       if (!res.success) return;
       qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["budget-projection"] });
+      qc.invalidateQueries({ queryKey: ["analytics", "recurring"] });
     },
   });
 }
@@ -44,6 +47,9 @@ export function useUpdateCategory() {
     onSuccess: (res) => {
       if (!res.success) return;
       qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["budget-projection"] });
+      qc.invalidateQueries({ queryKey: ["analytics", "recurring"] });
     },
   });
 }
@@ -56,6 +62,9 @@ export function useDeleteCategory() {
       if (!res.success) return;
       qc.invalidateQueries({ queryKey: ["categories"] });
       qc.invalidateQueries({ queryKey: ["budgets"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["budget-projection"] });
+      qc.invalidateQueries({ queryKey: ["analytics", "recurring"] });
     },
   });
 }

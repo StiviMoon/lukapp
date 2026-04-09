@@ -40,7 +40,12 @@ export function useCreateSavingGoal() {
       if (!res.success) throw new Error(res.error?.message ?? "No se pudo crear la meta");
       return res.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["saving-goals"] }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ["saving-goals"] }),
+        qc.invalidateQueries({ queryKey: ["budget-projection"] }),
+        qc.invalidateQueries({ queryKey: ["analytics", "summary"] }),
+      ]),
   });
 }
 
@@ -63,7 +68,12 @@ export function useUpdateSavingGoal() {
       if (!res.success) throw new Error(res.error?.message ?? "No se pudo actualizar la meta");
       return res.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["saving-goals"] }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ["saving-goals"] }),
+        qc.invalidateQueries({ queryKey: ["budget-projection"] }),
+        qc.invalidateQueries({ queryKey: ["analytics", "summary"] }),
+      ]),
   });
 }
 
@@ -71,6 +81,11 @@ export function useDeleteSavingGoal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.savingGoals.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["saving-goals"] }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ["saving-goals"] }),
+        qc.invalidateQueries({ queryKey: ["budget-projection"] }),
+        qc.invalidateQueries({ queryKey: ["analytics", "summary"] }),
+      ]),
   });
 }
