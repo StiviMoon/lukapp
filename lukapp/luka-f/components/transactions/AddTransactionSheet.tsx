@@ -180,6 +180,14 @@ export function AddTransactionSheet({
   });
 
   const accounts = (accountsRes?.data as Account[] | undefined) ?? [];
+  const visibleCategories = useMemo(() => {
+    const base = categories.slice(0, 10);
+    if (!selectedCategoryId) return base;
+    const selected = categories.find((cat) => cat.id === selectedCategoryId);
+    if (!selected) return base;
+    const withoutSelected = base.filter((cat) => cat.id !== selectedCategoryId);
+    return [selected, ...withoutSelected].slice(0, 10);
+  }, [categories, selectedCategoryId]);
 
   // Auto-select first category when categories load
   useEffect(() => {
@@ -360,12 +368,38 @@ export function AddTransactionSheet({
     if (!categoryName) return;
     if (editingTransaction && !isDirty) return;
 
+    let resolvedCategoryId = newCategoryInput.trim() ? null : selectedCategoryId;
+    let resolvedCategoryName = categoryName;
+
+    if (newCategoryInput.trim()) {
+      const typedName = newCategoryInput.trim();
+      const normalized = typedName.toLowerCase();
+      const existingCategory = categories.find(
+        (cat) => cat.type === type && cat.name.trim().toLowerCase() === normalized
+      );
+
+      if (existingCategory) {
+        resolvedCategoryId = existingCategory.id;
+        resolvedCategoryName = existingCategory.name;
+      } else if (editingTransaction) {
+        const createRes = await api.categories.create({ name: typedName, type });
+        if (!createRes.success || !createRes.data) {
+          toast.error(createRes.error?.message ?? "No se pudo crear la categoría");
+          return;
+        }
+        const created = createRes.data as { id: string; name: string };
+        resolvedCategoryId = created.id;
+        resolvedCategoryName = created.name ?? typedName;
+        await queryClient.invalidateQueries({ queryKey: ["categories"] });
+      }
+    }
+
     const vars: SaveVars = {
       type,
       amount: parseFloat(rawAmount),
       description: description.trim() || undefined,
-      suggestedCategoryName: categoryName,
-      categoryId: newCategoryInput.trim() ? null : selectedCategoryId,
+      suggestedCategoryName: resolvedCategoryName,
+      categoryId: resolvedCategoryId,
       accountId: selectedAccountId,
       date: editingTransaction?.date ?? new Date().toISOString(),
       periodicity: isRecurring ? periodicity : "ONCE",
@@ -548,7 +582,7 @@ export function AddTransactionSheet({
                     Categoría
                   </p>
                   <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                    {categories.slice(0, 10).map((cat) => (
+                    {visibleCategories.map((cat) => (
                       <button
                         key={cat.id}
                         onClick={() => handleChipSelect(cat)}

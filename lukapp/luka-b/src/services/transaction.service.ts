@@ -131,7 +131,7 @@ export class TransactionService {
   async getTransactions(userId: string, filters?: GetTransactionsInput) {
     return await transactionRepository.findByUserId(userId, {
       accountId: filters?.accountId,
-      categoryId: filters?.categoryId,
+      categoryId: filters?.categoryId ?? undefined,
       type: filters?.type,
       startDate: filters?.startDate,
       endDate: filters?.endDate,

@@ -2,6 +2,7 @@ export interface TransactionCategory {
   id: string;
   name: string;
   type: string;
+  icon?: string | null;
 }
 
 export interface TransactionAccount {

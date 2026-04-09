@@ -9,7 +9,7 @@ export const transactionTypeSchema = z.nativeEnum(TransactionType);
 
 export const createTransactionSchema = z.object({
   accountId: z.string().uuid("ID de cuenta inválido"),
-  categoryId: z.string().uuid("ID de categoría inválido").optional(),
+  categoryId: z.union([z.string().uuid("ID de categoría inválido"), z.null()]).optional(),
   type: transactionTypeSchema,
   amount: z
     .number()
@@ -32,7 +32,7 @@ export const transactionIdSchema = z.object({
 
 export const getTransactionsSchema = z.object({
   accountId: z.string().uuid("ID de cuenta inválido").optional(),
-  categoryId: z.string().uuid("ID de categoría inválido").optional(),
+  categoryId: z.union([z.string().uuid("ID de categoría inválido"), z.null()]).optional(),
   type: transactionTypeSchema.optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),

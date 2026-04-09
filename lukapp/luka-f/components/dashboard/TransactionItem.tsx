@@ -60,7 +60,7 @@ export function TransactionItem({ transaction, onClick }: TransactionItemProps) 
   const categoryName = category?.name ?? (type === "INCOME" ? "Ingreso" : "Gasto");
   const idx          = hashIndex(categoryName);
   const [colorFrom, colorTo] = CATEGORY_GRADIENTS[idx];
-  const initial      = categoryName.charAt(0).toUpperCase();
+  const categoryLabel = category?.icon || categoryName.charAt(0).toUpperCase();
   const numAmount    = Number(amount);
   const isIncome     = type === "INCOME";
   const dateLabel    = relativeDate(date);
@@ -77,7 +77,7 @@ export function TransactionItem({ transaction, onClick }: TransactionItemProps) 
           background: `linear-gradient(135deg, ${colorFrom}, ${colorTo})`,
         }}
       >
-        {initial}
+        {categoryLabel}
       </div>
 
       {/* Labels */}
