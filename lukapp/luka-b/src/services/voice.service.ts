@@ -128,6 +128,8 @@ REGLAS DE MONTO (crítico):
 - "quinientos" = 500 | "doscientos mil" = 200000
 - Ignorar símbolo $ y "COP" o "pesos"
 - El monto SIEMPRE es positivo
+- Monto total primero + detalle: "me gasté 6000 en 2 helados" / "pagué 50 mil por 3 cafés" → amount es el TOTAL (6000 / 50000), NO multipliques cantidad × nada. La description debe incluir la cantidad: "2 helados", "3 cafés".
+- Cantidad × precio unitario: "5 helados de 4500 c/u" / "2 por 3000" (cuando es claro que el segundo número es precio por unidad) → amount = cantidad × precio.
 
 REGLAS DE TIPO:
 - EXPENSE: "gasté", "pagué", "compré", "me costó", "saqué", "debité", "invertí en", "pedí", "ordené"
